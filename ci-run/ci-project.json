@@ -1,0 +1,4 @@
+{	"name": "test",
+	"requires": "everbase.core",
+	"variant": "c++"
+}

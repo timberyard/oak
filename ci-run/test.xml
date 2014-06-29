@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<document>
+	<_123>
+		<_456>
+			<_0>1</_0>
+			<_1>2</_1>
+			<_2>3</_2>
+		</_456>
+	</_123>
+	<abc>
+		<_124>test2</_124>
+		<_125>tes&apos;t2</_125>
+		<_126>tes&quot;t2</_126>
+		<def>test2</def>
+		<qqq>null</qqq>
+		<xyz>true</xyz>
+	</abc>
+</document>
