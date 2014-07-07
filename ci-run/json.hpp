@@ -30,7 +30,6 @@ namespace Json
 	typedef std::string String;
 	typedef bool Boolean;
 	class Null { };
-	class Undefined { };
 
 	// Value Type
 	typedef boost::make_recursive_variant<
@@ -40,8 +39,7 @@ namespace Json
 			Float,
 			String,
 			Boolean,
-			Null,
-			Undefined
+			Null
 		>::type Value;
 
 	// Object, Vector Type
@@ -107,7 +105,7 @@ namespace Json
 	enum Format
 	{
 		FORMAT_JSON = 1,
-		FORMAT_SIMPLEXML = 2
+		FORMAT_XML = 2
 	};
 
 	Value read(std::istream& stream, Format format);

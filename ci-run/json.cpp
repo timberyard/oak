@@ -1,4 +1,5 @@
 #include "json.hpp"
+#include "json.grammar.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/format.hpp>
@@ -78,10 +79,26 @@ namespace Json
 
 	Value read(std::istream& stream, Format format)
 	{
-		return Undefined();
+		std::string input;
+
+		stream.unsetf(std::ios::skipws);
+		std::copy(
+	        std::istream_iterator<char>(stream),
+	        std::istream_iterator<char>(),
+	        std::back_inserter(input));
+
+		JsonGrammar<std::string::const_iterator> grammar;
+		Value value;
+
+		std::string::const_iterator iter = input.begin();
+		std::string::const_iterator end = input.end();
+
+		bool result = boost::spirit::qi::phrase_parse(iter, end, grammar, boost::spirit::ascii::space, value);
+
+		return value;
 	}
 
-	std::string xmlEncodeString(const std::string& data)
+	std::string encodeXmlString(const std::string& data)
 	{
 		std::string result;
 		result.reserve(data.size());
@@ -107,7 +124,7 @@ namespace Json
 		return result;
 	}
 
-	std::string xmlJsonString(const std::string& data)
+	std::string encodeJsonString(const std::string& data)
 	{
 		std::string result;
 		result.reserve(data.size());
@@ -131,7 +148,7 @@ namespace Json
 		return result;
 	}
 
-	std::string xmlDeriveElement(const std::string& data)
+	std::string deriveXmlElement(const std::string& data)
 	{
 		std::string result;
 		result.reserve(data.size()+1);
@@ -153,11 +170,11 @@ namespace Json
 		return result;
 	}
 
-	void writeSimpleXml(const Value& value, std::ostream& stream, std::string currentIndex, unsigned int level)
+	void writeXml(const Value& value, std::ostream& stream, std::string currentIndex, unsigned int level)
 	{
 		std::string levelString(level, '\t');
 
-		currentIndex = xmlDeriveElement(currentIndex);
+		currentIndex = deriveXmlElement(currentIndex);
 
 		stream << std::endl << levelString << "<" << currentIndex << ">";
 
@@ -173,7 +190,7 @@ namespace Json
 		else
 		if(value.type() == typeid(String))
 		{
-			stream << xmlEncodeString(boost::get<String>(value));
+			stream << encodeXmlString(boost::get<String>(value));
 		}
 		else
 		if(value.type() == typeid(Boolean))
@@ -186,16 +203,11 @@ namespace Json
 			stream << "null";
 		}
 		else
-		if(value.type() == typeid(Undefined))
-		{
-			stream << "undefined";
-		}
-		else
 		if(value.type() == typeid(Object))
 		{	
 			for (auto& entry : boost::get<Object>(value))
 			{
-				writeSimpleXml(entry.second, stream, entry.first, level + 1);
+				writeXml(entry.second, stream, entry.first, level + 1);
 			}
 
 			stream << std::endl << levelString;
@@ -207,7 +219,7 @@ namespace Json
 
 			for (auto& entry : boost::get<Array>(value))
 			{
-				writeSimpleXml(entry, stream, (boost::format("%1%") % i++).str(), level + 1);
+				writeXml(entry, stream, (boost::format("%1%") % i++).str(), level + 1);
 			}
 
 			stream << std::endl << levelString;
@@ -236,7 +248,7 @@ namespace Json
 		else
 		if(value.type() == typeid(String))
 		{
-			stream << "\"" << xmlJsonString(boost::get<String>(value)) << "\"";
+			stream << "\"" << encodeJsonString(boost::get<String>(value)) << "\"";
 		}
 		else
 		if(value.type() == typeid(Boolean))
@@ -247,11 +259,6 @@ namespace Json
 		if(value.type() == typeid(Null))
 		{
 			stream << "null";
-		}
-		else
-		if(value.type() == typeid(Undefined))
-		{
-			stream << "undefined";
 		}
 		else
 		if(value.type() == typeid(Object))
@@ -267,7 +274,7 @@ namespace Json
 
 				stream << std::endl << levelString << "\t";
 
-				stream << "\"" << xmlJsonString(entry.first) << "\": ";
+				stream << "\"" << encodeJsonString(entry.first) << "\": ";
 				writeJson(entry.second, stream, level + 1);
 			}
 
@@ -306,9 +313,9 @@ namespace Json
 				writeJson(value, stream, 0);
 				break;
 
-			case FORMAT_SIMPLEXML:
+			case FORMAT_XML:
 				stream << "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
-				writeSimpleXml(value, stream, "document", 0);
+				writeXml(value, stream, "document", 0);
 				break;
 
 			default:
@@ -340,10 +347,12 @@ namespace Json
 				{"errors", Integer(0)}
 			};
 
+		lookup(object, JSON_PATH(tasks, test:unittest, result, errors)) = Integer(5);
+
 		write(object, std::cout, FORMAT_JSON);
 		std::cout << std::endl << std::endl;
 
-		write(object, std::cout, FORMAT_SIMPLEXML);
+		write(object, std::cout, FORMAT_XML);
 		std::cout << std::endl << std::endl;
 
 		/*
@@ -411,7 +420,7 @@ namespace Json
 		write(String("abc"), std::cout, FORMAT_JSON);
 		std::cout << std::endl << std::endl;
 
-		write(object, std::cout, FORMAT_SIMPLEXML);
+		write(object, std::cout, FORMAT_XML);
 		std::cout << std::endl << std::endl;
 		*/
 	}

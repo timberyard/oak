@@ -1,34 +1,46 @@
-template <typename Iterator>
-struct JsonGrammar : qi::grammar<Iterator, Value(), ascii::space_type>
+#pragma once
+
+#include <boost/spirit/include/qi.hpp>
+
+namespace Json
 {
-    JsonGrammar() : JsonGrammar::base_type(xml)
+    namespace spirit = boost::spirit;
+
+    template <typename Iterator>
+    struct JsonGrammar : spirit::qi::grammar<Iterator, Value(), spirit::ascii::space_type>
     {
-        using qi::lit;
-        using qi::lexeme;
-        using ascii::char_;
-        using ascii::string;
-        using namespace qi::labels;
+        JsonGrammar() : JsonGrammar::base_type(jsonValue)
+        {
+            using namespace spirit::qi::labels;
 
-        _value %=
-            (
-                  _string
-                | _number
-                | _object
-                | _array
-                | _boolean
-                | _null
-                | _undefined
-            );
-    }
+            jsonFloat %= spirit::qi::double_;
+            jsonInteger %= spirit::qi::int_;
 
-    qi::rule<Iterator, Value(), ascii::space_type> _value;
+            jsonValue %=
+                (
+                    /*
+                      jsonString
+                    | jsonNumber
+                    | jsonObject
+                    | jsonArray
+                    | jsonBoolean
+                    | jsonNull
+                    | jsonUndefined
+                    */
+                      jsonFloat
+                    | jsonInteger
+                );
+        }
 
-    qi::rule<Iterator, String(), ascii::space_type> _string;
-    qi::rule<Iterator, Real(), ascii::space_type> _real;
-    qi::rule<Iterator, Integer(), ascii::space_type> _integer;
-    qi::rule<Iterator, Object(), ascii::space_type> _object;
-    qi::rule<Iterator, Array(), ascii::space_type> _array;
-    qi::rule<Iterator, Boolean(), ascii::space_type> _boolean;
-    qi::rule<Iterator, Null(), ascii::space_type> _null;
-    qi::rule<Iterator, Undefined(), ascii::space_type> _undefined;
-};
+        spirit::qi::rule<Iterator, Integer(), spirit::ascii::space_type> jsonInteger;
+        spirit::qi::rule<Iterator, Float(), spirit::ascii::space_type> jsonFloat;
+        spirit::qi::rule<Iterator, String(), spirit::ascii::space_type> jsonString;
+        spirit::qi::rule<Iterator, Boolean(), spirit::ascii::space_type> jsonBoolean;
+        spirit::qi::rule<Iterator, Null(), spirit::ascii::space_type> jsonNull;
+
+        spirit::qi::rule<Iterator, Object(), spirit::ascii::space_type> jsonObject;
+        spirit::qi::rule<Iterator, Array(), spirit::ascii::space_type> jsonArray;
+
+        spirit::qi::rule<Iterator, Value(), spirit::ascii::space_type> jsonValue;
+    };
+}
