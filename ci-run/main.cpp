@@ -17,8 +17,8 @@ namespace Json {
 
 int main( int argc, const char* const* argv )
 {
-	Json::test();
-	return 0;
+	//Json::test();
+	//return 0;
 
 	// read configuration
 	ptree config;
@@ -131,8 +131,8 @@ int main( int argc, const char* const* argv )
 					boost::replace_all(child.data(), "${source.commit.id}", "9a034128a329f4fb7a53043dd1d1e8f74bfc91fc");
 					boost::replace_all(child.data(), "${source.commit.sid}", "9a03412");
 					boost::replace_all(child.data(), "${source.commit.timestamp}", "20140520-203412");
-					boost::replace_all(child.data(), "${source.path}", "/home/niklas/Development/everbase.net/everbase.lcis/dummy/source");
-					boost::replace_all(child.data(), "${output.path}", "/home/niklas/Development/everbase.net/everbase.lcis/dummy/output");
+					boost::replace_all(child.data(), "${source.path}", "/home/niklas/dev/oak/dummy/source");
+					boost::replace_all(child.data(), "${output.path}", "/home/niklas/dev/oak/dummy/output");
 				}
 			);
 
@@ -141,7 +141,20 @@ int main( int argc, const char* const* argv )
 
 			if(task != taskTypes.end())
 			{
-				TaskResult result = task->second(settings);
+				TaskResult result;
+
+				try
+				{
+					result = task->second(settings);
+				}
+				catch(const std::exception& e)
+				{
+					result.status = TaskResult::STATUS_ERROR;
+					result.warnings = 0;
+					result.errors = 1;
+					result.message = "exception occured";
+					result.output.put("pre", e.what());
+				}
 
 				ostringstream warningsStr; warningsStr << result.warnings;
 				ostringstream errorsStr; errorsStr << result.errors;

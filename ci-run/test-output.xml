@@ -26,13 +26,13 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr class="task-meta status-warning">
+					<tr class="task-meta status-error">
 						<td>build:cmake</td>
 						<td>build:main</td>
-						<td>[100%] Built target googletest</td>
+						<td>make: *** [all] Error 2</td>
 						<td>5</td>
 						<td>0</td>
-						<td>Warning</td>
+						<td>Error</td>
 					</tr>
 					<tr class="task-output">
 						<td colspan="6">
@@ -44,11 +44,11 @@
 									</tr>
 									<tr>
 										<th>Arguments:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/source</td>
+										<td>/home/niklas/dev/oak/dummy/source</td>
 									</tr>
 									<tr>
 										<th>Working Directory:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/build</td>
+										<td>/home/niklas/dev/oak/dummy/output/build</td>
 									</tr>
 								</table>
 								<div class="process-output">
@@ -64,7 +64,7 @@
 									<div class="line line-info">-- Detecting CXX compiler ABI info - done</div>
 									<div class="line line-info">-- Configuring done</div>
 									<div class="line line-info">-- Generating done</div>
-									<div class="line line-info">-- Build files have been written to: /home/niklas/Development/everbase.net/everbase.lcis/dummy/output/build</div>
+									<div class="line line-info">-- Build files have been written to: /home/niklas/dev/oak/dummy/output/build</div>
 									<div class="line line-exitcode ">0</div>
 								</div>
 							</div>
@@ -80,34 +80,39 @@
 									</tr>
 									<tr>
 										<th>Working Directory:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/build</td>
+										<td>/home/niklas/dev/oak/dummy/output/build</td>
 									</tr>
 								</table>
 								<div class="process-output">
 									<div class="line line-info">Scanning dependencies of target dummy</div>
 									<div class="line line-info">[ 50%] Building CXX object CMakeFiles/dummy.dir/dummy.cpp.o</div>
-									<div class="line line-error">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp: In function ‘int main(int, const char* const*)’:</div>
-									<div class="line line-error">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp:7:10: warning: conversion to ‘int’ from ‘float’ may alter its value [-Wconversion]</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/dummy.cpp: In function ‘int main(int, const char* const*)’:</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/dummy.cpp:7:10: warning: conversion to ‘int’ from ‘float’ may alter its value [-Wconversion]</div>
 									<div class="line line-error">  int y = x;</div>
 									<div class="line line-error">          ^</div>
-									<div class="line line-error">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp:8:10: warning: conversion to ‘int’ from ‘float’ may alter its value [-Wconversion]</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/dummy.cpp:8:10: warning: conversion to ‘int’ from ‘float’ may alter its value [-Wconversion]</div>
 									<div class="line line-error">  int z = x;</div>
 									<div class="line line-error">          ^</div>
-									<div class="line line-error">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp:8:6: warning: unused variable ‘z’ [-Wunused-variable]</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/dummy.cpp:8:6: warning: unused variable ‘z’ [-Wunused-variable]</div>
 									<div class="line line-error">  int z = x;</div>
 									<div class="line line-error">      ^</div>
-									<div class="line line-error">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp: At global scope:</div>
-									<div class="line line-error">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp:4:5: warning: unused parameter ‘argc’ [-Wunused-parameter]</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/dummy.cpp: At global scope:</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/dummy.cpp:4:5: warning: unused parameter ‘argc’ [-Wunused-parameter]</div>
 									<div class="line line-error"> int main(int argc, const char* const* argv)</div>
 									<div class="line line-error">     ^</div>
-									<div class="line line-error">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp:4:5: warning: unused parameter ‘argv’ [-Wunused-parameter]</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/dummy.cpp:4:5: warning: unused parameter ‘argv’ [-Wunused-parameter]</div>
 									<div class="line line-info">Linking CXX executable dummy</div>
 									<div class="line line-info">[ 50%] Built target dummy</div>
 									<div class="line line-info">Scanning dependencies of target googletest</div>
 									<div class="line line-info">[100%] Building CXX object CMakeFiles/googletest.dir/googletest.cpp.o</div>
-									<div class="line line-info">Linking CXX executable googletest</div>
-									<div class="line line-info">[100%] Built target googletest</div>
-									<div class="line line-exitcode ">0</div>
+									<div class="line line-error">/home/niklas/dev/oak/dummy/source/googletest.cpp:1:25: fatal error: gtest/gtest.h: No such file or directory</div>
+									<div class="line line-error"> #include &lt;gtest/gtest.h&gt;</div>
+									<div class="line line-error">                         ^</div>
+									<div class="line line-error">compilation terminated.</div>
+									<div class="line line-error">make[2]: *** [CMakeFiles/googletest.dir/googletest.cpp.o] Error 1</div>
+									<div class="line line-error">make[1]: *** [CMakeFiles/googletest.dir/all] Error 2</div>
+									<div class="line line-error">make: *** [all] Error 2</div>
+									<div class="line line-exitcode line-error">512</div>
 								</div>
 							</div>
 						</td>
@@ -115,139 +120,14 @@
 					<tr class="task-meta status-error">
 						<td>test:googletest</td>
 						<td>test:unittest</td>
-						<td> 1 FAILED TEST</td>
+						<td>exception occured</td>
 						<td>0</td>
 						<td>1</td>
 						<td>Error</td>
 					</tr>
 					<tr class="task-output">
 						<td colspan="6">
-							<div>
-								<table class="table table-bordered table-condensed">
-									<thead>
-										<tr>
-											<th>Name</th>
-											<th>Tests</th>
-											<th>Failures</th>
-											<th>Errors</th>
-											<th>Disabled</th>
-											<th>Time</th>
-											<th>Status</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr class="status-error">
-											<td>AllTests</td>
-											<td>3</td>
-											<td>1</td>
-											<td>0</td>
-											<td>0</td>
-											<td>0</td>
-											<td>Error</td>
-										</tr>
-										<tr class="status-ok">
-											<td>SampleTest1</td>
-											<td>1</td>
-											<td>0</td>
-											<td>0</td>
-											<td>0</td>
-											<td>0</td>
-											<td>Ok</td>
-										</tr>
-										<tr class="status-error">
-											<td>SampleTest2</td>
-											<td>2</td>
-											<td>1</td>
-											<td>0</td>
-											<td>0</td>
-											<td>0</td>
-											<td>Error</td>
-										</tr>
-									</tbody>
-								</table>
-							</div>
-							<div>
-								<table class="table table-bordered table-condensed">
-									<thead>
-										<tr>
-											<th>Name</th>
-											<th>Status</th>
-											<th>Message</th>
-											<th>Time</th>
-											<th>Status</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr class="status-ok">
-											<td>SampleTest1.TestA</td>
-											<td>run</td>
-											<td/>
-											<td>0</td>
-											<td>Ok</td>
-										</tr>
-										<tr class="status-ok">
-											<td>SampleTest2.TestA</td>
-											<td>run</td>
-											<td/>
-											<td>0</td>
-											<td>Ok</td>
-										</tr>
-										<tr class="status-error">
-											<td>SampleTest2.TestB</td>
-											<td>run</td>
-											<td>Value of: 10-9
-  Actual: 1
-Expected: 2</td>
-											<td>0</td>
-											<td>Error</td>
-										</tr>
-									</tbody>
-								</table>
-							</div>
-							<div class="task-output-block">
-								<table class="process-header">
-									<tr>
-										<th>Binary:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/build/googletest</td>
-									</tr>
-									<tr>
-										<th>Arguments:</th>
-										<td>--gtest_output=xml:/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/test/20140520-203412-9a03412/googletest.xml</td>
-									</tr>
-									<tr>
-										<th>Working Directory:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/test/20140520-203412-9a03412</td>
-									</tr>
-								</table>
-								<div class="process-output">
-									<div class="line line-info">[==========] Running 3 tests from 2 test cases.</div>
-									<div class="line line-info">[----------] Global test environment set-up.</div>
-									<div class="line line-info">[----------] 1 test from SampleTest1</div>
-									<div class="line line-info">[ RUN      ] SampleTest1.TestA</div>
-									<div class="line line-ok">[       OK ] SampleTest1.TestA (0 ms)</div>
-									<div class="line line-info">[----------] 1 test from SampleTest1 (0 ms total)</div>
-									<div class="line line-info"/>
-									<div class="line line-info">[----------] 2 tests from SampleTest2</div>
-									<div class="line line-info">[ RUN      ] SampleTest2.TestA</div>
-									<div class="line line-ok">[       OK ] SampleTest2.TestA (0 ms)</div>
-									<div class="line line-info">[ RUN      ] SampleTest2.TestB</div>
-									<div class="line line-info">/home/niklas/Development/everbase.net/everbase.lcis/dummy/source/googletest.cpp:28: Failure</div>
-									<div class="line line-info">Value of: 10-9</div>
-									<div class="line line-info">  Actual: 1</div>
-									<div class="line line-info">Expected: 2</div>
-									<div class="line line-error">[  FAILED  ] SampleTest2.TestB (0 ms)</div>
-									<div class="line line-info">[----------] 2 tests from SampleTest2 (0 ms total)</div>
-									<div class="line line-info"/>
-									<div class="line line-info">[----------] Global test environment tear-down</div>
-									<div class="line line-info">[==========] 3 tests from 2 test cases ran. (0 ms total)</div>
-									<div class="line line-ok">[  PASSED  ] 2 tests.</div>
-									<div class="line line-error">[  FAILED  ] 1 test, listed below:</div>
-									<div class="line line-error">[  FAILED  ] SampleTest2.TestB</div>
-									<div class="line line-info"/>
-									<div class="line line-info"> 1 FAILED TEST</div>
-									<div class="line line-exitcode line-error">256</div>
-								</div>
-							</div>
+							<pre>in file &apos;/home/niklas/Libs/boost-process/boost/process/posix/initializers/throw_on_error.hpp&apos;, line 64: execve(2) failed: No such file or directory</pre>
 						</td>
 					</tr>
 					<tr class="task-meta status-error">
@@ -294,11 +174,11 @@ Expected: 2</td>
 									</tr>
 									<tr>
 										<th>Arguments:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/doc/long/doxyfile</td>
+										<td>/home/niklas/dev/oak/dummy/output/doc/long/doxyfile</td>
 									</tr>
 									<tr>
 										<th>Working Directory:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/doc/long</td>
+										<td>/home/niklas/dev/oak/dummy/output/doc/long</td>
 									</tr>
 								</table>
 								<div class="process-output">
@@ -309,15 +189,15 @@ Expected: 2</td>
 									<div class="line line-info">Searching for msc files...</div>
 									<div class="line line-info">Searching for files to exclude</div>
 									<div class="line line-info">Searching for files to process...</div>
-									<div class="line line-info">Searching for files in directory /home/niklas/Development/everbase.net/everbase.lcis/dummy/source</div>
+									<div class="line line-info">Searching for files in directory /home/niklas/dev/oak/dummy/source</div>
 									<div class="line line-info">Reading and parsing tag files</div>
 									<div class="line line-info">Parsing files</div>
-									<div class="line line-info">Preprocessing /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp...</div>
-									<div class="line line-info">Parsing file /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp...</div>
-									<div class="line line-info">Preprocessing /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy2.cpp...</div>
-									<div class="line line-info">Parsing file /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy2.cpp...</div>
-									<div class="line line-info">Preprocessing /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/googletest.cpp...</div>
-									<div class="line line-info">Parsing file /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/googletest.cpp...</div>
+									<div class="line line-info">Preprocessing /home/niklas/dev/oak/dummy/source/dummy.cpp...</div>
+									<div class="line line-info">Parsing file /home/niklas/dev/oak/dummy/source/dummy.cpp...</div>
+									<div class="line line-info">Preprocessing /home/niklas/dev/oak/dummy/source/dummy2.cpp...</div>
+									<div class="line line-info">Parsing file /home/niklas/dev/oak/dummy/source/dummy2.cpp...</div>
+									<div class="line line-info">Preprocessing /home/niklas/dev/oak/dummy/source/googletest.cpp...</div>
+									<div class="line line-info">Parsing file /home/niklas/dev/oak/dummy/source/googletest.cpp...</div>
 									<div class="line line-info">Building group list...</div>
 									<div class="line line-info">Building directory list...</div>
 									<div class="line line-info">Building namespace list...</div>
@@ -371,9 +251,9 @@ Expected: 2</td>
 									<div class="line line-info">Generating example documentation...</div>
 									<div class="line line-info">Generating file sources...</div>
 									<div class="line line-info">Generating file documentation...</div>
-									<div class="line line-info">Generating docs for file /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy.cpp...</div>
-									<div class="line line-info">Generating docs for file /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/dummy2.cpp...</div>
-									<div class="line line-info">Generating docs for file /home/niklas/Development/everbase.net/everbase.lcis/dummy/source/googletest.cpp...</div>
+									<div class="line line-info">Generating docs for file /home/niklas/dev/oak/dummy/source/dummy.cpp...</div>
+									<div class="line line-info">Generating docs for file /home/niklas/dev/oak/dummy/source/dummy2.cpp...</div>
+									<div class="line line-info">Generating docs for file /home/niklas/dev/oak/dummy/source/googletest.cpp...</div>
 									<div class="line line-info">Generating page documentation...</div>
 									<div class="line line-info">Generating group documentation...</div>
 									<div class="line line-info">Generating class documentation...</div>
@@ -418,11 +298,11 @@ Expected: 2</td>
 									</tr>
 									<tr>
 										<th>Arguments:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/doc/short/doxyfile</td>
+										<td>/home/niklas/dev/oak/dummy/output/doc/short/doxyfile</td>
 									</tr>
 									<tr>
 										<th>Working Directory:</th>
-										<td>/home/niklas/Development/everbase.net/everbase.lcis/dummy/output/doc/short</td>
+										<td>/home/niklas/dev/oak/dummy/output/doc/short</td>
 									</tr>
 								</table>
 								<div class="process-output">
@@ -433,7 +313,7 @@ Expected: 2</td>
 									<div class="line line-info">Searching for msc files...</div>
 									<div class="line line-info">Searching for files to exclude</div>
 									<div class="line line-info">Searching for files to process...</div>
-									<div class="line line-info">Searching for files in directory /home/niklas/Development/everbase.net/everbase.lcis/dummy/source</div>
+									<div class="line line-info">Searching for files in directory /home/niklas/dev/oak/dummy/source</div>
 									<div class="line line-info">Reading and parsing tag files</div>
 									<div class="line line-info">Parsing files</div>
 									<div class="line line-info">Building group list...</div>
