@@ -8,8 +8,7 @@
 #include "ptree.utils.hpp"
 #include "tasks.hpp"
 
-using namespace std;
-using namespace boost::property_tree;
+namespace pt = boost::property_tree;
 
 namespace Json {
 	void test();
@@ -21,7 +20,7 @@ int main( int argc, const char* const* argv )
 	//return 0;
 
 	// read configuration
-	ptree config;
+	pt::ptree config;
 
 	try
 	{
@@ -30,67 +29,67 @@ int main( int argc, const char* const* argv )
 			if ( strlen(argv[i]) == 0 || argv[i][0] == '-' )
 				continue;
 
-			ifstream configStream;
+			std::ifstream configStream;
 
 			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 			configStream.open( argv[i] );
 
-			ptree configTree;
+			pt::ptree configTree;
 			read_json( configStream, configTree );
 
 			ptree_merge( config, configTree );
 		}
 	}
-	catch ( const ptree_error& exception )
+	catch ( const pt::ptree_error& exception )
 	{
-		cerr << exception.what() << endl;
+		std::cerr << exception.what() << '\n';
 		return -1;
 	}
-	catch ( const ifstream::failure& exception )
+	catch ( const std::ifstream::failure& exception )
 	{
-		cerr << exception.what() << endl;
+		std::cerr << exception.what() << '\n';
 		return -1;
 	}
 
 	// read template
 
-	ptree output;
+	pt::ptree output;
 
 	try
 	{
 		// read template
-		string outputTemplatePath = config.get<string>("output.template.file");
+		std::string outputTemplatePath = config.get<std::string>("output.template.file");
 
-		ifstream outputTemplateStream;
+		std::ifstream outputTemplateStream;
 
 		outputTemplateStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 		outputTemplateStream.open( outputTemplatePath );
 
-		read_xml( outputTemplateStream, output, xml_parser::trim_whitespace );
+		pt::read_xml( outputTemplateStream, output, pt::xml_parser::trim_whitespace );
 	}
-	catch ( const ptree_error& exception )
+	catch ( const pt::ptree_error& exception )
 	{
-		cerr << exception.what() << endl;
+		std::cerr << exception.what() << '\n';
 		return -1;
 	}
-	catch ( const ifstream::failure& exception )
+	catch ( const std::ifstream::failure& exception )
 	{
-		cerr << exception.what() << endl;
+		std::cerr << exception.what() << '\n';
 		return -1;
 	}
 
 
 	// run configurations
 
-	ptree outputTasks;
+	pt::ptree outputTasks;
 
 	try
 	{
 		outputTasks.put("div.<xmlattr>.class", "table-responsive");
 		outputTasks.put("div.table.<xmlattr>.class", "tasks table table-bordered");
 
-		outputTasks.add_child("div.table.thead.tr", ptree());
-		outputTasks.add_child("div.table.tbody", ptree());
+		outputTasks.add_child("div.table.thead.tr", pt::ptree());
+		outputTasks.add_child("div.table.tbody", pt::ptree());
 
 		outputTasks.get_child("div.table.thead.tr").add("th", "Type");
 		outputTasks.get_child("div.table.thead.tr").add("th", "Name");
@@ -102,17 +101,17 @@ int main( int argc, const char* const* argv )
 		for ( auto& taskConfig : config.get_child("tasks") )
 		{
 			// get task settings
-			string taskType = taskConfig.second.get<string>( "type" );
+			std::string taskType = taskConfig.second.get<std::string>( "type" );
 
-			boost::optional<string> taskVariant = taskConfig.second.get_optional<string>( "variant" );
+			boost::optional<std::string> taskVariant = taskConfig.second.get_optional<std::string>( "variant" );
 
 			if(!taskVariant)
-				taskVariant = string("defaults");
+				taskVariant = std::string("defaults");
 
-			boost::optional<ptree&> settings_specific = taskConfig.second.get_child_optional( "settings" );
-			boost::optional<ptree&> settings_variant = config.get_child_optional( string("defaults.") + taskType + string(".") + *taskVariant );
+			boost::optional<pt::ptree&> settings_specific = taskConfig.second.get_child_optional( "settings" );
+			boost::optional<pt::ptree&> settings_variant = config.get_child_optional( std::string("defaults.") + taskType + std::string(".") + *taskVariant );
 
-			ptree settings;
+			pt::ptree settings;
 
 			if(settings_variant)
 				ptree_merge(settings, *settings_variant);
@@ -124,7 +123,7 @@ int main( int argc, const char* const* argv )
 			ptree_traverse
 			(
 				settings,
-				[] (ptree &parent, const ptree::path_type &childPath, ptree &child)
+				[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
 				{
 					boost::replace_all(child.data(), "${source.repository}", "git@jakarta:ci-test");
 					boost::replace_all(child.data(), "${source.branch}", "master");
@@ -155,12 +154,12 @@ int main( int argc, const char* const* argv )
 					result.output.put("pre", e.what());
 				}
 
-				ostringstream warningsStr; warningsStr << result.warnings;
-				ostringstream errorsStr; errorsStr << result.errors;
+				std::ostringstream warningsStr; warningsStr << result.warnings;
+				std::ostringstream errorsStr; errorsStr << result.errors;
 
-				ptree outputTask;
+				pt::ptree outputTask;
 
-				outputTask.put("<xmlattr>.class", string("task-meta ") + (result.status == TaskResult::STATUS_OK ? "status-ok" : (result.status == TaskResult::STATUS_WARNING ? "status-warning" : "status-error")));
+				outputTask.put("<xmlattr>.class", std::string("task-meta ") + (result.status == TaskResult::STATUS_OK ? "status-ok" : (result.status == TaskResult::STATUS_WARNING ? "status-warning" : "status-error")));
 				outputTask.add("td", taskType);
 				outputTask.add("td", taskConfig.first);
 				outputTask.add("td", result.message);
@@ -172,48 +171,48 @@ int main( int argc, const char* const* argv )
 
 				result.output.put("<xmlattr>.colspan", "6");
 
-				ptree& outputTaskRow = outputTasks.get_child("div.table.tbody").add_child("tr", ptree());
+				pt::ptree& outputTaskRow = outputTasks.get_child("div.table.tbody").add_child("tr", pt::ptree());
 				outputTaskRow.add_child("td", result.output);
 				outputTaskRow.put("<xmlattr>.class", "task-output");
 			}
 			else
-				throw runtime_error(string("invalid task type: ") + taskType);
+				throw std::runtime_error(std::string("invalid task type: ") + taskType);
 		}
 	}
-	catch ( const ptree_error& exception )
+	catch ( const pt::ptree_error& exception )
 	{
-		cerr << exception.what() << endl;
+		std::cerr << "PTree Exception: " << exception.what() << '\n';
 		return -1;
 	}
 	catch ( const boost::system::system_error& exception )
 	{
-		cerr << exception.what() << endl;
-		return -1;
+		std::cerr << "System Error: " << exception.what() << '\n';
+		return -2;
 	}
-	catch ( const runtime_error& exception )
+	catch ( const std::runtime_error& exception )
 	{
-		cerr << exception.what() << endl;
-		return -1;
+		std::cerr << "Runtime Error: " << exception.what() << '\n';
+		return -3;
 	}
 
 	// dump output
 
 	try
 	{
-		output.put(config.get<string>("output.template.paths.title"), config.get<string>("name"));
-		output.put_child(config.get<string>("output.template.paths.content"), outputTasks);
+		output.put(config.get<std::string>("output.template.paths.title"), config.get<std::string>("name"));
+		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
 
-		ostringstream outputStream;
-		write_xml(outputStream, output, xml_writer_settings<char>('\t', 1));
+		std::ostringstream outputStream;
+		write_xml(outputStream, output, pt::xml_writer_settings<char>('\t', 1));
 
-		string outputStr = outputStream.str();
+		std::string outputStr = outputStream.str();
 		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
 
-		cout << outputStr << endl;
+		std::cout << outputStr << '\n';
 	}
-	catch ( const ptree_error& exception )
+	catch ( const pt::ptree_error& exception )
 	{
-		cerr << exception.what() << endl;
+		std::cerr << exception.what() << '\n';
 		return -1;
 	}
 
