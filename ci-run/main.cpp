@@ -129,7 +129,6 @@ int main( int argc, const char* const* argv )
 					boost::replace_all(child.data(), "${source.repository}", "git@jakarta:ci-test");
 					boost::replace_all(child.data(), "${source.branch}", "master");
 					boost::replace_all(child.data(), "${source.commit.id}", "9a034128a329f4fb7a53043dd1d1e8f74bfc91fc");
-					boost::replace_all(child.data(), "${source.commit.sid}", "9a03412");
 					boost::replace_all(child.data(), "${source.commit.timestamp}", "20140520-203412");
 					boost::replace_all(child.data(), "${source.path}", "/home/niklas/dev/oak/dummy/source");
 					boost::replace_all(child.data(), "${output.path}", "/home/niklas/dev/oak/dummy/output");

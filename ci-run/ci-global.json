@@ -1,8 +1,4 @@
 {	"output": {
-		"repository": {
-			"url": "${source.repository}",
-			"branch": "${source.branch}-ci"
-		},
 		"template": {
 			"file": "output-template.xml",
 			"paths": {
