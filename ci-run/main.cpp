@@ -24,7 +24,7 @@ void printUsage(std::ostream& o)
 		"\t-o <output_path>   the path where the output files shall be generated (required)\n"
 		"\t-r <repo>          the name of the repository (optional, only for decorating the output file)\n"
 		"\t-b <branch>        the name of the branch (optional, only for decorating the output file)\n"
-		"\t-i <commit_id>     guess what!  (optional, only for decorating the output file)\n"
+		"\t-c <commit_id>     guess what!  (optional, only for decorating the output file)\n"
 		"\t-t <timestamp>     the timestamp of the commit (optional, only for decorating the output file)\n"
 		"\n";
 }
@@ -41,10 +41,10 @@ int main( int argc, const char* const* argv )
 	desc.add_options()
 		(",i", po::value<std::string>(&inputPath)->required(),  "the path where the input files are expected (required)")
 		(",o", po::value<std::string>(&outputPath)->required(), "the path where the output files shall be generated (required)")
-		(",r", po::value<std::string>(&repoName)              , "the name of the repository (optional, only for decorating the output file)")
-		(",b", po::value<std::string>(&branchName)            , "the name of the branch (optional, only for decorating the output file)")
-		(",i", po::value<std::string>(&commitID)              , "the commit ID (optional, only for decorating the output file)")
-		(",t", po::value<std::string>(&commitTimestamp)       , "the timestamp of the commit (optional, only for decorating the output file)")
+		("repository,r", po::value<std::string>(&repoName)      , "the name of the repository (optional, only for decorating the output file)")
+		("branch,b", po::value<std::string>(&branchName)        , "the name of the branch (optional, only for decorating the output file)")
+		("commit,c", po::value<std::string>(&commitID)          , "the commit ID (optional, only for decorating the output file)")
+		("timestamp,t", po::value<std::string>(&commitTimestamp), "the timestamp of the commit (optional, only for decorating the output file)")
 		
 		("help,h", "show this text")
 		;
