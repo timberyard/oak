@@ -19,9 +19,10 @@ namespace Json {
 
 void printUsage(std::ostream& o)
 {
-	o << "Usage: ci-run -i <input_path> -o <output_path> [-r <repo>] [-b <branch>] [-i <commit_id>] [-t <timestamp]  config_file [ config_file... ]\n"
+	o << "Usage: ci-run -i <input_path> -o <output_path> [-O <output_file> ] [-r <repo>] [-b <branch>] [-i <commit_id>] [-t <timestamp]  config_file [ config_file... ]\n"
 		"\t-i <input_path>    the path where the input files are expected (required)\n"
 		"\t-o <output_path>   the path where the output files shall be generated (required)\n"
+		"\t-O <output_file>   write generated XHTML output into <output_file> (default:stdout)\n"
 		"\t-r <repo>          the name of the repository (optional, only for decorating the output file)\n"
 		"\t-b <branch>        the name of the branch (optional, only for decorating the output file)\n"
 		"\t-c <commit_id>     guess what!  (optional, only for decorating the output file)\n"
@@ -33,6 +34,7 @@ void printUsage(std::ostream& o)
 
 std::string inputPath, outputPath;  // required parameters
 std::vector<std::string> configFiles;
+std::string outputFileName;
 std::string repoName, branchName, commitID, commitTimestamp; // optional parameters
 
 int main( int argc, const char* const* argv )
@@ -44,6 +46,7 @@ int main( int argc, const char* const* argv )
 	desc.add_options()
 		(",i", po::value<std::string>(&inputPath)->required(),  "the path where the input files are expected (required)")
 		(",o", po::value<std::string>(&outputPath)->required(), "the path where the output files shall be generated (required)")
+		("output_file,O", po::value<std::string>(&outputFileName)  , "output file")
 		("repository,r", po::value<std::string>(&repoName)      , "the name of the repository (optional, only for decorating the output file)")
 		("branch,b", po::value<std::string>(&branchName)        , "the name of the branch (optional, only for decorating the output file)")
 		("commit,c", po::value<std::string>(&commitID)          , "the commit ID (optional, only for decorating the output file)")
@@ -274,7 +277,13 @@ int main( int argc, const char* const* argv )
 		std::string outputStr = outputStream.str();
 		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
 
-		std::cout << outputStr << '\n';
+		if(outputFileName.empty())
+		{
+			std::cout << outputStr << '\n';
+		}else{
+			std::ofstream of(outputFileName.c_str());
+			of << outputStr << '\n';
+		}
 	}
 	catch ( const pt::ptree_error& exception )
 	{
