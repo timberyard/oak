@@ -19,18 +19,21 @@ namespace Json {
 
 void printUsage(std::ostream& o)
 {
-	o << "Usage: ci-run -i <input_path> -o <output_path> [-r <repo>] [-b <branch>] [-i <commit_id>] [-t <timestamp]\n"
+	o << "Usage: ci-run -i <input_path> -o <output_path> [-r <repo>] [-b <branch>] [-i <commit_id>] [-t <timestamp]  config_file [ config_file... ]\n"
 		"\t-i <input_path>    the path where the input files are expected (required)\n"
 		"\t-o <output_path>   the path where the output files shall be generated (required)\n"
 		"\t-r <repo>          the name of the repository (optional, only for decorating the output file)\n"
 		"\t-b <branch>        the name of the branch (optional, only for decorating the output file)\n"
 		"\t-c <commit_id>     guess what!  (optional, only for decorating the output file)\n"
 		"\t-t <timestamp>     the timestamp of the commit (optional, only for decorating the output file)\n"
+		"\t<config_file>      the config file (at least one is required)\n"
 		"\n";
 }
 
 
-std::string inputPath, outputPath, repoName, branchName, commitID, commitTimestamp;
+std::string inputPath, outputPath;  // required parameters
+std::vector<std::string> configFiles;
+std::string repoName, branchName, commitID, commitTimestamp; // optional parameters
 
 int main( int argc, const char* const* argv )
 {
@@ -45,9 +48,14 @@ int main( int argc, const char* const* argv )
 		("branch,b", po::value<std::string>(&branchName)        , "the name of the branch (optional, only for decorating the output file)")
 		("commit,c", po::value<std::string>(&commitID)          , "the commit ID (optional, only for decorating the output file)")
 		("timestamp,t", po::value<std::string>(&commitTimestamp), "the timestamp of the commit (optional, only for decorating the output file)")
+		("filename", po::value< std::vector<std::string> >(&configFiles)->composing(), "the JSON config files (at least one is required)")
 		
 		("help,h", "show this text")
 		;
+	
+	po::positional_options_description desc_file;
+	desc_file.add("filename", 4711);
+	
 	
 	if(argc==1)
 	{
@@ -59,11 +67,11 @@ int main( int argc, const char* const* argv )
 	if(argv1=="-h" || argv1=="--help")
 	{
 		printUsage(std::cout);
-		return 0;
+		return 0; // asking for help is not an error.
 	}
 	
 	po::variables_map vm;
-	po::store( po::parse_command_line(argc, argv, desc), vm);
+	po::store( po::command_line_parser(argc, argv).options(desc).positional(desc_file).run(), vm);
 	po::notify(vm);
 	
 	if(vm.count("help"))
@@ -72,24 +80,29 @@ int main( int argc, const char* const* argv )
 		return 0;
 	}
 
+	if(configFiles.empty())
+	{
+		std::cerr << "\nError: No JSON config file given!\n\n";
+		printUsage(std::cerr);
+		return 2;
+	}
+
 	// read configuration
 	pt::ptree config;
 
 	try
 	{
-		for ( int i = 1; i < argc; ++i )
+		for( const std::string& filename : configFiles )
 		{
-			if ( strlen(argv[i]) == 0 || argv[i][0] == '-' )
-				continue;
-
+			std::cout << "\tRead file \"" << filename << "\" ...\n";
 			std::ifstream configStream;
-
+	
 			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			configStream.open( argv[i] );
-
+			configStream.open( filename );
+	
 			pt::ptree configTree;
 			read_json( configStream, configTree );
-
+	
 			ptree_merge( config, configTree );
 		}
 	}
