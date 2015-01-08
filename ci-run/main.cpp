@@ -122,32 +122,8 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
-	// read template
 
 	pt::ptree output;
-
-	try
-	{
-		// read template
-		const std::string outputTemplatePath = outputTemplateFile.empty() ? config.get<std::string>("output.template.file") : outputTemplateFile;
-
-		std::ifstream outputTemplateStream;
-
-		outputTemplateStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-		outputTemplateStream.open( outputTemplatePath );
-
-		pt::read_xml( outputTemplateStream, output, pt::xml_parser::trim_whitespace );
-	}
-	catch ( const pt::ptree_error& exception )
-	{
-		std::cerr << "PTree exeption when reading template file: " << exception.what() << '\n';
-		return 1;
-	}
-	catch ( const std::ifstream::failure& exception )
-	{
-		std::cerr << "Stream failure when reading template file: " << exception.what() << '\n';
-		return 1;
-	}
 
 	bool task_with_error = false;
 	
@@ -279,10 +255,10 @@ int main( int argc, const char* const* argv )
 		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
 
 		std::ostringstream outputStream;
-		write_xml(outputStream, output, pt::xml_writer_settings<char>('\t', 1));
+		write_json(outputStream, output /*, pt::json_writer_settings<char>('\t', 1)*/);
 
 		std::string outputStr = outputStream.str();
-		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
+//		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
 
 		if(outputFileName.empty())
 		{
