@@ -12,10 +12,6 @@
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 
-namespace Json {
-	void test();
-}
-
 
 void printUsage(std::ostream& o)
 {
@@ -40,9 +36,6 @@ std::string repoName, branchName, commitID, commitTimestamp; // optional paramet
 
 int main( int argc, const char* const* argv )
 {
-	//Json::test();
-	//return 0;
-	
 	po::options_description desc;
 	desc.add_options()
 		(",i", po::value<std::string>(&inputPath)->required(),  "the path where the input files are expected (required)")
@@ -132,6 +125,7 @@ int main( int argc, const char* const* argv )
 
 	try
 	{
+	/* table header? 
 		outputTasks.put("div.<xmlattr>.class", "table-responsive");
 		outputTasks.put("div.table.<xmlattr>.class", "tasks table table-bordered");
 
@@ -144,7 +138,9 @@ int main( int argc, const char* const* argv )
 		outputTasks.get_child("div.table.thead.tr").add("th", "Warnings");
 		outputTasks.get_child("div.table.thead.tr").add("th", "Errors");
 		outputTasks.get_child("div.table.thead.tr").add("th", "Status");
-
+*/
+		outputTasks.add_child("tasks", pt::ptree());
+		
 		for ( auto& taskConfig : config.get_child("tasks") )
 		{
 			// get task settings
@@ -211,21 +207,15 @@ int main( int argc, const char* const* argv )
 
 				pt::ptree outputTask;
 
-				outputTask.put("<xmlattr>.class", std::string("task-meta ") + (result.status == TaskResult::STATUS_OK ? "status-ok" : (result.status == TaskResult::STATUS_WARNING ? "status-warning" : "status-error")));
-				outputTask.add("td", taskType);
-				outputTask.add("td", taskConfig.first);
-				outputTask.add("td", result.message);
-				outputTask.add("td", warningsStr.str());
-				outputTask.add("td", errorsStr.str());
-				outputTask.add("td", result.status == TaskResult::STATUS_OK ? "Ok" : (result.status == TaskResult::STATUS_WARNING ? "Warning" : "Error"));
-
-				outputTasks.get_child("div.table.tbody").add_child("tr", outputTask);
-
-				result.output.put("<xmlattr>.colspan", "6");
-
-				pt::ptree& outputTaskRow = outputTasks.get_child("div.table.tbody").add_child("tr", pt::ptree());
-				outputTaskRow.add_child("td", result.output);
-				outputTaskRow.put("<xmlattr>.class", "task-output");
+				outputTask.add("type", taskType);
+				outputTask.add("name", taskConfig.first);
+				outputTask.add("message", result.message);
+				outputTask.add("warnings", warningsStr.str());
+				outputTask.add("errors", errorsStr.str());
+				outputTask.add("status", result.status == TaskResult::STATUS_OK ? "Ok" : (result.status == TaskResult::STATUS_WARNING ? "Warning" : "Error"));
+				outputTask.add_child("output", result.output );
+				
+				outputTasks.get_child("tasks").add_child("task", outputTask);
 			}
 			else
 				throw std::runtime_error(std::string("invalid task type: ") + taskType);
@@ -255,7 +245,7 @@ int main( int argc, const char* const* argv )
 		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
 
 		std::ostringstream outputStream;
-		write_json(outputStream, output /*, pt::json_writer_settings<char>('\t', 1)*/);
+		write_xml(outputStream, output , pt::xml_writer_settings<char>('\t', 1));
 
 		std::string outputStr = outputStream.str();
 //		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
