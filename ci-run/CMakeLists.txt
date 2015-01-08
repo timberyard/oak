@@ -6,7 +6,7 @@ project(ci-run)
 
 include_directories(/home/niklas/Libs/boost-process)
 
-find_package(Boost COMPONENTS system filesystem iostreams REQUIRED)
+find_package(Boost COMPONENTS system filesystem iostreams program_options REQUIRED)
 
 add_definitions(-std=c++11)
 
