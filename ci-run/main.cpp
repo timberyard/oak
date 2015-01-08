@@ -89,7 +89,7 @@ int main( int argc, const char* const* argv )
 	{
 		std::cerr << "\nError: No JSON config file given!\n\n";
 		printUsage(std::cerr);
-		return 2;
+		return 1;
 	}
 
 	// read configuration
@@ -114,12 +114,12 @@ int main( int argc, const char* const* argv )
 	catch ( const pt::ptree_error& exception )
 	{
 		std::cerr << "PTree error when reading config file. " << exception.what() << '\n';
-		return 6;
+		return 1;
 	}
 	catch ( const std::ifstream::failure& exception )
 	{
 		std::cerr << "Stream Failure when reading config file. " << exception.what() << '\n';
-		return 7;
+		return 1;
 	}
 
 	// read template
@@ -141,17 +141,17 @@ int main( int argc, const char* const* argv )
 	catch ( const pt::ptree_error& exception )
 	{
 		std::cerr << "PTree exeption when reading template file: " << exception.what() << '\n';
-		return 8;
+		return 1;
 	}
 	catch ( const std::ifstream::failure& exception )
 	{
 		std::cerr << "Stream failure when reading template file: " << exception.what() << '\n';
-		return 9;
+		return 1;
 	}
 
-
+	bool task_with_error = false;
+	
 	// run configurations
-
 	pt::ptree outputTasks;
 
 	try
@@ -225,6 +225,11 @@ int main( int argc, const char* const* argv )
 					result.output.put("pre", e.what());
 				}
 
+				if(result.status == TaskResult::STATUS_ERROR)
+				{
+					task_with_error = true;
+				}
+
 				std::ostringstream warningsStr; warningsStr << result.warnings;
 				std::ostringstream errorsStr; errorsStr << result.errors;
 
@@ -252,18 +257,18 @@ int main( int argc, const char* const* argv )
 	}
 	catch ( const pt::ptree_error& exception )
 	{
-		std::cerr << "PTree Exception: " << exception.what() << '\n';
-		return -1;
+		std::cerr << "PTree Exception during run: " << exception.what() << '\n';
+		return 1;
 	}
 	catch ( const boost::system::system_error& exception )
 	{
-		std::cerr << "System Error: " << exception.what() << '\n';
-		return -2;
+		std::cerr << "System Error during run: " << exception.what() << '\n';
+		return 1;
 	}
 	catch ( const std::runtime_error& exception )
 	{
-		std::cerr << "Runtime Error: " << exception.what() << '\n';
-		return -3;
+		std::cerr << "Runtime Error during run: " << exception.what() << '\n';
+		return 1;
 	}
 
 	// dump output
@@ -289,10 +294,9 @@ int main( int argc, const char* const* argv )
 	}
 	catch ( const pt::ptree_error& exception )
 	{
-		std::cerr << exception.what() << '\n';
-		return -1;
+		std::cerr << "PTree Error on output. " << exception.what() << '\n';
+		return 1;
 	}
 
-
-	return 0;
+	return  task_with_error ? 2 : 0;
 }
