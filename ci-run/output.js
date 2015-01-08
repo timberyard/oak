@@ -1,5 +1,5 @@
 
-$( document ).ready(function() {
+$( window ).load(function() {
 	$('.tasks .task-meta').on('click', function() {
 		var taskOutput = $(this).next();
 		if(taskOutput.hasClass('selected'))
