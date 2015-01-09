@@ -35,8 +35,9 @@ include_directories( ${JsonSpirit_INCLUDE_DIR} )
 add_definitions(-std=c++11)
 
 add_executable(ci-run main.cpp process.cpp tasks.cpp task.utils.cpp json.cpp)
+
 if(NOT WIN32)
-	target_link_libraries( ci-run ${Boost_LIBRARIES} ) $JS
+	target_link_libraries( ci-run ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} )
 else()
-	target_link_libraries( ci-run ${Boost_LIBRARIES} ws2_32 mswsock )
+	target_link_libraries( ci-run ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ws2_32 mswsock )
 endif()
