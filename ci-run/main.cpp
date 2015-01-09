@@ -231,8 +231,11 @@ int main( int argc, const char* const* argv )
 		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
 
 		std::ostringstream outputStream;
-//		write_xml(outputStream, output , pt::xml_writer_settings<char>('\t', 1));
-		write_json(outputStream, output /*, pt::xml_writer_settings<char>('\t', 1)*/);
+#if BOOST_VERSION >= 105600
+		write_xml(outputStream, output, pt::xml_writer_make_settings<std::string>('\t', 1));
+#else
+		write_xml(outputStream, output, pt::xml_writer_settings<char>('\t', 1));
+#endif
 
 		std::string outputStr = outputStream.str();
 
