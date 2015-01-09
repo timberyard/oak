@@ -1,4 +1,11 @@
 
+#if defined(BOOST_WINDOWS_API)
+#include <Windows.h>
+#endif
+
+#include <cstdlib>
+#include <string>
+
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/process.hpp>
@@ -10,6 +17,18 @@ using namespace std;
 using namespace boost::process;
 using namespace boost::process::initializers;
 using namespace boost::iostreams;
+
+boost::process::pipe create_async_pipe()
+{
+#if defined(BOOST_WINDOWS_API)
+	std::string name = "\\\\.\\pipe\\ci_run_" + std::to_string(GetCurrentProcessId()) + "_" + std::to_string(std::rand());
+	HANDLE handle1 = ::CreateNamedPipeA(name.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, 0, 1, 8192, 8192, 0, NULL);
+	HANDLE handle2 = ::CreateFileA(name.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	return make_pipe(handle1, handle2);
+#elif defined(BOOST_POSIX_API)
+	return create_pipe();
+#endif
+}
 
 TextProcessResult executeTextProcess(string binary, vector<string> arguments, const string& workingDirectory)
 {
@@ -25,8 +44,8 @@ TextProcessResult executeTextProcess(string binary, vector<string> arguments, co
 
 	TextProcessResult result;
 
-	boost::process::pipe pipeOut = create_pipe();
-	boost::process::pipe pipeErr = create_pipe();
+	boost::process::pipe pipeOut = create_async_pipe();
+	boost::process::pipe pipeErr = create_async_pipe();
 
 	shared_ptr<child> process;
 
