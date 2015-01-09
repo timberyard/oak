@@ -11,10 +11,15 @@ using namespace boost::process;
 using namespace boost::process::initializers;
 using namespace boost::iostreams;
 
-TextProcessResult executeTextProcess(const string& binary, vector<string> arguments, const string& workingDirectory)
+TextProcessResult executeTextProcess(string binary, vector<string> arguments, const string& workingDirectory)
 {
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw runtime_error("working directory does not exist");
+
+	if(binary.find('/') == std::string::npos && binary.find('\\') == std::string::npos)
+	{
+		binary = boost::process::search_path(binary);
+	}
 
 	arguments.insert(arguments.begin(), binary);
 

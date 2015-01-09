@@ -21,4 +21,4 @@ struct TextProcessResult
 		: output(o.output), exitCode(o.exitCode) { }
 };
 
-TextProcessResult executeTextProcess(const std::string& binary, std::vector<std::string> arguments, const std::string& workingDirectory);
+TextProcessResult executeTextProcess(std::string binary, std::vector<std::string> arguments, const std::string& workingDirectory);
