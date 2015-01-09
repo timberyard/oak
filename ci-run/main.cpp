@@ -231,7 +231,8 @@ int main( int argc, const char* const* argv )
 		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
 
 		std::ostringstream outputStream;
-		write_xml(outputStream, output , pt::xml_writer_settings<char>('\t', 1));
+//		write_xml(outputStream, output , pt::xml_writer_settings<char>('\t', 1));
+		write_json(outputStream, output /*, pt::xml_writer_settings<char>('\t', 1)*/);
 
 		std::string outputStr = outputStream.str();
 
