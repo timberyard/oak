@@ -21,4 +21,6 @@ struct TextProcessResult
 		: output(o.output), exitCode(o.exitCode) { }
 };
 
+std::string toString(TextProcessResult::LineType lineType);
+
 TextProcessResult executeTextProcess(const std::string& binary, std::vector<std::string> arguments, const std::string& workingDirectory);

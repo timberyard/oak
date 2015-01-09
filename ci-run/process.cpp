@@ -80,3 +80,15 @@ TextProcessResult executeTextProcess(const std::string& binary, std::vector<std:
 
 	return result;
 }
+
+
+std::string toString(TextProcessResult::LineType lineType)
+{
+	switch(lineType)
+	{
+		case INFO_LINE : return "info";
+		case ERROR_LINE : return "error";
+		case OK_LINE    : return "ok";
+	}
+	throw std::logic_error( "Unknown TextProcessResult::LineType!" );
+}
