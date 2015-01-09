@@ -6,37 +6,37 @@
 
 #include "process.hpp"
 
-using namespace std;
-using namespace boost::process;
-using namespace boost::process::initializers;
-using namespace boost::iostreams;
+namespace bp  = boost::process;
+namespace bpi = boost::process::initializers;
+namespace bio = boost::iostreams;
 
-TextProcessResult executeTextProcess(const string& binary, vector<string> arguments, const string& workingDirectory)
+
+TextProcessResult executeTextProcess(const std::string& binary, std::vector<std::string> arguments, const std::string& workingDirectory)
 {
 	if(!boost::filesystem::is_directory(workingDirectory))
-		throw runtime_error("working directory does not exist");
+		throw std::runtime_error("working directory does not exist");
 
 	arguments.insert(arguments.begin(), binary);
 
 	TextProcessResult result;
 
-	boost::process::pipe pipeOut = create_pipe();
-	boost::process::pipe pipeErr = create_pipe();
+	boost::process::pipe pipeOut = bp::create_pipe();
+	boost::process::pipe pipeErr = bp::create_pipe();
 
-	shared_ptr<child> process;
+	std::shared_ptr<bp::child> process;
 
 	{
-		file_descriptor_sink pipeOutSink(pipeOut.sink, close_handle);
-		file_descriptor_sink pipeErrSink(pipeErr.sink, close_handle);
+		bio::file_descriptor_sink pipeOutSink(pipeOut.sink, bio::close_handle);
+		bio::file_descriptor_sink pipeErrSink(pipeErr.sink, bio::close_handle);
 
-		process = make_shared<child>(execute(
-			run_exe(binary),
-		    set_args(arguments),
-		    start_in_dir(workingDirectory),
-		    inherit_env(),
-		    bind_stdout(pipeOutSink),
-		    bind_stderr(pipeErrSink),
-		    throw_on_error()
+		process = std::make_shared<bp::child>( bp::execute(
+			bpi::run_exe(binary),
+			bpi::set_args(arguments),
+			bpi::start_in_dir(workingDirectory),
+			bpi::inherit_env(),
+			bpi::bind_stdout(pipeOutSink),
+			bpi::bind_stderr(pipeErrSink),
+			bpi::throw_on_error()
 		));
 	}
 
@@ -54,7 +54,7 @@ TextProcessResult executeTextProcess(const string& binary, vector<string> argume
     boost::asio::streambuf lineBufOut;
     boost::asio::streambuf lineBufErr;
 
-    function<void(pipe_end&,boost::asio::streambuf&,TextProcessResult::LineType)> readLine =
+    std::function<void(pipe_end&,boost::asio::streambuf&,TextProcessResult::LineType)> readLine =
 	    [&readLine, &result](pipe_end& pipeEnd, boost::asio::streambuf& lineBuf, TextProcessResult::LineType lineType)
 	    {
 		    boost::asio::async_read_until(pipeEnd, lineBuf, "\n",
@@ -62,10 +62,10 @@ TextProcessResult executeTextProcess(const string& binary, vector<string> argume
 		        {
 		        	if(!error)
 		        	{
-		        		string line;
+		        		std::string line;
 		        		std::istream lineStream(&lineBuf);
 		        		std::getline(lineStream, line);
-		        		result.output.push_back(pair<TextProcessResult::LineType, string>(lineType, line));
+		        		result.output.push_back(std::make_pair(lineType, line));
 		        		readLine(pipeEnd, lineBuf, lineType);
 		        	}
 		        });
