@@ -10,6 +10,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/process.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "process.hpp"
 
@@ -89,6 +90,7 @@ TextProcessResult executeTextProcess(string binary, vector<string> arguments, co
 		        		string line;
 		        		std::istream lineStream(&lineBuf);
 		        		std::getline(lineStream, line);
+		        		boost::replace_all(line, "\033", "");
 		        		result.output.push_back(pair<TextProcessResult::LineType, string>(lineType, line));
 		        		readLine(pipeEnd, lineBuf, lineType);
 		        	}
