@@ -10,7 +10,7 @@ namespace bp  = boost::process;
 namespace bpi = boost::process::initializers;
 namespace bio = boost::iostreams;
 
-TextProcessResult executeTextProcess(string binary, vector<string> arguments, const string& workingDirectory)
+TextProcessResult executeTextProcess(const std::string& binary, const std::vector<std::string>& arguments, const string& workingDirectory)
 {
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw std::runtime_error("working directory does not exist");
