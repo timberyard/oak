@@ -13,6 +13,7 @@
 
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
+namespace js = json_spirit;
 
 
 void printUsage(std::ostream& o)
@@ -96,13 +97,13 @@ int main( int argc, const char* const* argv )
 		{
 			std::cout << "\tRead file \"" << filename << "\" ...\n";
 			std::ifstream configStream;
-	
+			
 			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 			configStream.open( filename );
-	
+			
 			pt::ptree configTree;
 			read_json( configStream, configTree );
-	
+			
 			ptree_merge( config, configTree );
 		}
 	}
@@ -118,13 +119,10 @@ int main( int argc, const char* const* argv )
 	}
 
 
-	pt::ptree output;
-
 	bool task_with_error = false;
 	
 	// run configurations
 	pt::ptree outputTasks;
-
 	try
 	{
 		outputTasks.add_child("tasks", pt::ptree());
@@ -182,7 +180,7 @@ int main( int argc, const char* const* argv )
 					result.warnings = 0;
 					result.errors = 1;
 					result.message = "exception occured";
-					result.output.put("pre", e.what());
+					result.output.put("exception", e.what());
 				}
 
 				if(result.status == TaskResult::STATUS_ERROR)
@@ -226,6 +224,7 @@ int main( int argc, const char* const* argv )
 	}
 
 	// dump output
+	pt::ptree output;
 
 	try
 	{
@@ -233,11 +232,8 @@ int main( int argc, const char* const* argv )
 		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
 
 		std::ostringstream outputStream;
-#if BOOST_VERSION >= 105600
-		write_xml(outputStream, output, pt::xml_writer_make_settings<std::string>('\t', 1));
-#else
-		write_xml(outputStream, output, pt::xml_writer_settings<char>('\t', 1));
-#endif
+
+		write_json(outputStream, output);
 
 		std::string outputStr = outputStream.str();
 
