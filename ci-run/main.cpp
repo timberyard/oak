@@ -9,6 +9,8 @@
 #include "ptree.utils.hpp"
 #include "tasks.hpp"
 
+#include "json_spirit/json_spirit.h"
+
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 
