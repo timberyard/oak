@@ -269,3 +269,15 @@ TaskResult task_doc_doxygen( const ptree& config )
 
 	return result;
 }
+
+
+std::string toString(TaskResult::Status status)
+{
+	switch(status)
+	{
+		case STATUS_OK : return "ok";
+		case STATUS_WARNING : return "warning";
+		case STATUS_ERROR : return "error";
+	}
+	throw std::logic_error("Unsupportet TaskResult::Status!");
+}
