@@ -24,6 +24,8 @@ map<string, function<TaskResult(const ptree&)>> taskTypes =
 	{ "doc:doxygen",     task_doc_doxygen }
 };
 
+extern std::string toolchain;
+
 TaskResult task_build_cmake( const ptree& config )
 {
 	boost::filesystem::remove_all(config.get<string>("output"));
@@ -31,9 +33,40 @@ TaskResult task_build_cmake( const ptree& config )
 
 	TaskResult result;
 
+	vector<string> cmakeParams { config.get<string>("source") };
+
+#ifndef _WIN32
+	if(toolchain == "gcc")
+	{
+		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_C_COMPILER:STRING=gcc");
+		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_CXX_COMPILER:STRING=g++");
+	}
+	else
+	if(toolchain == "clang")
+	{
+		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_C_COMPILER:STRING=clang");
+		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_CXX_COMPILER:STRING=clang++");
+	}
+#else
+	if(toolchain == "gcc")
+	{
+		cmakeParams.push_back("-G");
+		cmakeParams.push_back("MSYS Makefiles");
+	}
+	else
+	if(toolchain == "msvc")
+	{
+		// do nothing (since msvc is default on windows)
+	}
+#endif
+	else
+	{
+		throw std::runtime_error(std::string("invalid toolchain: ") + toolchain);
+	}
+
 	TextProcessResult cmakeResult = executeTextProcess(
 		config.get<string>("binary:cmake"),
-		vector<string>{config.get<string>("source")},
+		cmakeParams,
 		config.get<string>("output"));
 
 	result.output.add_child("div", createTaskOutput(
