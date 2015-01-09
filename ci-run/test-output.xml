@@ -212,11 +212,11 @@ Expected: 2</td>
 									</tr>
 									<tr>
 										<th>Arguments:</th>
-										<td>--gtest_output=xml:/home/niklas/dev/oak/dummy/output/test/20140520-203412-9a03412/googletest.xml</td>
+										<td>--gtest_output=xml:/home/niklas/dev/oak/dummy/output/test/20140520-203412-${source.commit.sid}/googletest.xml</td>
 									</tr>
 									<tr>
 										<th>Working Directory:</th>
-										<td>/home/niklas/dev/oak/dummy/output/test/20140520-203412-9a03412</td>
+										<td>/home/niklas/dev/oak/dummy/output/test/20140520-203412-${source.commit.sid}</td>
 									</tr>
 								</table>
 								<div class="process-output">
