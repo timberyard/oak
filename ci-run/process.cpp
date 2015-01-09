@@ -1,8 +1,16 @@
 
+#if defined(BOOST_WINDOWS_API)
+#include <Windows.h>
+#endif
+
+#include <cstdlib>
+#include <string>
+
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/process.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
+#include <boost/algorithm/string/replace.hpp>
 
 #include "process.hpp"
 
@@ -10,7 +18,19 @@ namespace bp  = boost::process;
 namespace bpi = boost::process::initializers;
 namespace bio = boost::iostreams;
 
-TextProcessResult executeTextProcess(std::string binary, std::vector<std::string> arguments, const std::string& workingDirectory)
+boost::process::pipe create_async_pipe()
+{
+#if defined(BOOST_WINDOWS_API)
+	std::string name = "\\\\.\\pipe\\ci_run_" + std::to_string(GetCurrentProcessId()) + "_" + std::to_string(std::rand());
+	HANDLE handle1 = ::CreateNamedPipeA(name.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, 0, 1, 8192, 8192, 0, NULL);
+	HANDLE handle2 = ::CreateFileA(name.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	return make_pipe(handle1, handle2);
+#elif defined(BOOST_POSIX_API)
+	return create_pipe();
+#endif
+}
+
+TextProcessResult executeTextProcess(string binary, vector<string> arguments, const string& workingDirectory)
 {
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw std::runtime_error("working directory does not exist");
@@ -24,8 +44,8 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 
 	TextProcessResult result;
 
-	boost::process::pipe pipeOut = bp::create_pipe();
-	boost::process::pipe pipeErr = bp::create_pipe();
+	boost::process::pipe pipeOut = create_async_pipe();
+	boost::process::pipe pipeErr = create_async_pipe();
 
 	std::shared_ptr<bp::child> process;
 
@@ -69,6 +89,7 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 						std::string line;
 						std::istream lineStream(&lineBuf);
 						std::getline(lineStream, line);
+		        		boost::replace_all(line, "\033", "");
 						result.output.push_back(std::make_pair(lineType, line));
 						readLine(pipeEnd, lineBuf, lineType);
 					}

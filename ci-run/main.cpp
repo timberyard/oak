@@ -36,6 +36,7 @@ std::string inputPath, outputPath;  // required parameters
 std::vector<std::string> configFiles;
 std::string outputFileName, outputTemplateFile;
 std::string repoName, branchName, commitID, commitTimestamp; // optional parameters
+std::string toolchain; // required
 
 int main( int argc, const char* const* argv )
 {
@@ -50,6 +51,7 @@ int main( int argc, const char* const* argv )
 		("commit,c", po::value<std::string>(&commitID)          , "the commit ID (optional, only for decorating the output file)")
 		("timestamp,t", po::value<std::string>(&commitTimestamp), "the timestamp of the commit (optional, only for decorating the output file)")
 		("filename", po::value< std::vector<std::string> >(&configFiles)->composing(), "the JSON config files (at least one is required)")
+		("toolchain", po::value<std::string>(&toolchain)->required(), "the toolchain (gcc, clang, msvc)")
 		
 		("help,h", "show this text")
 		;
