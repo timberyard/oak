@@ -279,7 +279,7 @@ int main( int argc, const char* const* argv )
 		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
 
 		std::ostringstream outputStream;
-		write_xml(outputStream, output, pt::xml_writer_settings<char>('\t', 1));
+		write_xml(outputStream, output, pt::xml_writer_make_settings<std::string>('\t', 1));
 
 		std::string outputStr = outputStream.str();
 		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
