@@ -10,7 +10,7 @@ namespace bp  = boost::process;
 namespace bpi = boost::process::initializers;
 namespace bio = boost::iostreams;
 
-TextProcessResult executeTextProcess(const std::string& binary, const std::vector<std::string>& arguments, const string& workingDirectory)
+TextProcessResult executeTextProcess(std::string binary, std::vector<std::string> arguments, const std::string& workingDirectory)
 {
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw std::runtime_error("working directory does not exist");
@@ -90,9 +90,9 @@ std::string toString(TextProcessResult::LineType lineType)
 {
 	switch(lineType)
 	{
-		case INFO_LINE : return "info";
-		case ERROR_LINE : return "error";
-		case OK_LINE    : return "ok";
+		case TextProcessResult::INFO_LINE : return "info";
+		case TextProcessResult::ERROR_LINE : return "error";
+		case TextProcessResult::OK_LINE    : return "ok";
 	}
 	throw std::logic_error( "Unknown TextProcessResult::LineType!" );
 }

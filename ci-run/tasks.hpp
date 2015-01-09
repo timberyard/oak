@@ -23,10 +23,11 @@ struct TaskResult
 	std::string message;
 	json_spirit::Object output;
 
-	TaskResult() : status(STATUS_ERROR), warnings(0), errors(0) { }
-
-	TaskResult(const TaskResult &o) = default;
-	TaskResult(TaskResult&& o) = default;
+	TaskResult()
+	: status(STATUS_ERROR)
+	, warnings(0)
+	, errors(0)
+	{ }
 };
 
 std::string toString(TaskResult::Status status);

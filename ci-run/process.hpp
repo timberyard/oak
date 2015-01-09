@@ -23,5 +23,5 @@ struct TextProcessResult
 
 std::string toString(TextProcessResult::LineType lineType);
 
-TextProcessResult executeTextProcess(const std::string& binary, const std::vector<std::string>& arguments, const std::string& workingDirectory);
+TextProcessResult executeTextProcess(std::string binary, std::vector<std::string> arguments, const std::string& workingDirectory);
 
