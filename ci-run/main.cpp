@@ -125,20 +125,6 @@ int main( int argc, const char* const* argv )
 
 	try
 	{
-	/* table header? 
-		outputTasks.put("div.<xmlattr>.class", "table-responsive");
-		outputTasks.put("div.table.<xmlattr>.class", "tasks table table-bordered");
-
-		outputTasks.add_child("div.table.thead.tr", pt::ptree());
-		outputTasks.add_child("div.table.tbody", pt::ptree());
-
-		outputTasks.get_child("div.table.thead.tr").add("th", "Type");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Name");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Message");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Warnings");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Errors");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Status");
-*/
 		outputTasks.add_child("tasks", pt::ptree());
 		
 		for ( auto& taskConfig : config.get_child("tasks") )
@@ -248,7 +234,6 @@ int main( int argc, const char* const* argv )
 		write_xml(outputStream, output , pt::xml_writer_settings<char>('\t', 1));
 
 		std::string outputStr = outputStream.str();
-//		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
 
 		if(outputFileName.empty())
 		{

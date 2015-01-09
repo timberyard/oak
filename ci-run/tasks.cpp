@@ -24,6 +24,7 @@ map<string, function<TaskResult(const ptree&)>> taskTypes =
 	{ "doc:doxygen",     task_doc_doxygen }
 };
 
+
 TaskResult task_build_cmake( const ptree& config )
 {
 	boost::filesystem::remove_all(config.get<string>("output"));
@@ -36,12 +37,12 @@ TaskResult task_build_cmake( const ptree& config )
 		vector<string>{config.get<string>("source")},
 		config.get<string>("output"));
 
-	result.output.add_child("div", createTaskOutput(
+	result.output.add_child("div-task-output-block", createTaskOutput(
 		config.get<string>("binary:cmake"),
 		vector<string>{config.get<string>("source")},
 		config.get<string>("output"),
-		cmakeResult))
-		.put("<xmlattr>.class", "task-output-block");
+		cmakeResult));
+//		.put("<xmlattr>.class", "task-output-block");
 
 	result.message = createTaskMessage(cmakeResult);
 	result.warnings = 0;
@@ -55,12 +56,12 @@ TaskResult task_build_cmake( const ptree& config )
 			vector<string>{ },
 			config.get<string>("output"));
 
-		result.output.add_child("div", createTaskOutput(
+		result.output.add_child("div-task-output-block2", createTaskOutput(
 			config.get<string>("binary:make"),
 			vector<string>{ },
 			config.get<string>("output"),
-			makeResult))
-			.put("<xmlattr>.class", "task-output-block");
+			makeResult));
+//			.put("<xmlattr>.class", "task-output-block");
 
 		result.message = createTaskMessage(makeResult);
 
@@ -86,6 +87,7 @@ TaskResult task_build_cmake( const ptree& config )
 
 	return result;
 }
+
 
 TaskResult task_test_googletest( const ptree& config )
 {
@@ -114,8 +116,8 @@ TaskResult task_test_googletest( const ptree& config )
 	// generate outline table
 	ptree table_outline;
 
-	table_outline.put("table.<xmlattr>.class", "table table-bordered table-condensed");
-
+//	table_outline.put("table-condensed");
+/*
 	table_outline.add_child("table.thead.tr", ptree());
 	table_outline.add_child("table.tbody", ptree());
 
@@ -126,19 +128,19 @@ TaskResult task_test_googletest( const ptree& config )
 	table_outline.get_child("table.thead.tr").add("th", "Disabled");
 	table_outline.get_child("table.thead.tr").add("th", "Time");
 	table_outline.get_child("table.thead.tr").add("th", "Status");
-
+*/
 	{	
 		ptree row;
-		row.put("<xmlattr>.class", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "status-error" : "status-ok"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.name"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.tests"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.failures"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.errors"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.disabled"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.time"));
-		row.add("td", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+//		row.put("testsuite"));
+		row.add("name", xmlTestResult.get<string>("testsuites.<xmlattr>.name"));
+		row.add("tests", xmlTestResult.get<string>("testsuites.<xmlattr>.tests"));
+		row.add("failures", xmlTestResult.get<string>("testsuites.<xmlattr>.failures"));
+		row.add("errors", xmlTestResult.get<string>("testsuites.<xmlattr>.errors"));
+		row.add("disabled", xmlTestResult.get<string>("testsuites.<xmlattr>.disabled"));
+		row.add("time", xmlTestResult.get<string>("testsuites.<xmlattr>.time"));
+		row.add("status", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-		table_outline.get_child("table.tbody").add_child("tr", row);
+		table_outline.add_child("trXXX", row);
 	}
 
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
@@ -147,23 +149,23 @@ TaskResult task_test_googletest( const ptree& config )
 			continue;
 
 		ptree row;
-		row.put("<xmlattr>.class", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "status-error" : "status-ok"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.name"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.tests"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.failures"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.errors"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.disabled"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.time"));
-		row.add("td", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+//		row.put("mööp"); //<xmlattr>.class", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "status-error" : "status-ok"));
+		row.add("name", testsuite.second.get<string>("<xmlattr>.name"));
+		row.add("tests", testsuite.second.get<string>("<xmlattr>.tests"));
+		row.add("failures", testsuite.second.get<string>("<xmlattr>.failures"));
+		row.add("errors", testsuite.second.get<string>("<xmlattr>.errors"));
+		row.add("disabled", testsuite.second.get<string>("<xmlattr>.disabled"));
+		row.add("time", testsuite.second.get<string>("<xmlattr>.time"));
+		row.add("status", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-		table_outline.get_child("table.tbody").add_child("tr", row);
+		table_outline.add_child("trYYY", row);
 	}
 
 	result.output.add_child("div", table_outline);
 
 	// generate details table
 	ptree table_details;
-
+/*
 	table_details.put("table.<xmlattr>.class", "table table-bordered table-condensed");
 
 	table_details.add_child("table.thead.tr", ptree());
@@ -174,7 +176,7 @@ TaskResult task_test_googletest( const ptree& config )
 	table_details.get_child("table.thead.tr").add("th", "Message");
 	table_details.get_child("table.thead.tr").add("th", "Time");
 	table_details.get_child("table.thead.tr").add("th", "Status");
-
+*/
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == string("<xmlattr>"))
@@ -186,14 +188,14 @@ TaskResult task_test_googletest( const ptree& config )
 				continue;
 
 			ptree row;
-			row.put("<xmlattr>.class", (testcase.second.count("failure") > 0 ? "status-error" : "status-ok"));
-			row.add("td", testcase.second.get<string>("<xmlattr>.classname")+string(".")+testcase.second.get<string>("<xmlattr>.name"));
-			row.add("td", testcase.second.get<string>("<xmlattr>.status"));
-			row.add("td", (testcase.second.count("failure") > 0 ? testcase.second.get<string>("failure.<xmlattr>.message") : string("")));
-			row.add("td", testcase.second.get<string>("<xmlattr>.time"));
-			row.add("td", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
+//			row.put("<xmlattr>.class", (testcase.second.count("failure") > 0 ? "status-error" : "status-ok"));
+			row.add("name", testcase.second.get<string>("<xmlattr>.classname")+string(".")+testcase.second.get<string>("<xmlattr>.name"));
+			row.add("status", testcase.second.get<string>("<xmlattr>.status"));
+			row.add("failure", (testcase.second.count("failure") > 0 ? testcase.second.get<string>("failure.<xmlattr>.message") : string("")));
+			row.add("time", testcase.second.get<string>("<xmlattr>.time"));
+			row.add("count", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
 
-			table_details.get_child("table.tbody").add_child("tr", row);
+			table_details.add_child("tr", row);
 		}
 	}
 
@@ -213,8 +215,8 @@ TaskResult task_test_googletest( const ptree& config )
 		}
 	}
 
-	result.output.add_child("div", createTaskOutput(config.get<string>("binary"), arguments, parentPath.string(), testResult))
-		.put("<xmlattr>.class", "task-output-block");
+	result.output.add_child("divQQQ", createTaskOutput(config.get<string>("binary"), arguments, parentPath.string(), testResult));
+//		.put("<xmlattr>.class", "task-output-block");
 
 	// generate meta data
 	result.message = createTaskMessage(testResult);
@@ -224,6 +226,7 @@ TaskResult task_test_googletest( const ptree& config )
 
 	return result;
 }
+
 
 TaskResult task_test_cppcheck( const ptree& config )
 {
@@ -237,6 +240,7 @@ TaskResult task_test_cppcheck( const ptree& config )
 
 	return result;
 }
+
 
 TaskResult task_doc_doxygen( const ptree& config )
 {
@@ -286,8 +290,8 @@ TaskResult task_doc_doxygen( const ptree& config )
 		*/
 	}
 
-	result.output.add_child("div", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult))
-		.put("<xmlattr>.class", "task-output-block");
+	result.output.add_child("div", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult));
+//		.put("task-output-block");
 
 	// generate meta data
 	result.message = createTaskMessage(doxygenResult);
