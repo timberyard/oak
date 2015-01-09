@@ -122,11 +122,9 @@ int main( int argc, const char* const* argv )
 	bool task_with_error = false;
 	
 	// run configurations
-	pt::ptree outputTasks;
+	js::Array outputTasks;
 	try
 	{
-		outputTasks.add_child("tasks", pt::ptree());
-		
 		for ( auto& taskConfig : config.get_child("tasks") )
 		{
 			// get task settings
@@ -180,7 +178,7 @@ int main( int argc, const char* const* argv )
 					result.warnings = 0;
 					result.errors = 1;
 					result.message = "exception occured";
-					result.output.put("exception", e.what());
+					result.output.push_back( js::Pair("exception", e.what()));
 				}
 
 				if(result.status == TaskResult::STATUS_ERROR)
@@ -191,17 +189,17 @@ int main( int argc, const char* const* argv )
 				std::ostringstream warningsStr; warningsStr << result.warnings;
 				std::ostringstream errorsStr; errorsStr << result.errors;
 
-				pt::ptree outputTask;
+				js::Object outputTask;
 
-				outputTask.add("type", taskType);
-				outputTask.add("name", taskConfig.first);
-				outputTask.add("message", result.message);
-				outputTask.add("warnings", warningsStr.str());
-				outputTask.add("errors", errorsStr.str());
-				outputTask.add("status", result.status == TaskResult::STATUS_OK ? "Ok" : (result.status == TaskResult::STATUS_WARNING ? "Warning" : "Error"));
-				outputTask.add_child("output", result.output );
+				outputTask.push_back( js::Pair("type", taskType ));
+				outputTask.push_back( js::Pair("name", taskConfig.first ));
+				outputTask.push_back( js::Pair("message", result.message ));
+				outputTask.push_back( js::Pair("warnings", warningsStr.str()));
+				outputTask.push_back( js::Pair("errors", errorsStr.str()));
+				outputTask.push_back( js::Pair("status", toString(result.status)));
+				outputTask.push_back( js::Pair("output", result.output ));
 				
-				outputTasks.get_child("tasks").add_child("task", outputTask);
+				outputTasks.push_back(outputTask);
 			}
 			else
 				throw std::runtime_error(std::string("invalid task type: ") + taskType);
@@ -224,18 +222,16 @@ int main( int argc, const char* const* argv )
 	}
 
 	// dump output
-	pt::ptree output;
+	js::Object output;
 
 	try
 	{
-		output.put(config.get<std::string>("output.template.paths.title"), config.get<std::string>("name"));
-		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
+		output.push_back( js::Pair(config.get<std::string>("output.template.paths.title"), config.get<std::string>("name")));
+		output.push_back( js::Pair(config.get<std::string>("output.template.paths.content"), outputTasks));
 
 		std::ostringstream outputStream;
-
-		write_json(outputStream, output);
-
-		std::string outputStr = outputStream.str();
+		js::write(output, outputStream, js::pretty_print);
+		const std::string outputStr = outputStream.str();
 
 		if(outputFileName.empty())
 		{
