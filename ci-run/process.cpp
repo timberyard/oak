@@ -10,11 +10,15 @@ namespace bp  = boost::process;
 namespace bpi = boost::process::initializers;
 namespace bio = boost::iostreams;
 
-
-TextProcessResult executeTextProcess(const std::string& binary, std::vector<std::string> arguments, const std::string& workingDirectory)
+TextProcessResult executeTextProcess(string binary, vector<string> arguments, const string& workingDirectory)
 {
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw std::runtime_error("working directory does not exist");
+
+	if(binary.find('/') == std::string::npos && binary.find('\\') == std::string::npos)
+	{
+		binary = boost::process::search_path(binary);
+	}
 
 	arguments.insert(arguments.begin(), binary);
 
