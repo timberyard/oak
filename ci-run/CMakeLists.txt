@@ -7,6 +7,7 @@ include( ExternalProject )
 project(ci-run)
 set_directory_properties(properties EP_PREFIX "${PROJECT_BINARY_DIR}/external_projects")
 
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS system filesystem iostreams program_options REQUIRED)
 
 
