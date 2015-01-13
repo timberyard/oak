@@ -15,19 +15,35 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
+// Version number & name of the program version.
+// Names came from  https://de.wikipedia.org/wiki/Bundesautobahn_20
+const std::string ciVersion =
+	"(1) Kreuz Lübeck";			// JSON output. (and 1st version with version name)
+	// "(2a) Lübeck Genin";
+	// "(2b) Lübeck-Süd";
+	// "(3) Groß Sarau";
+	// "(4) Lüdersdorf";
+	// "(5) Schönberg";
+	// "(6) Grevesmühlen";
+	// ...
+	// "(38) Prenzlau-Süd";
+	// "(39) Kreuz Uckermark";
+	
 
 void printUsage(std::ostream& o)
 {
 	o << "Usage: ci-run -i <input_path> -o <output_path> [-O <output_file> ] [-r <repo>] [-b <branch>] [-i <commit_id>] [-t <timestamp]  config_file [ config_file... ]\n"
 		"\t-i <input_path>    the path where the input files are expected (required)\n"
 		"\t-o <output_path>   the path where the output files shall be generated (required)\n"
-		"\t-O <output_file>   write generated XHTML output into <output_file> (default:stdout)\n"
+		"\t-O <output_file>   write generated JSON output into <output_file> (default:stdout)\n"
 		"\t-T <template_file> template XML file to generate the output. (default comes from \"output.template.file\" entry in the config file)\n"
 		"\t-r <repo>          the name of the repository (optional, only for decorating the output file)\n"
 		"\t-b <branch>        the name of the branch (optional, only for decorating the output file)\n"
 		"\t-c <commit_id>     guess what!  (optional, only for decorating the output file)\n"
 		"\t-t <timestamp>     the timestamp of the commit (optional, only for decorating the output file)\n"
 		"\t<config_file>      the config file (at least one is required)\n"
+		"\n"
+		"(This is ci-run version \"" << ciVersion << "\".)\n"
 		"\n";
 }
 
@@ -182,22 +198,19 @@ int main( int argc, const char* const* argv )
 					result.message = "exception occured";
 					result.output.push_back( js::Pair("exception", e.what()));
 				}
-
+				
 				if(result.status == TaskResult::STATUS_ERROR)
 				{
 					task_with_error = true;
 				}
-
-				std::ostringstream warningsStr; warningsStr << result.warnings;
-				std::ostringstream errorsStr; errorsStr << result.errors;
-
+				
 				js::Object outputTask;
-
+				
 				outputTask.push_back( js::Pair("type", taskType ));
 				outputTask.push_back( js::Pair("name", taskConfig.first ));
 				outputTask.push_back( js::Pair("message", result.message ));
-				outputTask.push_back( js::Pair("warnings", warningsStr.str()));
-				outputTask.push_back( js::Pair("errors", errorsStr.str()));
+				outputTask.push_back( js::Pair("warnings", result.warnings));
+				outputTask.push_back( js::Pair("errors",   result.errors));
 				outputTask.push_back( js::Pair("status", toString(result.status)));
 				outputTask.push_back( js::Pair("output", result.output ));
 				
@@ -228,8 +241,9 @@ int main( int argc, const char* const* argv )
 
 	try
 	{
-		output.push_back( js::Pair(config.get<std::string>("output.template.paths.title"), config.get<std::string>("name")));
-		output.push_back( js::Pair(config.get<std::string>("output.template.paths.content"), outputTasks));
+		output.push_back( js::Pair( "ci-version", ciVersion) );
+		output.push_back( js::Pair("project-title", config.get<std::string>("name")));
+		output.push_back( js::Pair("project-tasks", outputTasks));
 
 		std::ostringstream outputStream;
 		js::write(output, outputStream, js::pretty_print);
