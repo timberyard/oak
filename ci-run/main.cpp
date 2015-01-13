@@ -209,8 +209,8 @@ int main( int argc, const char* const* argv )
 				outputTask.push_back( js::Pair("type", taskType ));
 				outputTask.push_back( js::Pair("name", taskConfig.first ));
 				outputTask.push_back( js::Pair("message", result.message ));
-				outputTask.push_back( js::Pair("warnings", result.warnings));
-				outputTask.push_back( js::Pair("errors",   result.errors));
+				outputTask.push_back( js::Pair("warnings", uint64_t(result.warnings)));
+				outputTask.push_back( js::Pair("errors",   uint64_t(result.errors)));
 				outputTask.push_back( js::Pair("status", toString(result.status)));
 				outputTask.push_back( js::Pair("output", result.output ));
 				
