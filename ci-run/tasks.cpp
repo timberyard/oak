@@ -3,6 +3,7 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <json_spirit/json_spirit.h>
 
 #include "tasks.hpp"
 #include "process.hpp"
@@ -10,6 +11,8 @@
 
 using namespace std;
 using namespace boost::property_tree;
+
+namespace js = json_spirit;
 
 TaskResult task_build_cmake    ( const ptree& config );
 TaskResult task_test_googletest( const ptree& config );
@@ -69,12 +72,11 @@ TaskResult task_build_cmake( const ptree& config )
 		cmakeParams,
 		config.get<string>("output"));
 
-	result.output.add_child("div", createTaskOutput(
+	result.output.emplace_back("task-output-block", createTaskOutput(
 		config.get<string>("binary:cmake"),
 		vector<string>{config.get<string>("source")},
 		config.get<string>("output"),
-		cmakeResult))
-		.put("<xmlattr>.class", "task-output-block");
+		cmakeResult));
 
 	result.message = createTaskMessage(cmakeResult);
 	result.warnings = 0;
@@ -88,12 +90,11 @@ TaskResult task_build_cmake( const ptree& config )
 			vector<string>{ },
 			config.get<string>("output"));
 
-		result.output.add_child("div", createTaskOutput(
+		result.output.emplace_back("task-output-block2", createTaskOutput(
 			config.get<string>("binary:make"),
 			vector<string>{ },
 			config.get<string>("output"),
-			makeResult))
-			.put("<xmlattr>.class", "task-output-block");
+			makeResult));
 
 		result.message = createTaskMessage(makeResult);
 
@@ -120,6 +121,7 @@ TaskResult task_build_cmake( const ptree& config )
 	return result;
 }
 
+
 TaskResult task_test_googletest( const ptree& config )
 {
 	TaskResult result;
@@ -145,69 +147,43 @@ TaskResult task_test_googletest( const ptree& config )
 	read_xml( xmlTestResultStream, xmlTestResult, xml_parser::trim_whitespace );
 
 	// generate outline table
-	ptree table_outline;
+	js::Object table_outline;
 
-	table_outline.put("table.<xmlattr>.class", "table table-bordered table-condensed");
+	{
+		js::Object row;
+		row.emplace_back("name", xmlTestResult.get<string>("testsuites.<xmlattr>.name"));
+		row.emplace_back("tests", xmlTestResult.get<string>("testsuites.<xmlattr>.tests"));
+		row.emplace_back("failures", xmlTestResult.get<string>("testsuites.<xmlattr>.failures"));
+		row.emplace_back("errors", xmlTestResult.get<string>("testsuites.<xmlattr>.errors"));
+		row.emplace_back("disabled", xmlTestResult.get<string>("testsuites.<xmlattr>.disabled"));
+		row.emplace_back("time", xmlTestResult.get<string>("testsuites.<xmlattr>.time"));
+		row.emplace_back("status", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-	table_outline.add_child("table.thead.tr", ptree());
-	table_outline.add_child("table.tbody", ptree());
-
-	table_outline.get_child("table.thead.tr").add("th", "Name");
-	table_outline.get_child("table.thead.tr").add("th", "Tests");
-	table_outline.get_child("table.thead.tr").add("th", "Failures");
-	table_outline.get_child("table.thead.tr").add("th", "Errors");
-	table_outline.get_child("table.thead.tr").add("th", "Disabled");
-	table_outline.get_child("table.thead.tr").add("th", "Time");
-	table_outline.get_child("table.thead.tr").add("th", "Status");
-
-	{	
-		ptree row;
-		row.put("<xmlattr>.class", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "status-error" : "status-ok"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.name"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.tests"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.failures"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.errors"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.disabled"));
-		row.add("td", xmlTestResult.get<string>("testsuites.<xmlattr>.time"));
-		row.add("td", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
-
-		table_outline.get_child("table.tbody").add_child("tr", row);
+		table_outline.emplace_back("testsuite-head", row);
 	}
 
+	js::Array testsuites;
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == string("<xmlattr>"))
 			continue;
 
-		ptree row;
-		row.put("<xmlattr>.class", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "status-error" : "status-ok"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.name"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.tests"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.failures"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.errors"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.disabled"));
-		row.add("td", testsuite.second.get<string>("<xmlattr>.time"));
-		row.add("td", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+		js::Object row;
+		row.emplace_back("name", testsuite.second.get<string>("<xmlattr>.name"));
+		row.emplace_back("tests", testsuite.second.get<string>("<xmlattr>.tests"));
+		row.emplace_back("failures", testsuite.second.get<string>("<xmlattr>.failures"));
+		row.emplace_back("errors", testsuite.second.get<string>("<xmlattr>.errors"));
+		row.emplace_back("disabled", testsuite.second.get<string>("<xmlattr>.disabled"));
+		row.emplace_back("time", testsuite.second.get<string>("<xmlattr>.time"));
+		row.emplace_back("status", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-		table_outline.get_child("table.tbody").add_child("tr", row);
+		testsuites.push_back(row);
 	}
-
-	result.output.add_child("div", table_outline);
+	table_outline.emplace_back("testsuites", testsuites);
+	result.output.emplace_back("table-outline", table_outline);
 
 	// generate details table
-	ptree table_details;
-
-	table_details.put("table.<xmlattr>.class", "table table-bordered table-condensed");
-
-	table_details.add_child("table.thead.tr", ptree());
-	table_details.add_child("table.tbody", ptree());
-
-	table_details.get_child("table.thead.tr").add("th", "Name");
-	table_details.get_child("table.thead.tr").add("th", "Status");
-	table_details.get_child("table.thead.tr").add("th", "Message");
-	table_details.get_child("table.thead.tr").add("th", "Time");
-	table_details.get_child("table.thead.tr").add("th", "Status");
-
+	js::Array table_details;
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == string("<xmlattr>"))
@@ -218,19 +194,18 @@ TaskResult task_test_googletest( const ptree& config )
 			if(testcase.first == string("<xmlattr>"))
 				continue;
 
-			ptree row;
-			row.put("<xmlattr>.class", (testcase.second.count("failure") > 0 ? "status-error" : "status-ok"));
-			row.add("td", testcase.second.get<string>("<xmlattr>.classname")+string(".")+testcase.second.get<string>("<xmlattr>.name"));
-			row.add("td", testcase.second.get<string>("<xmlattr>.status"));
-			row.add("td", (testcase.second.count("failure") > 0 ? testcase.second.get<string>("failure.<xmlattr>.message") : string("")));
-			row.add("td", testcase.second.get<string>("<xmlattr>.time"));
-			row.add("td", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
+			js::Object row;
+			row.emplace_back("name", testcase.second.get<string>("<xmlattr>.classname")+string(".")+testcase.second.get<string>("<xmlattr>.name"));
+			row.emplace_back("status", testcase.second.get<string>("<xmlattr>.status"));
+			row.emplace_back("failure", (testcase.second.count("failure") > 0 ? testcase.second.get<string>("failure.<xmlattr>.message") : string("")));
+			row.emplace_back("time", testcase.second.get<string>("<xmlattr>.time"));
+			row.emplace_back("count", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
 
-			table_details.get_child("table.tbody").add_child("tr", row);
+			table_details.push_back(row);
 		}
 	}
 
-	result.output.add_child("div", table_details);
+	result.output.emplace_back("details", table_details);
 
 	// generate console output
 	for(auto& line : testResult.output)
@@ -246,8 +221,7 @@ TaskResult task_test_googletest( const ptree& config )
 		}
 	}
 
-	result.output.add_child("div", createTaskOutput(config.get<string>("binary"), arguments, parentPath.string(), testResult))
-		.put("<xmlattr>.class", "task-output-block");
+	result.output.emplace_back("tasko", createTaskOutput(config.get<string>("binary"), arguments, parentPath.string(), testResult));
 
 	// generate meta data
 	result.message = createTaskMessage(testResult);
@@ -258,11 +232,12 @@ TaskResult task_test_googletest( const ptree& config )
 	return result;
 }
 
+
 TaskResult task_test_cppcheck( const ptree& config )
 {
 	TaskResult result;
 
-	result.output.put("pre", "under construction...");
+	result.output.emplace_back("pre", "under construction...");
 	result.message = "under construction...";
 	result.warnings = 0;
 	result.errors = 1;
@@ -270,6 +245,7 @@ TaskResult task_test_cppcheck( const ptree& config )
 
 	return result;
 }
+
 
 TaskResult task_doc_doxygen( const ptree& config )
 {
@@ -319,8 +295,7 @@ TaskResult task_doc_doxygen( const ptree& config )
 		*/
 	}
 
-	result.output.add_child("div", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult))
-		.put("<xmlattr>.class", "task-output-block");
+	result.output.emplace_back("task-output-block", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult));
 
 	// generate meta data
 	result.message = createTaskMessage(doxygenResult);
@@ -329,4 +304,16 @@ TaskResult task_doc_doxygen( const ptree& config )
 	result.status = (doxygenResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
 
 	return result;
+}
+
+
+std::string toString(TaskResult::Status status)
+{
+	switch(status)
+	{
+		case TaskResult::STATUS_OK : return "ok";
+		case TaskResult::STATUS_WARNING : return "warning";
+		case TaskResult::STATUS_ERROR : return "error";
+	}
+	throw std::logic_error("Unsupportet TaskResult::Status!");
 }

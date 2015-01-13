@@ -9,26 +9,41 @@
 #include "ptree.utils.hpp"
 #include "tasks.hpp"
 
+#include "json_spirit/json_spirit.h"
+
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
+namespace js = json_spirit;
 
-namespace Json {
-	void test();
-}
-
+// Version number & name of the program version.
+// Names came from  https://de.wikipedia.org/wiki/Bundesautobahn_20
+const std::string ciVersion =
+	"(1) Kreuz Lübeck";			// JSON output. (and 1st version with version name)
+	// "(2a) Lübeck Genin";
+	// "(2b) Lübeck-Süd";
+	// "(3) Groß Sarau";
+	// "(4) Lüdersdorf";
+	// "(5) Schönberg";
+	// "(6) Grevesmühlen";
+	// ...
+	// "(38) Prenzlau-Süd";
+	// "(39) Kreuz Uckermark";
+	
 
 void printUsage(std::ostream& o)
 {
 	o << "Usage: ci-run -i <input_path> -o <output_path> [-O <output_file> ] [-r <repo>] [-b <branch>] [-i <commit_id>] [-t <timestamp]  config_file [ config_file... ]\n"
 		"\t-i <input_path>    the path where the input files are expected (required)\n"
 		"\t-o <output_path>   the path where the output files shall be generated (required)\n"
-		"\t-O <output_file>   write generated XHTML output into <output_file> (default:stdout)\n"
+		"\t-O <output_file>   write generated JSON output into <output_file> (default:stdout)\n"
 		"\t-T <template_file> template XML file to generate the output. (default comes from \"output.template.file\" entry in the config file)\n"
 		"\t-r <repo>          the name of the repository (optional, only for decorating the output file)\n"
 		"\t-b <branch>        the name of the branch (optional, only for decorating the output file)\n"
 		"\t-c <commit_id>     guess what!  (optional, only for decorating the output file)\n"
 		"\t-t <timestamp>     the timestamp of the commit (optional, only for decorating the output file)\n"
 		"\t<config_file>      the config file (at least one is required)\n"
+		"\n"
+		"(This is ci-run version \"" << ciVersion << "\".)\n"
 		"\n";
 }
 
@@ -41,9 +56,6 @@ std::string toolchain; // required
 
 int main( int argc, const char* const* argv )
 {
-	//Json::test();
-	//return 0;
-	
 	po::options_description desc;
 	desc.add_options()
 		(",i", po::value<std::string>(&inputPath)->required(),  "the path where the input files are expected (required)")
@@ -103,13 +115,13 @@ int main( int argc, const char* const* argv )
 		{
 			std::cout << "\tRead file \"" << filename << "\" ...\n";
 			std::ifstream configStream;
-	
+			
 			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 			configStream.open( filename );
-	
+			
 			pt::ptree configTree;
 			read_json( configStream, configTree );
-	
+			
 			ptree_merge( config, configTree );
 		}
 	}
@@ -124,53 +136,13 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
-	// read template
-
-	pt::ptree output;
-
-	try
-	{
-		// read template
-		const std::string outputTemplatePath = outputTemplateFile.empty() ? config.get<std::string>("output.template.file") : outputTemplateFile;
-
-		std::ifstream outputTemplateStream;
-
-		outputTemplateStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-		outputTemplateStream.open( outputTemplatePath );
-
-		pt::read_xml( outputTemplateStream, output, pt::xml_parser::trim_whitespace );
-	}
-	catch ( const pt::ptree_error& exception )
-	{
-		std::cerr << "PTree exeption when reading template file: " << exception.what() << '\n';
-		return 1;
-	}
-	catch ( const std::ifstream::failure& exception )
-	{
-		std::cerr << "Stream failure when reading template file: " << exception.what() << '\n';
-		return 1;
-	}
 
 	bool task_with_error = false;
 	
 	// run configurations
-	pt::ptree outputTasks;
-
+	js::Array outputTasks;
 	try
 	{
-		outputTasks.put("div.<xmlattr>.class", "table-responsive");
-		outputTasks.put("div.table.<xmlattr>.class", "tasks table table-bordered");
-
-		outputTasks.add_child("div.table.thead.tr", pt::ptree());
-		outputTasks.add_child("div.table.tbody", pt::ptree());
-
-		outputTasks.get_child("div.table.thead.tr").add("th", "Type");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Name");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Message");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Warnings");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Errors");
-		outputTasks.get_child("div.table.thead.tr").add("th", "Status");
-
 		for ( auto& taskConfig : config.get_child("tasks") )
 		{
 			// get task settings
@@ -224,34 +196,25 @@ int main( int argc, const char* const* argv )
 					result.warnings = 0;
 					result.errors = 1;
 					result.message = "exception occured";
-					result.output.put("pre", e.what());
+					result.output.push_back( js::Pair("exception", e.what()));
 				}
-
+				
 				if(result.status == TaskResult::STATUS_ERROR)
 				{
 					task_with_error = true;
 				}
-
-				std::ostringstream warningsStr; warningsStr << result.warnings;
-				std::ostringstream errorsStr; errorsStr << result.errors;
-
-				pt::ptree outputTask;
-
-				outputTask.put("<xmlattr>.class", std::string("task-meta ") + (result.status == TaskResult::STATUS_OK ? "status-ok" : (result.status == TaskResult::STATUS_WARNING ? "status-warning" : "status-error")));
-				outputTask.add("td", taskType);
-				outputTask.add("td", taskConfig.first);
-				outputTask.add("td", result.message);
-				outputTask.add("td", warningsStr.str());
-				outputTask.add("td", errorsStr.str());
-				outputTask.add("td", result.status == TaskResult::STATUS_OK ? "Ok" : (result.status == TaskResult::STATUS_WARNING ? "Warning" : "Error"));
-
-				outputTasks.get_child("div.table.tbody").add_child("tr", outputTask);
-
-				result.output.put("<xmlattr>.colspan", "6");
-
-				pt::ptree& outputTaskRow = outputTasks.get_child("div.table.tbody").add_child("tr", pt::ptree());
-				outputTaskRow.add_child("td", result.output);
-				outputTaskRow.put("<xmlattr>.class", "task-output");
+				
+				js::Object outputTask;
+				
+				outputTask.push_back( js::Pair("type", taskType ));
+				outputTask.push_back( js::Pair("name", taskConfig.first ));
+				outputTask.push_back( js::Pair("message", result.message ));
+				outputTask.push_back( js::Pair("warnings", uint64_t(result.warnings)));
+				outputTask.push_back( js::Pair("errors",   uint64_t(result.errors)));
+				outputTask.push_back( js::Pair("status", toString(result.status)));
+				outputTask.push_back( js::Pair("output", result.output ));
+				
+				outputTasks.push_back(outputTask);
 			}
 			else
 				throw std::runtime_error(std::string("invalid task type: ") + taskType);
@@ -274,21 +237,18 @@ int main( int argc, const char* const* argv )
 	}
 
 	// dump output
+	js::Object output;
 
 	try
 	{
-		output.put(config.get<std::string>("output.template.paths.title"), config.get<std::string>("name"));
-		output.put_child(config.get<std::string>("output.template.paths.content"), outputTasks);
+		output.push_back( js::Pair( "ci-version", ciVersion) );
+		output.push_back( js::Pair("project-title", config.get<std::string>("name")));
+		output.push_back( js::Pair("project-tasks", outputTasks));
 
+		const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
 		std::ostringstream outputStream;
-#if BOOST_VERSION >= 105600
-		write_xml(outputStream, output, pt::xml_writer_make_settings<std::string>('\t', 1));
-#else
-		write_xml(outputStream, output, pt::xml_writer_settings<char>('\t', 1));
-#endif
-
-		std::string outputStr = outputStream.str();
-		outputStr = outputStr.insert(outputStr.find("?>")+2, "\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"\n\t\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">");
+		js::write(output, outputStream, options);
+		const std::string outputStr = outputStream.str();
 
 		if(outputFileName.empty())
 		{

@@ -5,6 +5,8 @@
 #include <functional>
 #include <boost/property_tree/ptree.hpp>
 
+#include <json_spirit/json_spirit.h>
+
 struct TaskResult
 {
 	enum Status
@@ -19,18 +21,15 @@ struct TaskResult
 	unsigned int errors;
 
 	std::string message;
-	boost::property_tree::ptree output;
+	json_spirit::Object output;
 
-	TaskResult() : status(STATUS_ERROR), warnings(0), errors(0) { }
-
-	TaskResult(const TaskResult &o)
-	{
-		status = o.status;
-		warnings = o.warnings;
-		errors = o.errors;
-		message = o.message;
-		output = o.output;
-	}
+	TaskResult()
+	: status(STATUS_ERROR)
+	, warnings(0)
+	, errors(0)
+	{ }
 };
+
+std::string toString(TaskResult::Status status);
 
 extern std::map<std::string, std::function<TaskResult(const boost::property_tree::ptree&)>> taskTypes;
