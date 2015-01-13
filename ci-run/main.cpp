@@ -245,8 +245,9 @@ int main( int argc, const char* const* argv )
 		output.push_back( js::Pair("project-title", config.get<std::string>("name")));
 		output.push_back( js::Pair("project-tasks", outputTasks));
 
+		const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
 		std::ostringstream outputStream;
-		js::write(output, outputStream, js::pretty_print);
+		js::write(output, outputStream, options);
 		const std::string outputStr = outputStream.str();
 
 		if(outputFileName.empty())
