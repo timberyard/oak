@@ -90,8 +90,20 @@ TextProcessResult executeTextProcess(string binary, vector<string> arguments, co
 		        		string line;
 		        		std::istream lineStream(&lineBuf);
 		        		std::getline(lineStream, line);
+
 		        		boost::replace_all(line, "\033", "");
+
 		        		result.output.push_back(pair<TextProcessResult::LineType, string>(lineType, line));
+
+		        		if(lineType != TextProcessResult::ERROR_LINE)
+		        		{
+		        			std::cout << line << std::endl;
+		        		}
+		        		else
+		        		{
+		        			std::cerr << line << std::endl;
+		        		}
+
 		        		readLine(pipeEnd, lineBuf, lineType);
 		        	}
 		        });
