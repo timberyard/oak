@@ -4,6 +4,7 @@ set(CMAKE_BUILD_TYPE "Debug")
 
 project(ci-run)
 
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS system filesystem iostreams program_options REQUIRED)
 
 include_directories( ${Boost_INCLUDE_DIRS} )
