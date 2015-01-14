@@ -78,11 +78,11 @@ int main( int argc, const char* const* argv )
 		("sysconfig,s" , po::value<std::string>(&argSysConfig) , (std::string("the JSON system config file (optional, default is ") + oakSysConfigDefault + std::string(")")).c_str())
 		("config,c"    , po::value<std::string>(&argConfig)    , "the JSON config file (required in standard mode)")
 		("result,r"    , po::value<std::string>(&argResult)    , "the JSON result file (required in standard mode)")
-		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (optional, only for decorating the output file)")
-		("repository,R", po::value<std::string>(&argRepository), "the repository of the commit (optional, only for decorating the output file)")
-		("branch,B"    , po::value<std::string>(&argBranch)    , "the branch of the commit (optional, only for decorating the output file)")
-		("commit,C"    , po::value<std::string>(&argCommit)    , "the id of the commit (optional, only for decorating the output file)")
-		("timestamp,T" , po::value<std::string>(&argTimestamp) , "the timestamp of the commit (optional, only for decorating the output file)")
+		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (primarily for decorating the output file)")
+		("repository,R", po::value<std::string>(&argRepository), "the repository of the commit (primarily for decorating the output file)")
+		("branch,B"    , po::value<std::string>(&argBranch)    , "the branch of the commit (primarily for decorating the output file)")
+		("commit,C"    , po::value<std::string>(&argCommit)    , "the id of the commit (primarily for decorating the output file)")
+		("timestamp,T" , po::value<std::string>(&argTimestamp) , "the timestamp of the commit (primarily for decorating the output file)")
 		("help,h", "show this text")
 		;
 
@@ -192,6 +192,12 @@ int main( int argc, const char* const* argv )
 	}
 
 	if(argInput.length() == 0 || argOutput.length() == 0 || argConfig.length() == 0 || argResult.length() == 0)
+	{
+		std::cout << desc << std::endl;
+		return 1;
+	}
+
+	if(argMachine.length() == 0 || argRepository.length() == 0 || argBranch.length() == 0 || argCommit.length() == 0 || argTimestamp.length() == 0)
 	{
 		std::cout << desc << std::endl;
 		return 1;
@@ -323,6 +329,7 @@ int main( int argc, const char* const* argv )
 				settings,
 				[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
 				{
+					boost::replace_all(child.data(), "${machine}", argMachine);
 					boost::replace_all(child.data(), "${repository}", argRepository);
 					boost::replace_all(child.data(), "${branch}"    , argBranch);
 					boost::replace_all(child.data(), "${commit.id}" , argCommit);

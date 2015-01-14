@@ -18,13 +18,15 @@ TaskResult task_build_cmake    ( const ptree& config );
 TaskResult task_test_googletest( const ptree& config );
 TaskResult task_test_cppcheck  ( const ptree& config );
 TaskResult task_doc_doxygen    ( const ptree& config );
+TaskResult task_publish_rsync  ( const ptree& config );
 
 map<string, function<TaskResult(const ptree&)>> taskTypes =
 {
 	{ "build:cmake",     task_build_cmake },
 	{ "test:googletest", task_test_googletest },
 	{ "test:cppcheck",   task_test_cppcheck },
-	{ "doc:doxygen",     task_doc_doxygen }
+	{ "doc:doxygen",     task_doc_doxygen },
+	{ "publish:rsync",   task_publish_rsync }
 };
 
 TaskResult task_build_cmake( const ptree& config )
@@ -337,6 +339,27 @@ TaskResult task_doc_doxygen( const ptree& config )
 	result.warnings = 0;
 	result.errors = (doxygenResult.exitCode != 0 ? 1 : 0);
 	result.status = (doxygenResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
+
+	return result;
+}
+
+TaskResult task_publish_rsync( const ptree& config )
+{
+	TaskResult result;
+
+	vector<string> arguments {
+		std::string("--rsh=ssh -o \"BatchMode yes\" -p ") + config.get<string>("destination.port"),
+		"--archive", "--delete",
+		config.get<string>("source"),
+		config.get<string>("destination.user") + std::string("@") + config.get<string>("destination.host") + std::string(":")
+		+ config.get<string>("destination.base") + std::string("/") + config.get<string>("destination.directory")
+	};
+
+	// run rsync
+	TextProcessResult rsyncResult = executeTextProcess(config.get<string>("binary"), arguments, config.get<string>("source"));
+
+	// generate task output
+	result.output.emplace_back("rsync", createTaskOutput(config.get<string>("binary"), arguments, config.get<string>("source"), rsyncResult));
 
 	return result;
 }

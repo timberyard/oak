@@ -53,7 +53,7 @@
 		"source": "${output}",
 		"destination": {
 			"port": "22",
-			"directory": "${repository}/${branch}/${commit.timestamp}_${commit.short-id}"
+			"directory": "${repository}/${branch}/${commit.timestamp}_${commit.short-id}/${machine}"
 		}
 	}
 }
