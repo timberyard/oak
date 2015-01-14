@@ -264,7 +264,7 @@ int main( int argc, const char* const* argv )
 		// read variant configuration
 		const std::string variantName = projectConfig.get<std::string>( "variant" );
 		const auto v = variants.find( variantName );
-		if(v!=variants.end())
+		if(v==variants.end())
 		{
 			std::cerr << "Unknown variant: \"" << variantName << "\"!\nKnown variants are:\n";
 			for(auto q : variants)
