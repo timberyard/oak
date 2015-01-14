@@ -336,9 +336,11 @@ int main( int argc, const char* const* argv )
 				settings,
 				[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
 				{
+					boost::replace_all(child.data(), "${machine}", argMachine);
 					boost::replace_all(child.data(), "${repository}", argRepository);
 					boost::replace_all(child.data(), "${branch}"    , argBranch);
 					boost::replace_all(child.data(), "${commit.id}" , argCommit);
+					boost::replace_all(child.data(), "${commit.short-id}" , argCommit.substr(0, 7));
 					boost::replace_all(child.data(), "${commit.timestamp}", argTimestamp);
 					boost::replace_all(child.data(), "${input}", argInput);
 					boost::replace_all(child.data(), "${output}", argOutput);

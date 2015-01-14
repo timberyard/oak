@@ -15,5 +15,13 @@
 	},
 	"doc:doxygen": {
 		"binary": "/usr/bin/doxygen"
+	},
+	"publish:rsync": {
+		"enabled": "yes",
+		"destination": {
+			"user": "builds",
+			"host": "localhost",
+			"base": "/home/builds/integration"
+		}
 	}
 }

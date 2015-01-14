@@ -47,5 +47,14 @@
 			"GENERATE_BUGLIST": "NO",
 			"SHOW_USED_FILES": "NO"
 		}
+	},
+	"publish:rsync": {
+		"enabled": "no",
+		"binary": "rsync",
+		"source": "${output}",
+		"destination": {
+			"port": "22",
+			"directory": "${repository}/${branch}/${commit.timestamp}_${commit.short-id}/${machine}"
+		}
 	}
 }
