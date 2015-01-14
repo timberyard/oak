@@ -11,6 +11,7 @@
 #include <boost/process.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include "process.hpp"
 
@@ -30,30 +31,35 @@ boost::process::pipe create_async_pipe()
 #endif
 }
 
-
 TextProcessResult executeTextProcess(std::string binary, std::vector<std::string> arguments, const std::string& workingDirectory)
 {
+	std::cout << "-------------------------------------------------------------------------" << std::endl;
+	std::cout << "Running process: " << binary << std::endl;
+	std::cout << "arguments: " << boost::algorithm::join(arguments, " ") << std::endl;
+	std::cout << "working_dir: " << workingDirectory << std::endl;
+	std::cout << "-------------------------------------------------------------------------" << std::endl;
+
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw std::runtime_error("working directory does not exist");
-	
+
 	if(binary.find('/') == std::string::npos && binary.find('\\') == std::string::npos)
 	{
 		binary = boost::process::search_path(binary);
 	}
-	
+
 	arguments.insert(arguments.begin(), binary);
-	
+
 	TextProcessResult result;
-	
+
 	boost::process::pipe pipeOut = create_async_pipe();
 	boost::process::pipe pipeErr = create_async_pipe();
-	
+
 	std::shared_ptr<bp::child> process;
-	
+
 	{
 		bio::file_descriptor_sink pipeOutSink(pipeOut.sink, bio::close_handle);
 		bio::file_descriptor_sink pipeErrSink(pipeErr.sink, bio::close_handle);
-		
+
 		process = std::make_shared<bp::child>( bp::execute(
 			bpi::run_exe(binary),
 			bpi::set_args(arguments),
@@ -72,13 +78,13 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 #endif
 
 	boost::asio::io_service io;
-	
+
 	pipe_end pipeOutEnd(io, pipeOut.source);
 	pipe_end pipeErrEnd(io, pipeErr.source);
-	
+
 	boost::asio::streambuf lineBufOut;
 	boost::asio::streambuf lineBufErr;
-	
+
 	std::function<void(pipe_end&,boost::asio::streambuf&,TextProcessResult::LineType)> readLine =
 		[&readLine, &result](pipe_end& pipeEnd, boost::asio::streambuf& lineBuf, TextProcessResult::LineType lineType)
 		{
@@ -90,10 +96,10 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 						std::string line;
 						std::istream lineStream(&lineBuf);
 						std::getline(lineStream, line);
-						
+
 						boost::replace_all(line, "\033", "");
 						result.output.push_back(std::make_pair(lineType, line));
-						
+
 						if(lineType != TextProcessResult::ERROR_LINE)
 						{
 							std::cout << line << std::endl;
@@ -102,19 +108,21 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 						{
 							std::cerr << line << std::endl;
 						}
-						
+
 						readLine(pipeEnd, lineBuf, lineType);
 					}
 				});
 		};
-	
+
 	readLine(pipeOutEnd, lineBufOut, TextProcessResult::INFO_LINE);
 	readLine(pipeErrEnd, lineBufErr, TextProcessResult::ERROR_LINE);
-	
+
 	io.run();
-	
+
 	result.exitCode = wait_for_exit(*process);
-	
+
+	std::cout << "-------------------------------------------------------------------------" << std::endl;
+
 	return result;
 }
 

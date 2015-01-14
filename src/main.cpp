@@ -5,6 +5,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/system/system_error.hpp>
+#include <boost/filesystem.hpp>
 
 #include "ptree.utils.hpp"
 #include "tasks.hpp"
@@ -16,9 +17,10 @@ namespace po = boost::program_options;
 namespace js = json_spirit;
 
 const std::string oakVersion = "0.1";
+const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 
-std::string argMode, argInput, argOutput, argConfig, argResult;  // required parameters
-std::string argMachine, argRepository, argBranch, argCommit, argTimestamp; // optional parameters
+std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
+std::string argMachine, argRepository, argBranch, argCommit, argTimestamp;
 
 extern const unsigned char _binary_configs_builtin_defaults_json_start[];
 extern const unsigned char _binary_configs_builtin_defaults_json_end[];
@@ -42,9 +44,10 @@ int main( int argc, const char* const* argv )
 {
 	po::options_description desc;
 	desc.add_options()
-		("mode,m"      , po::value<std::string>(&argMode)      , "the operational mode (standard=default, jenkins)")
+		("mode,m"      , po::value<std::string>(&argMode)      , "the operational mode (standard [default], jenkins)")
 		("input,i"     , po::value<std::string>(&argInput)     , "the path where the input files are expected (required in standard mode)")
 		("output,o"    , po::value<std::string>(&argOutput)    , "the path where the output files shall be generated (required in standard mode)")
+		("sysconfig,s" , po::value<std::string>(&argSysConfig) , (std::string("the JSON system config file (optional, default is ") + oakSysConfigDefault + std::string(")")).c_str())
 		("config,c"    , po::value<std::string>(&argConfig)    , "the JSON config file (required in standard mode)")
 		("result,r"    , po::value<std::string>(&argResult)    , "the JSON result file (required in standard mode)")
 		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (optional, only for decorating the output file)")
@@ -146,6 +149,18 @@ int main( int argc, const char* const* argv )
 		}
 	}
 
+	if(argSysConfig.length() == 0)
+	{
+		auto envOakSysConfig = environment("OAK_SYSCONFIG");
+
+		if(envOakSysConfig)
+			{ argSysConfig = *envOakSysConfig; }
+#ifndef _WIN32
+		else if(boost::filesystem::exists(oakSysConfigDefault))
+			{ argSysConfig = oakSysConfigDefault; }
+#endif
+	}
+
 	if(argInput.length() == 0 || argOutput.length() == 0 || argConfig.length() == 0 || argResult.length() == 0)
 	{
 		std::cout << desc << std::endl;
@@ -184,16 +199,19 @@ int main( int argc, const char* const* argv )
 		}
 
 		// load system defaults
-		std::cout << "Load system default configuration..." << std::endl;
-
+		if(argSysConfig.length() > 0)
 		{
-			std::ifstream configStream;
-			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			configStream.open( "/etc/oak/defaults.json" );
+			std::cout << "Load system default configuration..." << std::endl;
 
-			pt::ptree systemDefaultsConfig;
-			read_json( configStream, systemDefaultsConfig );
-			ptree_merge( defaultsConfig, systemDefaultsConfig );
+			{
+				std::ifstream configStream;
+				configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+				configStream.open( argSysConfig );
+
+				pt::ptree systemDefaultsConfig;
+				read_json( configStream, systemDefaultsConfig );
+				ptree_merge( defaultsConfig, systemDefaultsConfig );
+			}
 		}
 
 		// read variant configuration
@@ -248,6 +266,8 @@ int main( int argc, const char* const* argv )
 	{
 		for ( auto& taskConfig : config.get_child("tasks") )
 		{
+			std::cout << "*************************************************************************" << std::endl;
+
 			// get task settings
 			std::string taskType = taskConfig.second.get<std::string>( "type" );
 
@@ -278,6 +298,12 @@ int main( int argc, const char* const* argv )
 			);
 
 			// run task
+
+			std::cout << "Running task: " << taskConfig.first << std::endl;
+			std::cout << "type: " << taskType << std::endl;
+
+			std::cout << "*************************************************************************" << std::endl;
+
 			auto task = taskTypes.find(taskType);
 
 			if(task != taskTypes.end())
@@ -310,12 +336,14 @@ int main( int argc, const char* const* argv )
 				outputTask.push_back( js::Pair("warnings", uint64_t(result.warnings)));
 				outputTask.push_back( js::Pair("errors",   uint64_t(result.errors)));
 				outputTask.push_back( js::Pair("status", toString(result.status)));
-				outputTask.push_back( js::Pair("output", result.output ));
+				outputTask.push_back( js::Pair("details", result.output ));
 
 				outputTasks.push_back(outputTask);
 			}
 			else
 				throw std::runtime_error(std::string("invalid task type: ") + taskType);
+
+			std::cout << "*************************************************************************" << std::endl;
 		}
 	}
 	catch ( const pt::ptree_error& exception )

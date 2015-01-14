@@ -37,7 +37,7 @@ TaskResult task_build_cmake( const ptree& config )
 	vector<string> cmakeParams { config.get<string>("source") };
 
 	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<string>("c:binary"));
-	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_CXX_COMPILER:STRING=g++") + config.get<string>("c++:binary"));
+	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_CXX_COMPILER:STRING=") + config.get<string>("c++:binary"));
 
 #ifdef _WIN32
 	cmakeParams.push_back("-G");
@@ -49,7 +49,7 @@ TaskResult task_build_cmake( const ptree& config )
 		cmakeParams,
 		config.get<string>("output"));
 
-	result.output.emplace_back("task-output-block", createTaskOutput(
+	result.output.emplace_back("cmake", createTaskOutput(
 		config.get<string>("cmake:binary"),
 		vector<string>{config.get<string>("source")},
 		config.get<string>("output"),
@@ -67,7 +67,7 @@ TaskResult task_build_cmake( const ptree& config )
 			vector<string>{ },
 			config.get<string>("output"));
 
-		result.output.emplace_back("task-output-block2", createTaskOutput(
+		result.output.emplace_back("make", createTaskOutput(
 			config.get<string>("make:binary"),
 			vector<string>{ },
 			config.get<string>("output"),
@@ -136,7 +136,7 @@ TaskResult task_test_googletest( const ptree& config )
 		row.emplace_back("time", xmlTestResult.get<string>("testsuites.<xmlattr>.time"));
 		row.emplace_back("status", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-		table_outline.emplace_back("testsuite-head", row);
+		table_outline.emplace_back("all", row);
 	}
 
 	js::Array testsuites;
@@ -157,7 +157,7 @@ TaskResult task_test_googletest( const ptree& config )
 		testsuites.push_back(row);
 	}
 	table_outline.emplace_back("testsuites", testsuites);
-	result.output.emplace_back("table-outline", table_outline);
+	result.output.emplace_back("outline", table_outline);
 
 	// generate details table
 	js::Array table_details;
@@ -198,7 +198,7 @@ TaskResult task_test_googletest( const ptree& config )
 		}
 	}
 
-	result.output.emplace_back("tasko", createTaskOutput(config.get<string>("binary"), arguments, parentPath.string(), testResult));
+	result.output.emplace_back("googletest", createTaskOutput(config.get<string>("binary"), arguments, parentPath.string(), testResult));
 
 	// generate meta data
 	result.message = createTaskMessage(testResult);
@@ -214,7 +214,7 @@ TaskResult task_test_cppcheck( const ptree& config )
 {
 	TaskResult result;
 
-	result.output.emplace_back("pre", "under construction...");
+	result.output.emplace_back("cppcheck", "under construction...");
 	result.message = "under construction...";
 	result.warnings = 0;
 	result.errors = 1;
@@ -256,8 +256,8 @@ TaskResult task_doc_doxygen( const ptree& config )
 	// run doxygen
 	TextProcessResult doxygenResult = executeTextProcess(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath);
 
-	// generate console output
-	result.output.emplace_back("task-output-block", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult));
+	// generate task output
+	result.output.emplace_back("doxygen", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult));
 
 	// generate meta data
 	result.message = createTaskMessage(doxygenResult);

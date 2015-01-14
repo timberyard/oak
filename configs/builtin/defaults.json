@@ -1,4 +1,8 @@
 {	"build:cmake": {
+		"cmake:binary": "cmake",
+		"make:binary": "make",
+		"c:binary": "cc",
+		"c++:binary": "c++",
 		"source": "${source.path}",
 		"output": "${output.path}/build"
 	},
@@ -7,6 +11,7 @@
 		"output": "${output.path}/tests/googletest.xml"
 	},
 	"test:cppcheck": {
+		"binary": "cppcheck",
 		"source": "${source.path}",
 		"output": "${output.path}/tests/cppcheck.xml",
 		"arguments" : {
@@ -15,6 +20,7 @@
 		}
 	},
 	"doc:doxygen": {
+		"binary": "doxygen",
 		"source": "${source.path}",
 		"output": "${output.path}/docs",
 		"doxyfile" : {
