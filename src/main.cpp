@@ -158,7 +158,7 @@ int main( int argc, const char* const* argv )
 		{
 			if(argInput.length() > 0 && argBranch.length() > 0 && argTimestamp.length() > 0 && argCommit.length() > 0)
 			{
-				argOutput = argInput + std::string("/output/") + argBranch + std::string("/") + argTimestamp + std::string("_") + argCommit.substr(0, 7);
+				argOutput = argInput + std::string("/oak/") + argBranch + std::string("/") + argTimestamp + std::string("_") + argCommit.substr(0, 7);
 			}
 		}
 
@@ -172,7 +172,7 @@ int main( int argc, const char* const* argv )
 		{
 			if(argOutput.length() > 0)
 			{
-				argResult = argOutput + std::string("/ci.json");
+				argResult = argOutput + std::string("/result.json");
 			}
 		}
 	}

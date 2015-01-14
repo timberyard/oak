@@ -3,7 +3,7 @@
 		"make:binary": "make",
 		"c:binary": "cc",
 		"c++:binary": "c++",
-		"source": "${input}/src",
+		"source": "${input}",
 		"output": "${output}/build"
 	},
 	"test:googletest": {
