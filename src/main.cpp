@@ -22,11 +22,25 @@ const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
 std::string argMachine, argRepository, argBranch, argCommit, argTimestamp;
 
+// GNU ld generates these funny symbols when generating .o files from arbitrary binary files:
 extern const unsigned char _binary_configs_builtin_defaults_json_start[];
 extern const unsigned char _binary_configs_builtin_defaults_json_end[];
 
 extern const unsigned char _binary_configs_builtin_tasks_c___json_start[];
 extern const unsigned char _binary_configs_builtin_tasks_c___json_end[];
+
+
+struct CompileTimeData
+{
+	const unsigned char* begin;
+	const unsigned char* end;
+};
+
+// currently we support only one variant. But for future use... :-)
+const std::map<std::string, CompileTimeData> variants =
+	{
+		{"c++", { _binary_configs_builtin_tasks_c___json_start, _binary_configs_builtin_tasks_c___json_end } }
+	};
 
 
 // if 'variable' is "", fetch it from environment, if it exists there
@@ -139,6 +153,7 @@ int main( int argc, const char* const* argv )
 			}
 		}
 
+		// no config file given? search a default config in the input path:
 		if(argConfig.empty())
 		{
 			if(argInput.length() > 0)
@@ -147,6 +162,7 @@ int main( int argc, const char* const* argv )
 			}
 		}
 
+		// not output JSON file given? put it into the output path:
 		if(argResult.empty())
 		{
 			if(argOutput.length() > 0)
@@ -191,10 +207,8 @@ int main( int argc, const char* const* argv )
 
 		{
 			std::ifstream stream;
-
 			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 			stream.open( argConfig );
-
 			read_json( stream, projectConfig );
 		}
 
@@ -202,11 +216,9 @@ int main( int argc, const char* const* argv )
 		std::cout << "Load built-in default configuration..." << std::endl;
 
 		pt::ptree defaultsConfig;
-
 		{
 			std::istringstream stream(std::string(_binary_configs_builtin_defaults_json_start, _binary_configs_builtin_defaults_json_end));
 			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-
 			read_json( stream, defaultsConfig );
 		}
 
@@ -214,33 +226,31 @@ int main( int argc, const char* const* argv )
 		if(argSysConfig.length() > 0)
 		{
 			std::cout << "Load system default configuration..." << std::endl;
-
-			{
-				std::ifstream configStream;
-				configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-				configStream.open( argSysConfig );
-
-				pt::ptree systemDefaultsConfig;
-				read_json( configStream, systemDefaultsConfig );
-				ptree_merge( defaultsConfig, systemDefaultsConfig );
-			}
+			std::ifstream configStream;
+			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+			configStream.open( argSysConfig );
+			
+			pt::ptree systemDefaultsConfig;
+			read_json( configStream, systemDefaultsConfig );
+			ptree_merge( defaultsConfig, systemDefaultsConfig );
 		}
 
 		// read variant configuration
-		std::string variant = projectConfig.get<std::string>( "variant" );
-		std::string variantData;
-
-		if(variant == "c++")
+		const std::string variantName = projectConfig.get<std::string>( "variant" );
+		const auto v = variants.find( variantName );
+		if(v!=variants.end())
 		{
-			variantData = std::string(_binary_configs_builtin_tasks_c___json_start, _binary_configs_builtin_tasks_c___json_end);
-		}
-		else
-		{
-			std::cerr << "Invalid variant: " << variant << std::endl;
+			std::cerr << "Unknown variant: \"" << variantName << "\"!\nKnown variants are:\n";
+			for(auto q : variants)
+			{
+				std::cerr << "\t\"" << q.first << "\"\n";
+			}
 			return 1;
 		}
 
-		std::cout << "Load built-in variant configuration for " << variant << "..." << std::endl;
+		const std::string variantData = std::string(v->second.begin, v->second.end);
+
+		std::cout << "Load built-in variant configuration for \"" << variantName << "\"..." << std::endl;
 
 		pt::ptree variantConfig;
 
