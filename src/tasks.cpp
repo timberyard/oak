@@ -27,8 +27,6 @@ map<string, function<TaskResult(const ptree&)>> taskTypes =
 	{ "doc:doxygen",     task_doc_doxygen }
 };
 
-extern std::string toolchain;
-
 TaskResult task_build_cmake( const ptree& config )
 {
 	boost::filesystem::remove_all(config.get<string>("output"));
@@ -38,42 +36,21 @@ TaskResult task_build_cmake( const ptree& config )
 
 	vector<string> cmakeParams { config.get<string>("source") };
 
-#ifndef _WIN32
-	if(toolchain == "gcc")
-	{
-		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_C_COMPILER:STRING=gcc");
-		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_CXX_COMPILER:STRING=g++");
-	}
-	else
-	if(toolchain == "clang")
-	{
-		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_C_COMPILER:STRING=clang");
-		cmakeParams.insert(cmakeParams.begin(), "-DCMAKE_CXX_COMPILER:STRING=clang++");
-	}
-#else
-	if(toolchain == "gcc")
-	{
-		cmakeParams.push_back("-G");
-		cmakeParams.push_back("MSYS Makefiles");
-	}
-	else
-	if(toolchain == "msvc")
-	{
-		// do nothing (since msvc is default on windows)
-	}
+	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<string>("c:binary"));
+	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_CXX_COMPILER:STRING=g++") + config.get<string>("c++:binary"));
+
+#ifdef _WIN32
+	cmakeParams.push_back("-G");
+	cmakeParams.push_back("MSYS Makefiles");
 #endif
-	else
-	{
-		throw std::runtime_error(std::string("invalid toolchain: ") + toolchain);
-	}
 
 	TextProcessResult cmakeResult = executeTextProcess(
-		config.get<string>("binary:cmake"),
+		config.get<string>("cmake:binary"),
 		cmakeParams,
 		config.get<string>("output"));
 
 	result.output.emplace_back("task-output-block", createTaskOutput(
-		config.get<string>("binary:cmake"),
+		config.get<string>("cmake:binary"),
 		vector<string>{config.get<string>("source")},
 		config.get<string>("output"),
 		cmakeResult));
@@ -86,12 +63,12 @@ TaskResult task_build_cmake( const ptree& config )
 	if(cmakeResult.exitCode == 0)
 	{
 		TextProcessResult makeResult = executeTextProcess(
-			config.get<string>("binary:make"),
+			config.get<string>("make:binary"),
 			vector<string>{ },
 			config.get<string>("output"));
 
 		result.output.emplace_back("task-output-block2", createTaskOutput(
-			config.get<string>("binary:make"),
+			config.get<string>("make:binary"),
 			vector<string>{ },
 			config.get<string>("output"),
 			makeResult));
@@ -110,7 +87,7 @@ TaskResult task_build_cmake( const ptree& config )
 				return count + (el.second.find(": error:") != string::npos ? 1 : 0);
 			});
 
-		result.status = 
+		result.status =
 			((result.errors > 0 || makeResult.exitCode != 0)
 				? TaskResult::STATUS_ERROR
 				: (result.warnings > 0
@@ -280,21 +257,6 @@ TaskResult task_doc_doxygen( const ptree& config )
 	TextProcessResult doxygenResult = executeTextProcess(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath);
 
 	// generate console output
-	for(auto& line : doxygenResult.output)
-	{
-		/*
-		if(line.second.find("[  FAILED  ]") != string::npos)
-		{
-			line.first = TextProcessResult::ERROR_LINE;
-		}
-		else
-		if(line.second.find("[       OK ]") != string::npos || line.second.find("[  PASSED  ]") != string::npos)
-		{
-			line.first = TextProcessResult::OK_LINE;
-		}
-		*/
-	}
-
 	result.output.emplace_back("task-output-block", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult));
 
 	// generate meta data
@@ -305,7 +267,6 @@ TaskResult task_doc_doxygen( const ptree& config )
 
 	return result;
 }
-
 
 std::string toString(TaskResult::Status status)
 {

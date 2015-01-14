@@ -1,0 +1,43 @@
+{	"build:cmake": {
+		"source": "${source.path}",
+		"output": "${output.path}/build"
+	},
+	"test:googletest": {
+		"binary": "${output.path}/build/tests",
+		"output": "${output.path}/tests/googletest.xml"
+	},
+	"test:cppcheck": {
+		"source": "${source.path}",
+		"output": "${output.path}/tests/cppcheck.xml",
+		"arguments" : {
+			"enable": "all",
+			"suppress": "missingIncludeSystem"
+		}
+	},
+	"doc:doxygen": {
+		"source": "${source.path}",
+		"output": "${output.path}/docs",
+		"doxyfile" : {
+			"FILE_PATTERNS": "*.h*",
+			"RECURSIVE": "YES",
+			"CASE_SENSE_NAMES": "NO",
+			"EXTRACT_ALL": "NO",
+			"EXTRACT_PRIVATE": "NO",
+			"EXTRACT_PACKAGE": "NO",
+			"EXTRACT_STATIC": "YES",
+			"EXTRACT_LOCAL_CLASSES": "NO",
+			"EXTRACT_LOCAL_METHODS": "NO",
+			"EXTRACT_ANON_NSPACES": "NO",
+			"HIDE_UNDOC_MEMBERS": "YES",
+			"HIDE_UNDOC_CLASSES": "YES",
+			"HIDE_FRIEND_COMPOUNDS": "YES",
+			"HIDE_IN_BODY_DOCS": "YES",
+			"INTERNAL_DOCS": "NO",
+			"SHOW_INCLUDE_FILES": "NO",
+			"GENERATE_TODOLIST": "NO",
+			"GENERATE_TESTLIST": "NO",
+			"GENERATE_BUGLIST": "NO",
+			"SHOW_USED_FILES": "NO"
+		}
+	}
+}

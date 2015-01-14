@@ -15,94 +15,140 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-// Version number & name of the program version.
-// Names came from  https://de.wikipedia.org/wiki/Bundesautobahn_20
-const std::string ciVersion =
-	"(1) Kreuz Lübeck";			// JSON output. (and 1st version with version name)
-	// "(2a) Lübeck Genin";
-	// "(2b) Lübeck-Süd";
-	// "(3) Groß Sarau";
-	// "(4) Lüdersdorf";
-	// "(5) Schönberg";
-	// "(6) Grevesmühlen";
-	// ...
-	// "(38) Prenzlau-Süd";
-	// "(39) Kreuz Uckermark";
-	
+const std::string oakVersion = "0.1";
 
-void printUsage(std::ostream& o)
+std::string argMode, argInput, argOutput, argConfig, argResult;  // required parameters
+std::string argMachine, argRepository, argBranch, argCommit, argTimestamp; // optional parameters
+
+extern const unsigned char _binary_configs_builtin_defaults_json_start[];
+extern const unsigned char _binary_configs_builtin_defaults_json_end[];
+
+extern const unsigned char _binary_configs_builtin_tasks_c___json_start[];
+extern const unsigned char _binary_configs_builtin_tasks_c___json_end[];
+
+boost::optional<std::string> environment(std::string name)
 {
-	o << "Usage: ci-run -i <input_path> -o <output_path> [-O <output_file> ] [-r <repo>] [-b <branch>] [-i <commit_id>] [-t <timestamp]  config_file [ config_file... ]\n"
-		"\t-i <input_path>    the path where the input files are expected (required)\n"
-		"\t-o <output_path>   the path where the output files shall be generated (required)\n"
-		"\t-O <output_file>   write generated JSON output into <output_file> (default:stdout)\n"
-		"\t-T <template_file> template XML file to generate the output. (default comes from \"output.template.file\" entry in the config file)\n"
-		"\t-r <repo>          the name of the repository (optional, only for decorating the output file)\n"
-		"\t-b <branch>        the name of the branch (optional, only for decorating the output file)\n"
-		"\t-c <commit_id>     guess what!  (optional, only for decorating the output file)\n"
-		"\t-t <timestamp>     the timestamp of the commit (optional, only for decorating the output file)\n"
-		"\t<config_file>      the config file (at least one is required)\n"
-		"\n"
-		"(This is ci-run version \"" << ciVersion << "\".)\n"
-		"\n";
+	auto e = getenv(name.c_str());
+
+	if(e == NULL)
+	{
+		return boost::optional<std::string>();
+	}
+
+	return boost::optional<std::string>(std::string(e));
 }
-
-
-std::string inputPath, outputPath;  // required parameters
-std::vector<std::string> configFiles;
-std::string outputFileName, outputTemplateFile;
-std::string repoName, branchName, commitID, commitTimestamp; // optional parameters
-std::string toolchain; // required
 
 int main( int argc, const char* const* argv )
 {
 	po::options_description desc;
 	desc.add_options()
-		(",i", po::value<std::string>(&inputPath)->required(),  "the path where the input files are expected (required)")
-		(",o", po::value<std::string>(&outputPath)->required(), "the path where the output files shall be generated (required)")
-		("output_file,O", po::value<std::string>(&outputFileName)  , "output file")
-		("output_template,T", po::value<std::string>(&outputTemplateFile)  , "output template file")
-		("repository,r", po::value<std::string>(&repoName)      , "the name of the repository (optional, only for decorating the output file)")
-		("branch,b", po::value<std::string>(&branchName)        , "the name of the branch (optional, only for decorating the output file)")
-		("commit,c", po::value<std::string>(&commitID)          , "the commit ID (optional, only for decorating the output file)")
-		("timestamp,t", po::value<std::string>(&commitTimestamp), "the timestamp of the commit (optional, only for decorating the output file)")
-		("filename", po::value< std::vector<std::string> >(&configFiles)->composing(), "the JSON config files (at least one is required)")
-		("toolchain", po::value<std::string>(&toolchain)->required(), "the toolchain (gcc, clang, msvc)")
-		
+		("mode,m"      , po::value<std::string>(&argMode)      , "the operational mode (standard=default, jenkins)")
+		("input,i"     , po::value<std::string>(&argInput)     , "the path where the input files are expected (required in standard mode)")
+		("output,o"    , po::value<std::string>(&argOutput)    , "the path where the output files shall be generated (required in standard mode)")
+		("config,c"    , po::value<std::string>(&argConfig)    , "the JSON config file (required in standard mode)")
+		("result,r"    , po::value<std::string>(&argResult)    , "the JSON result file (required in standard mode)")
+		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (optional, only for decorating the output file)")
+		("repository,R", po::value<std::string>(&argRepository), "the repository of the commit (optional, only for decorating the output file)")
+		("branch,B"    , po::value<std::string>(&argBranch)    , "the branch of the commit (optional, only for decorating the output file)")
+		("commit,C"    , po::value<std::string>(&argCommit)    , "the id of the commit (optional, only for decorating the output file)")
+		("timestamp,T" , po::value<std::string>(&argTimestamp) , "the timestamp of the commit (optional, only for decorating the output file)")
 		("help,h", "show this text")
 		;
-	
-	po::positional_options_description desc_file;
-	desc_file.add("filename", 4711);
-	
-	
-	if(argc==1)
+
+	if(argc < 2)
 	{
-		printUsage(std::cerr); // IMHO more readable than than the output generated by:  std::cerr << desc << '\n';
+		std::cerr << desc << std::endl;
 		return 1;
 	}
-	
-	const std::string argv1 = argv[1];
-	if(argv1=="-h" || argv1=="--help")
-	{
-		printUsage(std::cout);
-		return 0; // asking for help is not an error.
-	}
-	
+
 	po::variables_map vm;
-	po::store( po::command_line_parser(argc, argv).options(desc).positional(desc_file).run(), vm);
+	po::store( po::command_line_parser(argc, argv).options(desc).run(), vm);
 	po::notify(vm);
-	
-	if(vm.count("help"))
+
+	if(vm.count("help") > 0)
 	{
-		std::cout << desc << '\n';
+		std::cout << desc << std::endl;
 		return 0;
 	}
 
-	if(configFiles.empty())
+	if(argMode == "jenkins")
 	{
-		std::cerr << "\nError: No JSON config file given!\n\n";
-		printUsage(std::cerr);
+		auto envWorkspace = environment("WORKSPACE");
+		auto envNodeName = environment("NODE_NAME");
+		auto envGitUrl = environment("GIT_URL");
+		auto envGitCommit = environment("GIT_COMMIT");
+		auto envGitBranch = environment("GIT_BRANCH");
+		auto envBuildId = environment("BUILD_ID");
+
+		if(argMachine.length() == 0)
+		{
+			if(envNodeName)
+				{ argMachine = *envNodeName; }
+		}
+
+		if(argRepository.length() == 0)
+		{
+			if(envGitUrl)
+				{ argRepository = *envGitUrl; }
+		}
+
+		if(argBranch.length() == 0)
+		{
+			if(envGitBranch)
+			{
+				argBranch = *envGitBranch;
+
+				if(argBranch.find("origin/") == 0)
+				{
+					argBranch = argBranch.substr(7);
+				}
+			}
+		}
+
+		if(argCommit.length() == 0)
+		{
+			if(envGitCommit)
+				argCommit = *envGitCommit;
+		}
+
+		if(argTimestamp.length() == 0)
+		{
+			if(envBuildId)
+				{ argTimestamp = *envBuildId; }
+		}
+
+		if(argInput.length() == 0)
+		{
+			if(envWorkspace)
+				{ argInput = *envWorkspace; }
+		}
+
+		if(argOutput.length() == 0)
+		{
+			if(argInput.length() > 0 && argBranch.length() > 0 && argTimestamp.length() > 0 && argCommit.length() > 0)
+			{
+				argOutput = argInput + std::string("/output/") + argBranch + std::string("/") + argTimestamp + std::string("_") + argCommit.substr(0, 7);
+			}
+		}
+
+		if(argConfig.length() == 0)
+		{
+			if(argInput.length() > 0)
+				{ argConfig = argInput + std::string("/ci.json"); }
+		}
+
+		if(argResult.length() == 0)
+		{
+			if(argOutput.length() > 0)
+			{
+				argResult = argOutput + std::string("/ci.json");
+			}
+		}
+	}
+
+	if(argInput.length() == 0 || argOutput.length() == 0 || argConfig.length() == 0 || argResult.length() == 0)
+	{
+		std::cout << desc << std::endl;
 		return 1;
 	}
 
@@ -111,34 +157,91 @@ int main( int argc, const char* const* argv )
 
 	try
 	{
-		for( const std::string& filename : configFiles )
+		// read project config
+		std::cout << "Load project configuration..." << std::endl;
+
+		pt::ptree projectConfig;
+
 		{
-			std::cout << "\tRead file \"" << filename << "\" ...\n";
-			std::ifstream configStream;
-			
-			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			configStream.open( filename );
-			
-			pt::ptree configTree;
-			read_json( configStream, configTree );
-			
-			ptree_merge( config, configTree );
+			std::ifstream stream;
+
+			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+			stream.open( argConfig );
+
+			read_json( stream, projectConfig );
 		}
+
+		// read builtin defaults
+		std::cout << "Load built-in default configuration..." << std::endl;
+
+		pt::ptree defaultsConfig;
+
+		{
+			std::istringstream stream(std::string(_binary_configs_builtin_defaults_json_start, _binary_configs_builtin_defaults_json_end));
+			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+
+			read_json( stream, defaultsConfig );
+		}
+
+		// load system defaults
+		std::cout << "Load system default configuration..." << std::endl;
+
+		{
+			std::ifstream configStream;
+			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+			configStream.open( "/etc/oak/defaults.json" );
+
+			pt::ptree systemDefaultsConfig;
+			read_json( configStream, systemDefaultsConfig );
+			ptree_merge( defaultsConfig, systemDefaultsConfig );
+		}
+
+		// read variant configuration
+		std::string variant = projectConfig.get<std::string>( "variant" );
+		std::string variantData;
+
+		if(variant == "c++")
+		{
+			variantData = std::string(_binary_configs_builtin_tasks_c___json_start, _binary_configs_builtin_tasks_c___json_end);
+		}
+		else
+		{
+			std::cerr << "Invalid variant: " << variant << std::endl;
+			return 1;
+		}
+
+		std::cout << "Load built-in variant configuration for " << variant << "..." << std::endl;
+
+		pt::ptree variantConfig;
+
+		{
+			std::istringstream stream(variantData);
+			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+
+			read_json( stream, variantConfig );
+		}
+
+		// merge configurations
+		std::cout << "Merge configurations..." << std::endl;
+
+		config.add_child("defaults", defaultsConfig);
+		config.add_child("tasks", variantConfig);
+		ptree_merge( config, projectConfig );
 	}
 	catch ( const pt::ptree_error& exception )
 	{
-		std::cerr << "PTree error when reading config file. " << exception.what() << '\n';
+		std::cerr << "Error while reading config file (ptree): " << exception.what() << std::endl;
 		return 1;
 	}
 	catch ( const std::ifstream::failure& exception )
 	{
-		std::cerr << "Stream Failure when reading config file. " << exception.what() << '\n';
+		std::cerr << "Error while reading config file (stream): " << exception.what() << std::endl;
 		return 1;
 	}
 
 
 	bool task_with_error = false;
-	
+
 	// run configurations
 	js::Array outputTasks;
 	try
@@ -148,18 +251,13 @@ int main( int argc, const char* const* argv )
 			// get task settings
 			std::string taskType = taskConfig.second.get<std::string>( "type" );
 
-			boost::optional<std::string> taskVariant = taskConfig.second.get_optional<std::string>( "variant" );
-
-			if(!taskVariant)
-				taskVariant = std::string("defaults");
-
+			boost::optional<pt::ptree&> settings_defaults = config.get_child_optional( std::string( "defaults." ) + taskType );
 			boost::optional<pt::ptree&> settings_specific = taskConfig.second.get_child_optional( "settings" );
-			boost::optional<pt::ptree&> settings_variant = config.get_child_optional( std::string("defaults.") + taskType + std::string(".") + *taskVariant );
 
 			pt::ptree settings;
 
-			if(settings_variant)
-				ptree_merge(settings, *settings_variant);
+			if(settings_defaults)
+				ptree_merge(settings, *settings_defaults);
 
 			if(settings_specific)
 				ptree_merge(settings, *settings_specific);
@@ -170,12 +268,12 @@ int main( int argc, const char* const* argv )
 				settings,
 				[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
 				{
-					boost::replace_all(child.data(), "${source.repository}", repoName);
-					boost::replace_all(child.data(), "${source.branch}"    , branchName);
-					boost::replace_all(child.data(), "${source.commit.id}" , commitID);
-					boost::replace_all(child.data(), "${source.commit.timestamp}", commitTimestamp);
-					boost::replace_all(child.data(), "${source.path}", inputPath);
-					boost::replace_all(child.data(), "${output.path}", outputPath);
+					boost::replace_all(child.data(), "${source.repository}", argRepository);
+					boost::replace_all(child.data(), "${source.branch}"    , argBranch);
+					boost::replace_all(child.data(), "${source.commit.id}" , argCommit);
+					boost::replace_all(child.data(), "${source.commit.timestamp}", argTimestamp);
+					boost::replace_all(child.data(), "${source.path}", argInput);
+					boost::replace_all(child.data(), "${output.path}", argOutput);
 				}
 			);
 
@@ -198,14 +296,14 @@ int main( int argc, const char* const* argv )
 					result.message = "exception occured";
 					result.output.push_back( js::Pair("exception", e.what()));
 				}
-				
+
 				if(result.status == TaskResult::STATUS_ERROR)
 				{
 					task_with_error = true;
 				}
-				
+
 				js::Object outputTask;
-				
+
 				outputTask.push_back( js::Pair("type", taskType ));
 				outputTask.push_back( js::Pair("name", taskConfig.first ));
 				outputTask.push_back( js::Pair("message", result.message ));
@@ -213,7 +311,7 @@ int main( int argc, const char* const* argv )
 				outputTask.push_back( js::Pair("errors",   uint64_t(result.errors)));
 				outputTask.push_back( js::Pair("status", toString(result.status)));
 				outputTask.push_back( js::Pair("output", result.output ));
-				
+
 				outputTasks.push_back(outputTask);
 			}
 			else
@@ -222,17 +320,17 @@ int main( int argc, const char* const* argv )
 	}
 	catch ( const pt::ptree_error& exception )
 	{
-		std::cerr << "PTree Exception during run: " << exception.what() << '\n';
+		std::cerr << "Error during run (ptree): " << exception.what() << std::endl;
 		return 1;
 	}
 	catch ( const boost::system::system_error& exception )
 	{
-		std::cerr << "System Error during run: " << exception.what() << '\n';
+		std::cerr << "Error during run (system): " << exception.what() << std::endl;
 		return 1;
 	}
 	catch ( const std::runtime_error& exception )
 	{
-		std::cerr << "Runtime Error during run: " << exception.what() << '\n';
+		std::cerr << "Error during run (runtime): " << exception.what() << std::endl;
 		return 1;
 	}
 
@@ -241,26 +339,20 @@ int main( int argc, const char* const* argv )
 
 	try
 	{
-		output.push_back( js::Pair( "ci-version", ciVersion) );
-		output.push_back( js::Pair("project-title", config.get<std::string>("name")));
-		output.push_back( js::Pair("project-tasks", outputTasks));
+		output.push_back( js::Pair("oak", oakVersion) );
+		output.push_back( js::Pair("title", config.get<std::string>("name")));
+		output.push_back( js::Pair("tasks", outputTasks));
 
 		const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
-		std::ostringstream outputStream;
-		js::write(output, outputStream, options);
-		const std::string outputStr = outputStream.str();
 
-		if(outputFileName.empty())
-		{
-			std::cout << outputStr << '\n';
-		}else{
-			std::ofstream of(outputFileName.c_str());
-			of << outputStr << '\n';
-		}
+		std::ofstream stream(argResult.c_str());
+		stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+
+		js::write(output, stream, options);
 	}
 	catch ( const pt::ptree_error& exception )
 	{
-		std::cerr << "PTree Error on output. " << exception.what() << '\n';
+		std::cerr << "Error on output (ptree): " << exception.what() << std::endl;
 		return 1;
 	}
 

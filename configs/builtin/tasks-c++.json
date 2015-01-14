@@ -1,0 +1,13 @@
+{	"build": {
+		"type": "build:cmake"
+	},
+	"unittests": {
+		"type": "test:googletest"
+	},
+	"cppcheck": {
+		"type": "test:cppcheck"
+	},
+	"docs": {
+		"type": "doc:doxygen"
+	}
+}
