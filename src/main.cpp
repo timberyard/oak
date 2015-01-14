@@ -16,7 +16,7 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.1";
+const std::string oakVersion = "0.1a";
 const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
@@ -88,7 +88,8 @@ int main( int argc, const char* const* argv )
 
 	if(argc < 2)
 	{
-		std::cerr << desc << std::endl;
+		std::cerr << desc << "\n"
+		"This is oak version " << oakVersion << "\n\n";
 		return 1;
 	}
 
@@ -98,7 +99,8 @@ int main( int argc, const char* const* argv )
 
 	if(vm.count("help") > 0)
 	{
-		std::cout << desc << std::endl;
+		std::cout << desc << "\n"
+		"This is oak version " << oakVersion << "\n\n";
 		return 0;
 	}
 
