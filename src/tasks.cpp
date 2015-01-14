@@ -142,7 +142,8 @@ TaskResult task_test_googletest( const ptree& config )
 		table_outline.emplace_back("all", row);
 	}
 
-	js::Array testsuites;
+//	js::Array testsuites;  // if we want the task list as array
+	js::Object testsuites; // if we want the task list as object ...
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == string("<xmlattr>"))
@@ -157,7 +158,8 @@ TaskResult task_test_googletest( const ptree& config )
 		row.emplace_back("time", testsuite.second.get<string>("<xmlattr>.time"));
 		row.emplace_back("status", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-		testsuites.push_back(row);
+		// testsuites.push_back(row); // if we want the task list as array
+		testsuites.emplace_back( testsuite.second.get<string>("<xmlattr>.name"), row ); // if we want the task list as object with the task name as key
 	}
 	table_outline.emplace_back("details", testsuites);
 	result.output.emplace_back("testsuites", table_outline);

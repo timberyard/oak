@@ -16,7 +16,7 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.1a";
+const std::string oakVersion = "0.2";
 const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;

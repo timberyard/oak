@@ -18,9 +18,15 @@ json_spirit::Object createTaskOutput(const std::string& binary, const std::vecto
 	output_lines.reserve( processResult.output.size());
 	for(auto& i : processResult.output)
 	{
+#if OUTPUT_LINES_ARE_ARRAYS
 		js::Array line;
 		line.push_back( toString(i.first));  // LineStatus
 		line.push_back( i.second);           // line's content
+#else
+		js::Object line;
+		line.emplace_back( "status", toString(i.first));
+		line.emplace_back( "c", i.second );  // line's content
+#endif
 		output_lines.push_back( line );
 	}
 
