@@ -34,10 +34,13 @@ TaskResult task_build_cmake( const ptree& config )
 
 	TaskResult result;
 
-	vector<string> cmakeParams { config.get<string>("source") };
-
-	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<string>("c:binary"));
-	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_CXX_COMPILER:STRING=") + config.get<string>("c++:binary"));
+	vector<string> cmakeParams {
+		std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<string>("target.c:binary"),
+		std::string("-DCMAKE_CXX_COMPILER:STRING=") + config.get<string>("target.c++:binary"),
+		std::string("-DLOCAL_C_COMPILER:STRING=") + config.get<string>("local.c:binary"),
+		std::string("-DLOCAL_CXX_COMPILER:STRING=") + config.get<string>("local.c++:binary"),
+		config.get<string>("source")
+	};
 
 #ifdef _WIN32
 	cmakeParams.push_back("-G");

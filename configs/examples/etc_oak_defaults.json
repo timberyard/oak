@@ -1,8 +1,14 @@
 {	"build:cmake": {
 		"cmake:binary": "/usr/bin/cmake",
 		"make:binary": "/usr/bin/make",
-		"c:binary": "/usr/bin/gcc",
-		"c++:binary": "/usr/bin/g++"
+		"local" : {
+			"c:binary": "/usr/bin/gcc",
+			"c++:binary": "/usr/bin/g++"
+		},
+		"target" : {
+			"c:binary": "/usr/bin/gcc",
+			"c++:binary": "/usr/bin/g++"
+		}
 	},
 	"test:cppcheck": {
 		"binary": "/usr/bin/cppcheck"

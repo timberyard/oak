@@ -1,8 +1,14 @@
 {	"build:cmake": {
 		"cmake:binary": "cmake",
 		"make:binary": "make",
-		"c:binary": "cc",
-		"c++:binary": "c++",
+		"local" : {
+			"c:binary": "cc",
+			"c++:binary": "c++"
+		},
+		"target" : {
+			"c:binary": "cc",
+			"c++:binary": "c++"
+		},
 		"source": "${input}",
 		"output": "${output}/build"
 	},
