@@ -15,5 +15,12 @@
 	},
 	"doc:doxygen": {
 		"binary": "/usr/bin/doxygen"
+	},
+	"publish:rsync": {
+		"destination": {
+			"user": "builds",
+			"host": "192.168.55.555",
+			"base": "/home/builds"
+		}
 	}
 }
