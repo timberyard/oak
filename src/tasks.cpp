@@ -345,7 +345,7 @@ TaskResult task_publish_rsync( const pt::ptree& config )
 {
 	TaskResult result;
 
-	if(config.get<bool>("enabled"))
+	if(config.get<std::string>("enabled") != "yes")
 	{
 		result.message = "publishing via rsync disabled";
 		result.warnings = 0;
