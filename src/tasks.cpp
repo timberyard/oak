@@ -156,8 +156,8 @@ TaskResult task_test_googletest( const ptree& config )
 
 		testsuites.push_back(row);
 	}
-	table_outline.emplace_back("testsuites", testsuites);
-	result.output.emplace_back("outline", table_outline);
+	table_outline.emplace_back("details", testsuites);
+	result.output.emplace_back("testsuites", table_outline);
 
 	// generate details table
 	js::Array table_details;
@@ -182,7 +182,7 @@ TaskResult task_test_googletest( const ptree& config )
 		}
 	}
 
-	result.output.emplace_back("details", table_details);
+	result.output.emplace_back("tests", table_details);
 
 	// generate console output
 	for(auto& line : testResult.output)
