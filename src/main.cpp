@@ -60,7 +60,7 @@ void getFromEnvironment(std::string& variable, const char* const environ_name)
 }
 
 
-int complainIfNotSet(const std::string& variable, const char* const complainText, const po::options_description& desc)
+int complainIfNotSet(const std::string& variable, const char* const complainText)
 {
 	if(variable.empty())
 	{
