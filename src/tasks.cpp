@@ -54,7 +54,7 @@ TaskResult task_build_cmake( const ptree& config )
 
 	result.output.emplace_back("cmake", createTaskOutput(
 		config.get<string>("cmake:binary"),
-		vector<string>{config.get<string>("source")},
+		cmakeParams,
 		config.get<string>("output"),
 		cmakeResult));
 
@@ -282,7 +282,7 @@ TaskResult task_test_cppcheck( const ptree& config )
 		result.errors = 1;
 	}
 
-	result.output.emplace_back("cmake", createTaskOutput(
+	result.output.emplace_back("cppcheck", createTaskOutput(
 		config.get<string>("binary"),
 		arguments,
 		config.get<string>("source"),

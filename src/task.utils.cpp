@@ -5,6 +5,8 @@
 
 //using namespace boost::property_tree;
 
+#define OUTPUT_LINES_ARE_ARRAYS 1
+
 namespace js = json_spirit;
 
 json_spirit::Object createTaskOutput(const std::string& binary, const std::vector<std::string>& arguments, const std::string& workingDirectory, const TextProcessResult& processResult)
