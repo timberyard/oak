@@ -16,7 +16,7 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.2";
+const std::string oakVersion = "0.2b";
 const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
@@ -28,54 +28,62 @@ extern const unsigned char _binary_configs_builtin_defaults_json_end[];
 extern const unsigned char _binary_configs_builtin_tasks_c___json_start[];
 extern const unsigned char _binary_configs_builtin_tasks_c___json_end[];
 
-boost::optional<std::string> environment(std::string name)
+
+boost::optional<std::string> environment(const std::string& name)
 {
 	auto e = getenv(name.c_str());
-
+	
 	if(e == NULL)
 	{
 		return boost::optional<std::string>();
 	}
-
+	
 	return boost::optional<std::string>(std::string(e));
 }
 
-boost::filesystem::path normalize(const boost::filesystem::path &path)
+
+boost::filesystem::path normalize(const boost::filesystem::path& path)
 {
-    boost::filesystem::path absPath = boost::filesystem::absolute(path);
-    boost::filesystem::path::iterator it = absPath.begin();
-    boost::filesystem::path result = *it++;
-
-    // Get canonical version of the existing part
-    for (; exists(result / *it) && it != absPath.end(); ++it) {
-        result /= *it;
-    }
-    result = boost::filesystem::canonical(result);
-
-    // For the rest remove ".." and "." in a path with no symlinks
-    for (; it != absPath.end(); ++it) {
-        // Just move back on ../
-        if (*it == "..") {
-            result = result.parent_path();
-        }
-        // Ignore "."
-        else if (*it != ".") {
-            // Just cat other path entries
-            result /= *it;
-        }
-    }
-
-    return result;
+	boost::filesystem::path absPath = boost::filesystem::absolute(path);
+	boost::filesystem::path::iterator it = absPath.begin();
+	boost::filesystem::path result = *it++;
+	
+	// Get canonical version of the existing part
+	for (; exists(result / *it) && it != absPath.end(); ++it)
+	{
+		result /= *it;
+	}
+	result = boost::filesystem::canonical(result);
+	
+	// For the rest remove ".." and "." in a path with no symlinks
+	for (; it != absPath.end(); ++it)
+	{
+		// Just move back on ../
+		if (*it == "..")
+		{
+			result = result.parent_path();
+		}
+		// Ignore "."
+		else if (*it != ".")
+		{
+			// Just cat other path entries
+			result /= *it;
+		}
+	}
+	return result;
 }
+
 
 int main( int argc, const char* const* argv )
 {
 	po::options_description desc;
+	
+	const std::string sysconfigDesc = "the JSON system config file (optional. compile-time default is " + oakSysConfigDefault + ")";
 	desc.add_options()
 		("mode,m"      , po::value<std::string>(&argMode)      , "the operational mode (standard [default], jenkins)")
 		("input,i"     , po::value<std::string>(&argInput)     , "the path where the input files are expected (required in standard mode)")
 		("output,o"    , po::value<std::string>(&argOutput)    , "the path where the output files shall be generated (required in standard mode)")
-		("sysconfig,s" , po::value<std::string>(&argSysConfig) , (std::string("the JSON system config file (optional, default is ") + oakSysConfigDefault + std::string(")")).c_str())
+		("sysconfig,s" , po::value<std::string>(&argSysConfig) , sysconfigDesc.c_str() )
 		("config,c"    , po::value<std::string>(&argConfig)    , "the JSON config file (required in standard mode)")
 		("result,r"    , po::value<std::string>(&argResult)    , "the JSON result file (required in standard mode)")
 		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (optional, only for decorating the output file)")
