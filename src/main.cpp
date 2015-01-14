@@ -16,7 +16,7 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.2b";
+const std::string oakVersion = "0.2e";
 const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
@@ -29,16 +29,20 @@ extern const unsigned char _binary_configs_builtin_tasks_c___json_start[];
 extern const unsigned char _binary_configs_builtin_tasks_c___json_end[];
 
 
-boost::optional<std::string> environment(const std::string& name)
+// if 'variable' is "", fetch it from environment, if it exists there
+void getFromEnvironment(std::string& variable, const char* const environ_name)
 {
-	auto e = getenv(name.c_str());
+	if( not variable.empty() )
+		return;
+	
+	auto e = getenv(environ_name);
 	
 	if(e == NULL)
 	{
-		return boost::optional<std::string>();
+		return;
 	}
 	
-	return boost::optional<std::string>(std::string(e));
+	variable = std::string(e);
 }
 
 
@@ -114,94 +118,59 @@ int main( int argc, const char* const* argv )
 
 	if(argMode == "jenkins")
 	{
-		auto envWorkspace = environment("WORKSPACE");
-		auto envNodeName = environment("NODE_NAME");
-		auto envGitUrl = environment("GIT_URL");
-		auto envGitCommit = environment("GIT_COMMIT");
-		auto envGitBranch = environment("GIT_BRANCH");
-		auto envBuildId = environment("BUILD_ID");
-
-		if(argMachine.length() == 0)
+		getFromEnvironment(argMachine   , "NODE_NAME" );
+		getFromEnvironment(argRepository, "GIT_URL"   );
+		getFromEnvironment(argBranch    , "GIT_BRANCH");
+		if(argBranch.find("origin/") == 0)
 		{
-			if(envNodeName)
-				{ argMachine = *envNodeName; }
+			argBranch = argBranch.substr(7);
 		}
+		
+		getFromEnvironment(argCommit   , "GIT_COMMIT");
+		getFromEnvironment(argTimestamp, "BUILD_ID"  );
+		getFromEnvironment(argInput    , "WORKSPACE" );
 
-		if(argRepository.length() == 0)
-		{
-			if(envGitUrl)
-				{ argRepository = *envGitUrl; }
-		}
-
-		if(argBranch.length() == 0)
-		{
-			if(envGitBranch)
-			{
-				argBranch = *envGitBranch;
-
-				if(argBranch.find("origin/") == 0)
-				{
-					argBranch = argBranch.substr(7);
-				}
-			}
-		}
-
-		if(argCommit.length() == 0)
-		{
-			if(envGitCommit)
-				argCommit = *envGitCommit;
-		}
-
-		if(argTimestamp.length() == 0)
-		{
-			if(envBuildId)
-				{ argTimestamp = *envBuildId; }
-		}
-
-		if(argInput.length() == 0)
-		{
-			if(envWorkspace)
-				{ argInput = *envWorkspace; }
-		}
-
-		if(argOutput.length() == 0)
+		// build output directory from inpit directory + git infos:
+		if(argOutput.empty())
 		{
 			if(argInput.length() > 0 && argBranch.length() > 0 && argTimestamp.length() > 0 && argCommit.length() > 0)
 			{
-				argOutput = argInput + std::string("/oak/") + argBranch + std::string("/") + argTimestamp + std::string("_") + argCommit.substr(0, 7);
+				argOutput = argInput + "/oak/" + argBranch + "/" + argTimestamp + "_" + argCommit.substr(0, 7);
 			}
 		}
 
-		if(argConfig.length() == 0)
+		if(argConfig.empty())
 		{
 			if(argInput.length() > 0)
-				{ argConfig = argInput + std::string("/ci.json"); }
+			{
+				argConfig = argInput + "/ci.json";
+			}
 		}
 
-		if(argResult.length() == 0)
+		if(argResult.empty())
 		{
 			if(argOutput.length() > 0)
 			{
-				argResult = argOutput + std::string("/result.json");
+				argResult = argOutput + "/result.json";
 			}
 		}
 	}
 
-	if(argSysConfig.length() == 0)
-	{
-		auto envOakSysConfig = environment("OAK_SYSCONFIG");
-
-		if(envOakSysConfig)
-			{ argSysConfig = *envOakSysConfig; }
+	getFromEnvironment(argSysConfig, "OAK_SYSCONFIG");
 #ifndef _WIN32
-		else if(boost::filesystem::exists(oakSysConfigDefault))
-			{ argSysConfig = oakSysConfigDefault; }
-#endif
-	}
-
-	if(argInput.length() == 0 || argOutput.length() == 0 || argConfig.length() == 0 || argResult.length() == 0)
+	if(argSysConfig.empty())
 	{
-		std::cout << desc << std::endl;
+		if(boost::filesystem::exists(oakSysConfigDefault))
+		{
+			argSysConfig = oakSysConfigDefault;
+		}
+	}
+#endif
+
+	if(argInput.empty() || argOutput.empty() || argConfig.empty() || argResult.empty())
+	{
+		std::cout << desc << "\n"
+		"This is oak version " << oakVersion << "\n\n";
 		return 1;
 	}
 
