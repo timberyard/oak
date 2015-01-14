@@ -16,7 +16,7 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.3";
+const std::string oakVersion = "0.4";
 const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
@@ -57,6 +57,17 @@ void getFromEnvironment(std::string& variable, const char* const environ_name)
 	}
 	
 	variable = std::string(e);
+}
+
+
+int complainIfNotSet(const std::string& variable, const char* const complainText, const po::options_description& desc)
+{
+	if(variable.empty())
+	{
+		std::cerr << "Problem: No " << complainText << " was given.\n";
+		return 1;
+	}
+	return 0;
 }
 
 
@@ -104,11 +115,11 @@ int main( int argc, const char* const* argv )
 		("sysconfig,s" , po::value<std::string>(&argSysConfig) , sysconfigDesc.c_str() )
 		("config,c"    , po::value<std::string>(&argConfig)    , "the JSON config file (required in standard mode)")
 		("result,r"    , po::value<std::string>(&argResult)    , "the JSON result file (required in standard mode)")
-		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (optional, only for decorating the output file)")
-		("repository,R", po::value<std::string>(&argRepository), "the repository of the commit (optional, only for decorating the output file)")
-		("branch,B"    , po::value<std::string>(&argBranch)    , "the branch of the commit (optional, only for decorating the output file)")
-		("commit,C"    , po::value<std::string>(&argCommit)    , "the id of the commit (optional, only for decorating the output file)")
-		("timestamp,T" , po::value<std::string>(&argTimestamp) , "the timestamp of the commit (optional, only for decorating the output file)")
+		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (required in standard mode)")
+		("repository,R", po::value<std::string>(&argRepository), "the repository of the commit (required in standard mode)")
+		("branch,B"    , po::value<std::string>(&argBranch)    , "the branch of the commit (required in standard mode")
+		("commit,C"    , po::value<std::string>(&argCommit)    , "the id of the commit (required in standard mode")
+		("timestamp,T" , po::value<std::string>(&argTimestamp) , "the timestamp of the commit (required in standard mode")
 		("help,h", "show this text")
 		;
 
@@ -194,6 +205,21 @@ int main( int argc, const char* const* argv )
 	argOutput = normalize(argOutput).string();
 	argConfig = normalize(argConfig).string();
 	argResult = normalize(argResult).string();
+
+	// use + instead of || to avoid short-circtuiting and report all errors at once
+	if( complainIfNotSet(argInput, "input path")
+		+ complainIfNotSet(argOutput, "output path" )
+		+ complainIfNotSet(argMachine, "node name")
+		+ complainIfNotSet(argRepository, "repository URL")
+		+ complainIfNotSet(argBranch, "branch name")
+		+ complainIfNotSet(argCommit, "commit ID")
+		+ complainIfNotSet(argTimestamp, "commit timestamp")
+		)
+	{
+		std::cerr << desc << "\n"
+			"This is oak version " << oakVersion << "\n\n";
+		return 1;
+	}
 
 	// read configuration
 	pt::ptree config;
