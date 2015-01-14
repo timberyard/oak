@@ -18,7 +18,8 @@
 	},
 	"test:cppcheck": {
 		"binary": "cppcheck",
-		"source": "${input}/src"
+		"source": "${input}/src",
+		"output": "${output}/tests/cppcheck.xml"
 	},
 	"doc:doxygen": {
 		"binary": "doxygen",

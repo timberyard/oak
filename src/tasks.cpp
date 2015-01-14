@@ -241,6 +241,14 @@ TaskResult task_test_cppcheck( const ptree& config )
 			}
 		}
 
+		// write xml data
+		ofstream xmlCheckPersistStream;
+		xmlCheckPersistStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+		xmlCheckPersistStream.open( config.get<string>("output") );
+
+		xmlCheckPersistStream << xmlCheckData;
+		xmlCheckPersistStream.close();
+
 		// read XML result data
 		ptree xmlCheckResult;
 
