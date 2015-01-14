@@ -3,7 +3,6 @@
 #include <json_spirit/json_spirit.h>
 #include "task.utils.hpp"
 
-//using namespace boost::property_tree;
 
 #define OUTPUT_LINES_ARE_ARRAYS 1
 
