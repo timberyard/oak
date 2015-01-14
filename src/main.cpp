@@ -16,7 +16,7 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.2e";
+const std::string oakVersion = "0.3";
 const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
 
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
@@ -381,6 +381,11 @@ int main( int argc, const char* const* argv )
 	{
 		output.push_back( js::Pair("oak", oakVersion) );
 		output.push_back( js::Pair("title", config.get<std::string>("name")));
+		output.emplace_back( "buildnode", argMachine);
+		output.emplace_back( "repository", argRepository);
+		output.emplace_back( "branch"    , argBranch);
+		output.emplace_back( "commit"    , argCommit);
+		output.emplace_back( "timestamp" , argTimestamp);
 		output.push_back( js::Pair("tasks", outputTasks));
 
 		const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
