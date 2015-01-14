@@ -40,6 +40,34 @@ boost::optional<std::string> environment(std::string name)
 	return boost::optional<std::string>(std::string(e));
 }
 
+boost::filesystem::path normalize(const boost::filesystem::path &path)
+{
+    boost::filesystem::path absPath = boost::filesystem::absolute(path);
+    boost::filesystem::path::iterator it = absPath.begin();
+    boost::filesystem::path result = *it++;
+
+    // Get canonical version of the existing part
+    for (; exists(result / *it) && it != absPath.end(); ++it) {
+        result /= *it;
+    }
+    result = boost::filesystem::canonical(result);
+
+    // For the rest remove ".." and "." in a path with no symlinks
+    for (; it != absPath.end(); ++it) {
+        // Just move back on ../
+        if (*it == "..") {
+            result = result.parent_path();
+        }
+        // Ignore "."
+        else if (*it != ".") {
+            // Just cat other path entries
+            result /= *it;
+        }
+    }
+
+    return result;
+}
+
 int main( int argc, const char* const* argv )
 {
 	po::options_description desc;
@@ -167,10 +195,10 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
-	argInput = boost::filesystem::canonical(argInput).string();
-	argOutput = boost::filesystem::canonical(argOutput).string();
-	argConfig = boost::filesystem::canonical(argConfig).string();
-	argResult = boost::filesystem::canonical(argResult).string();
+	argInput = normalize(argInput).string();
+	argOutput = normalize(argOutput).string();
+	argConfig = normalize(argConfig).string();
+	argResult = normalize(argResult).string();
 
 	// read configuration
 	pt::ptree config;
@@ -293,12 +321,12 @@ int main( int argc, const char* const* argv )
 				settings,
 				[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
 				{
-					boost::replace_all(child.data(), "${source.repository}", argRepository);
-					boost::replace_all(child.data(), "${source.branch}"    , argBranch);
-					boost::replace_all(child.data(), "${source.commit.id}" , argCommit);
-					boost::replace_all(child.data(), "${source.commit.timestamp}", argTimestamp);
-					boost::replace_all(child.data(), "${source.path}", argInput);
-					boost::replace_all(child.data(), "${output.path}", argOutput);
+					boost::replace_all(child.data(), "${repository}", argRepository);
+					boost::replace_all(child.data(), "${branch}"    , argBranch);
+					boost::replace_all(child.data(), "${commit.id}" , argCommit);
+					boost::replace_all(child.data(), "${commit.timestamp}", argTimestamp);
+					boost::replace_all(child.data(), "${input}", argInput);
+					boost::replace_all(child.data(), "${output}", argOutput);
 				}
 			);
 

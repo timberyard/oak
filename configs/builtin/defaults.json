@@ -3,17 +3,17 @@
 		"make:binary": "make",
 		"c:binary": "cc",
 		"c++:binary": "c++",
-		"source": "${source.path}",
-		"output": "${output.path}/build"
+		"source": "${input}",
+		"output": "${output}/build"
 	},
 	"test:googletest": {
-		"binary": "${output.path}/build/tests",
-		"output": "${output.path}/tests/googletest.xml"
+		"binary": "${output}/build/tests",
+		"output": "${output}/tests/googletest.xml"
 	},
 	"test:cppcheck": {
 		"binary": "cppcheck",
-		"source": "${source.path}",
-		"output": "${output.path}/tests/cppcheck.xml",
+		"source": "${input}",
+		"output": "${output}/tests/cppcheck.xml",
 		"arguments" : {
 			"enable": "all",
 			"suppress": "missingIncludeSystem"
@@ -21,8 +21,8 @@
 	},
 	"doc:doxygen": {
 		"binary": "doxygen",
-		"source": "${source.path}",
-		"output": "${output.path}/docs",
+		"source": "${input}",
+		"output": "${output}/docs",
 		"doxyfile" : {
 			"FILE_PATTERNS": "*.h*",
 			"RECURSIVE": "YES",
