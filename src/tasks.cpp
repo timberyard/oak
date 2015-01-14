@@ -345,6 +345,16 @@ TaskResult task_publish_rsync( const pt::ptree& config )
 {
 	TaskResult result;
 
+	if(config.get<bool>("enabled"))
+	{
+		result.message = "publishing via rsync disabled";
+		result.warnings = 0;
+		result.errors = 0;
+		result.status = TaskResult::STATUS_OK;
+
+		return result;
+	}
+
 	std::vector<std::string> arguments {
 		std::string("--rsh=ssh -o \"BatchMode yes\" -p ") + config.get<std::string>("destination.port"),
 		"--archive", "--delete",

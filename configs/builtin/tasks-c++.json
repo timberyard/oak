@@ -9,5 +9,8 @@
 	},
 	"docs": {
 		"type": "doc:doxygen"
+	},
+	"publish": {
+		"type": "publish:rsync"
 	}
 }

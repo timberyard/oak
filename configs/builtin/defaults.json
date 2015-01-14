@@ -49,6 +49,7 @@
 		}
 	},
 	"publish:rsync": {
+		"enabled": false,
 		"binary": "rsync",
 		"source": "${output}",
 		"destination": {
