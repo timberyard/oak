@@ -9,17 +9,15 @@
 #include "process.hpp"
 #include "task.utils.hpp"
 
-using namespace std;
-using namespace boost::property_tree;
-
+namespace pt = boost::property_tree;
 namespace js = json_spirit;
 
-TaskResult task_build_cmake    ( const ptree& config );
-TaskResult task_test_googletest( const ptree& config );
-TaskResult task_test_cppcheck  ( const ptree& config );
-TaskResult task_doc_doxygen    ( const ptree& config );
+TaskResult task_build_cmake    ( const pt::ptree& config );
+TaskResult task_test_googletest( const pt::ptree& config );
+TaskResult task_test_cppcheck  ( const pt::ptree& config );
+TaskResult task_doc_doxygen    ( const pt::ptree& config );
 
-map<string, function<TaskResult(const ptree&)>> taskTypes =
+std::map<std::string, std::function<TaskResult(const pt::ptree&)>> taskTypes =
 {
 	{ "build:cmake",     task_build_cmake },
 	{ "test:googletest", task_test_googletest },
@@ -27,19 +25,19 @@ map<string, function<TaskResult(const ptree&)>> taskTypes =
 	{ "doc:doxygen",     task_doc_doxygen }
 };
 
-TaskResult task_build_cmake( const ptree& config )
+TaskResult task_build_cmake( const pt::ptree& config )
 {
-	boost::filesystem::remove_all(config.get<string>("output"));
-	boost::filesystem::create_directories(config.get<string>("output"));
+	boost::filesystem::remove_all(config.get<std::string>("output"));
+	boost::filesystem::create_directories(config.get<std::string>("output"));
 
 	TaskResult result;
 
-	vector<string> cmakeParams {
-		std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<string>("target.c:binary"),
-		std::string("-DCMAKE_CXX_COMPILER:STRING=") + config.get<string>("target.c++:binary"),
-		std::string("-DLOCAL_C_COMPILER:STRING=") + config.get<string>("local.c:binary"),
-		std::string("-DLOCAL_CXX_COMPILER:STRING=") + config.get<string>("local.c++:binary"),
-		config.get<string>("source")
+	std::vector<std::string> cmakeParams {
+		std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<std::string>("target.c:binary"),
+		std::string("-DCMAKE_CXX_COMPILER:STRING=") + config.get<std::string>("target.c++:binary"),
+		std::string("-DLOCAL_C_COMPILER:STRING=") + config.get<std::string>("local.c:binary"),
+		std::string("-DLOCAL_CXX_COMPILER:STRING=") + config.get<std::string>("local.c++:binary"),
+		config.get<std::string>("source")
 	};
 
 #ifdef _WIN32
@@ -48,14 +46,14 @@ TaskResult task_build_cmake( const ptree& config )
 #endif
 
 	TextProcessResult cmakeResult = executeTextProcess(
-		config.get<string>("cmake:binary"),
+		config.get<std::string>("cmake:binary"),
 		cmakeParams,
-		config.get<string>("output"));
+		config.get<std::string>("output"));
 
 	result.output.emplace_back("cmake", createTaskOutput(
-		config.get<string>("cmake:binary"),
+		config.get<std::string>("cmake:binary"),
 		cmakeParams,
-		config.get<string>("output"),
+		config.get<std::string>("output"),
 		cmakeResult));
 
 	result.message = createTaskMessage(cmakeResult);
@@ -66,28 +64,28 @@ TaskResult task_build_cmake( const ptree& config )
 	if(cmakeResult.exitCode == 0)
 	{
 		TextProcessResult makeResult = executeTextProcess(
-			config.get<string>("make:binary"),
-			vector<string>{ },
-			config.get<string>("output"));
+			config.get<std::string>("make:binary"),
+			std::vector<std::string>{ },
+			config.get<std::string>("output"));
 
 		result.output.emplace_back("make", createTaskOutput(
-			config.get<string>("make:binary"),
-			vector<string>{ },
-			config.get<string>("output"),
+			config.get<std::string>("make:binary"),
+			std::vector<std::string>{ },
+			config.get<std::string>("output"),
 			makeResult));
 
 		result.message = createTaskMessage(makeResult);
 
 		result.warnings = accumulate(
 			makeResult.output.begin(), makeResult.output.end(), 0,
-			[] (unsigned int count, const pair<TextProcessResult::LineType, string>& el) -> unsigned int {
-				return count + (el.second.find(": warning:") != string::npos ? 1 : 0);
+			[] (unsigned int count, const std::pair<TextProcessResult::LineType, std::string>& el) -> unsigned int {
+				return count + (el.second.find(": warning:") != std::string::npos ? 1 : 0);
 			});
 
 		result.errors = accumulate(
 			makeResult.output.begin(), makeResult.output.end(), 0,
-			[] (unsigned int count, const pair<TextProcessResult::LineType, string>& el) -> unsigned int {
-				return count + (el.second.find(": error:") != string::npos ? 1 : 0);
+			[] (unsigned int count, const std::pair<TextProcessResult::LineType, std::string>& el) -> unsigned int {
+				return count + (el.second.find(": error:") != std::string::npos ? 1 : 0);
 			});
 
 		result.status =
@@ -102,41 +100,41 @@ TaskResult task_build_cmake( const ptree& config )
 }
 
 
-TaskResult task_test_googletest( const ptree& config )
+TaskResult task_test_googletest( const pt::ptree& config )
 {
 	TaskResult result;
 
 	// prepare parameter and dirs
-	boost::filesystem::path xmlFilePath = config.get<string>("output");
+	boost::filesystem::path xmlFilePath = config.get<std::string>("output");
 	boost::filesystem::path parentPath = xmlFilePath.branch_path();
 
 	boost::filesystem::create_directories(parentPath);
 
-	vector<string> arguments = {string("--gtest_output=xml:")+xmlFilePath.string()};
+	std::vector<std::string> arguments = { "--gtest_output=xml:" + xmlFilePath.string() };
 
 	// run test
-	TextProcessResult testResult = executeTextProcess(config.get<string>("binary"), arguments, parentPath.string());
+	TextProcessResult testResult = executeTextProcess(config.get<std::string>("binary"), arguments, parentPath.string());
 
 	// read XML result file
-	ptree xmlTestResult;
+	pt::ptree xmlTestResult;
 
-	ifstream xmlTestResultStream;
+	std::ifstream xmlTestResultStream;
 	xmlTestResultStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 	xmlTestResultStream.open( xmlFilePath.string() );
 
-	read_xml( xmlTestResultStream, xmlTestResult, xml_parser::trim_whitespace );
+	pt::read_xml( xmlTestResultStream, xmlTestResult, pt::xml_parser::trim_whitespace );
 
 	// generate outline table
 	js::Object table_outline;
 
 	{
 		js::Object row;
-		row.emplace_back("name", xmlTestResult.get<string>("testsuites.<xmlattr>.name"));
-		row.emplace_back("tests", xmlTestResult.get<string>("testsuites.<xmlattr>.tests"));
-		row.emplace_back("failures", xmlTestResult.get<string>("testsuites.<xmlattr>.failures"));
-		row.emplace_back("errors", xmlTestResult.get<string>("testsuites.<xmlattr>.errors"));
-		row.emplace_back("disabled", xmlTestResult.get<string>("testsuites.<xmlattr>.disabled"));
-		row.emplace_back("time", xmlTestResult.get<string>("testsuites.<xmlattr>.time"));
+		row.emplace_back("name", xmlTestResult.get<std::string>("testsuites.<xmlattr>.name"));
+		row.emplace_back("tests", xmlTestResult.get<std::string>("testsuites.<xmlattr>.tests"));
+		row.emplace_back("failures", xmlTestResult.get<std::string>("testsuites.<xmlattr>.failures"));
+		row.emplace_back("errors", xmlTestResult.get<std::string>("testsuites.<xmlattr>.errors"));
+		row.emplace_back("disabled", xmlTestResult.get<std::string>("testsuites.<xmlattr>.disabled"));
+		row.emplace_back("time", xmlTestResult.get<std::string>("testsuites.<xmlattr>.time"));
 		row.emplace_back("status", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
 		table_outline.emplace_back("all", row);
@@ -145,20 +143,20 @@ TaskResult task_test_googletest( const ptree& config )
 	js::Object testsuites;
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
-		if(testsuite.first == string("<xmlattr>"))
+		if(testsuite.first == "<xmlattr>")
 			continue;
 
 		js::Object row;
-		row.emplace_back("name", testsuite.second.get<string>("<xmlattr>.name"));
-		row.emplace_back("tests", testsuite.second.get<string>("<xmlattr>.tests"));
-		row.emplace_back("failures", testsuite.second.get<string>("<xmlattr>.failures"));
-		row.emplace_back("errors", testsuite.second.get<string>("<xmlattr>.errors"));
-		row.emplace_back("disabled", testsuite.second.get<string>("<xmlattr>.disabled"));
-		row.emplace_back("time", testsuite.second.get<string>("<xmlattr>.time"));
+		row.emplace_back("name", testsuite.second.get<std::string>("<xmlattr>.name"));
+		row.emplace_back("tests", testsuite.second.get<std::string>("<xmlattr>.tests"));
+		row.emplace_back("failures", testsuite.second.get<std::string>("<xmlattr>.failures"));
+		row.emplace_back("errors", testsuite.second.get<std::string>("<xmlattr>.errors"));
+		row.emplace_back("disabled", testsuite.second.get<std::string>("<xmlattr>.disabled"));
+		row.emplace_back("time", testsuite.second.get<std::string>("<xmlattr>.time"));
 		row.emplace_back("status", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
 		// testsuites.push_back(row); // if we want the task list as array
-		testsuites.emplace_back( testsuite.second.get<string>("<xmlattr>.name"), row ); // if we want the task list as object with the task name as key
+		testsuites.emplace_back( testsuite.second.get<std::string>("<xmlattr>.name"), row ); // if we want the task list as object with the task name as key
 	}
 	table_outline.emplace_back("details", testsuites);
 	result.output.emplace_back("testsuites", table_outline);
@@ -167,21 +165,21 @@ TaskResult task_test_googletest( const ptree& config )
 	js::Object table_details;
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
-		if(testsuite.first == string("<xmlattr>"))
+		if(testsuite.first == "<xmlattr>")
 			continue;
 
 		for ( auto& testcase : testsuite.second )
 		{
-			if(testcase.first == string("<xmlattr>"))
+			if(testcase.first == "<xmlattr>")
 				continue;
 
-			std::string name = testcase.second.get<string>("<xmlattr>.classname")+string(".")+testcase.second.get<string>("<xmlattr>.name");
+			std::string name = testcase.second.get<std::string>("<xmlattr>.classname") + "." + testcase.second.get<std::string>("<xmlattr>.name");
 
 			js::Object row;
 			row.emplace_back("name", name);
-			row.emplace_back("status", testcase.second.get<string>("<xmlattr>.status"));
-			row.emplace_back("failure", (testcase.second.count("failure") > 0 ? testcase.second.get<string>("failure.<xmlattr>.message") : string("")));
-			row.emplace_back("time", testcase.second.get<string>("<xmlattr>.time"));
+			row.emplace_back("status", testcase.second.get<std::string>("<xmlattr>.status"));
+			row.emplace_back("failure", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : ""));
+			row.emplace_back("time", testcase.second.get<std::string>("<xmlattr>.time"));
 			row.emplace_back("count", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
 
 			table_details.emplace_back(name, row);
@@ -193,18 +191,18 @@ TaskResult task_test_googletest( const ptree& config )
 	// generate console output
 	for(auto& line : testResult.output)
 	{
-		if(line.second.find("[  FAILED  ]") != string::npos)
+		if(line.second.find("[  FAILED  ]") != std::string::npos)
 		{
 			line.first = TextProcessResult::ERROR_LINE;
 		}
 		else
-		if(line.second.find("[       OK ]") != string::npos || line.second.find("[  PASSED  ]") != string::npos)
+		if(line.second.find("[       OK ]") != std::string::npos || line.second.find("[  PASSED  ]") != std::string::npos)
 		{
 			line.first = TextProcessResult::OK_LINE;
 		}
 	}
 
-	result.output.emplace_back("googletest", createTaskOutput(config.get<string>("binary"), arguments, parentPath.string(), testResult));
+	result.output.emplace_back("googletest", createTaskOutput(config.get<std::string>("binary"), arguments, parentPath.string(), testResult));
 
 	// generate meta data
 	result.message = createTaskMessage(testResult);
@@ -216,16 +214,16 @@ TaskResult task_test_googletest( const ptree& config )
 }
 
 
-TaskResult task_test_cppcheck( const ptree& config )
+TaskResult task_test_cppcheck( const pt::ptree& config )
 {
 	TaskResult result;
 
-	vector<string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", "." };
+	std::vector<std::string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", "." };
 
 	TextProcessResult checkResult = executeTextProcess(
-		config.get<string>("binary"),
+		config.get<std::string>("binary"),
 		arguments,
-		config.get<string>("source"));
+		config.get<std::string>("source"));
 
 	if(checkResult.exitCode == 0)
 	{
@@ -245,32 +243,32 @@ TaskResult task_test_cppcheck( const ptree& config )
 		}
 
 		// write xml data
-		ofstream xmlCheckPersistStream;
+		std::ofstream xmlCheckPersistStream;
 		xmlCheckPersistStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-		xmlCheckPersistStream.open( config.get<string>("output") );
+		xmlCheckPersistStream.open( config.get<std::string>("output") );
 
 		xmlCheckPersistStream << xmlCheckData;
 		xmlCheckPersistStream.close();
 
 		// read XML result data
-		ptree xmlCheckResult;
+		pt::ptree xmlCheckResult;
 
 		std::istringstream xmlCheckResultStream(xmlCheckData);
 		xmlCheckResultStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 
-		read_xml( xmlCheckResultStream, xmlCheckResult, xml_parser::trim_whitespace );
+		pt::read_xml( xmlCheckResultStream, xmlCheckResult, pt::xml_parser::trim_whitespace );
 
 		// interpret xml data
 		js::Array errors;
 		for ( auto& error : xmlCheckResult.get_child("results.errors") )
 		{
-			if(error.first == string("<xmlattr>"))
+			if(error.first == "<xmlattr>")
 				continue;
 
 			js::Object row;
-			row.emplace_back("type", error.second.get<string>("<xmlattr>.id"));
-			row.emplace_back("severity", error.second.get<string>("<xmlattr>.severity"));
-			row.emplace_back("message", error.second.get<string>("<xmlattr>.msg"));
+			row.emplace_back("type", error.second.get<std::string>("<xmlattr>.id"));
+			row.emplace_back("severity", error.second.get<std::string>("<xmlattr>.severity"));
+			row.emplace_back("message", error.second.get<std::string>("<xmlattr>.msg"));
 
 			errors.push_back(row);
 		}
@@ -284,9 +282,9 @@ TaskResult task_test_cppcheck( const ptree& config )
 	}
 
 	result.output.emplace_back("cppcheck", createTaskOutput(
-		config.get<string>("binary"),
+		config.get<std::string>("binary"),
 		arguments,
-		config.get<string>("source"),
+		config.get<std::string>("source"),
 		checkResult));
 
 	result.message = createTaskMessage(checkResult);
@@ -297,40 +295,40 @@ TaskResult task_test_cppcheck( const ptree& config )
 }
 
 
-TaskResult task_doc_doxygen( const ptree& config )
+TaskResult task_doc_doxygen( const pt::ptree& config )
 {
 	TaskResult result;
 
 	// prepare arguments and dirs
 
-	string sourcePath = config.get<string>("source");
-	string outputPath = config.get<string>("output");
-	string doxyfilePath = (boost::filesystem::path(outputPath) / boost::filesystem::path("doxyfile")).string();
+	const std::string sourcePath = config.get<std::string>("source");
+	const std::string outputPath = config.get<std::string>("output");
+	const std::string doxyfilePath = (boost::filesystem::path(outputPath) / boost::filesystem::path("doxyfile")).string();
 
 	boost::filesystem::remove_all(outputPath);
 	boost::filesystem::create_directories(outputPath);
 
 	// generate doxyfile
 
-	ofstream doxyfileStream;
+	std::ofstream doxyfileStream;
 	doxyfileStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 	doxyfileStream.open( doxyfilePath );
 
 	for( auto& data : config.get_child("doxyfile") )
 	{
-		doxyfileStream << data.first << " = " << data.second.data() << endl;
+		doxyfileStream << data.first << " = " << data.second.data() << '\n';
 	}
 
-	doxyfileStream << "INPUT" << " = " << sourcePath << endl;
-	doxyfileStream << "OUTPUT_DIRECTORY" << " = " << outputPath << endl;
+	doxyfileStream << "INPUT" << " = " << sourcePath << '\n';
+	doxyfileStream << "OUTPUT_DIRECTORY" << " = " << outputPath << '\n';
 
 	doxyfileStream.close();
 
 	// run doxygen
-	TextProcessResult doxygenResult = executeTextProcess(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath);
+	TextProcessResult doxygenResult = executeTextProcess(config.get<std::string>("binary"), std::vector<std::string>{doxyfilePath}, outputPath);
 
 	// generate task output
-	result.output.emplace_back("doxygen", createTaskOutput(config.get<string>("binary"), vector<string>{doxyfilePath}, outputPath, doxygenResult));
+	result.output.emplace_back("doxygen", createTaskOutput(config.get<std::string>("binary"), std::vector<std::string>{doxyfilePath}, outputPath, doxygenResult));
 
 	// generate meta data
 	result.message = createTaskMessage(doxygenResult);
@@ -340,6 +338,7 @@ TaskResult task_doc_doxygen( const ptree& config )
 
 	return result;
 }
+
 
 std::string toString(TaskResult::Status status)
 {
