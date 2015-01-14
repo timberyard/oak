@@ -50,7 +50,8 @@
 	},
 	"publish:rsync": {
 		"enabled": "no",
-		"binary": "rsync",
+		"rsync:binary": "rsync",
+		"ssh:binary": "ssh",
 		"source": "${output}",
 		"destination": {
 			"port": "22",

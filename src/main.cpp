@@ -275,10 +275,13 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
-
-	bool task_with_error = false;
+	// clean output
+	boost::filesystem::remove_all(argOutput);
+	boost::filesystem::create_directories(argOutput);
 
 	// run configurations
+	bool task_with_error = false;
+
 	js::Object outputTasks;
 	try
 	{

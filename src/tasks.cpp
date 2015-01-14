@@ -29,7 +29,6 @@ std::map<std::string, std::function<TaskResult(const pt::ptree&)>> taskTypes =
 
 TaskResult task_build_cmake( const pt::ptree& config )
 {
-	boost::filesystem::remove_all(config.get<std::string>("output"));
 	boost::filesystem::create_directories(config.get<std::string>("output"));
 
 	TaskResult result;
@@ -218,6 +217,11 @@ TaskResult task_test_googletest( const pt::ptree& config )
 
 TaskResult task_test_cppcheck( const pt::ptree& config )
 {
+	boost::filesystem::path xmlFilePath = config.get<std::string>("output");
+	boost::filesystem::path parentPath = xmlFilePath.branch_path();
+
+	boost::filesystem::create_directories(parentPath);
+
 	TaskResult result;
 
 	std::vector<std::string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", "." };
@@ -307,7 +311,6 @@ TaskResult task_doc_doxygen( const pt::ptree& config )
 	const std::string outputPath = config.get<std::string>("output");
 	const std::string doxyfilePath = (boost::filesystem::path(outputPath) / boost::filesystem::path("doxyfile")).string();
 
-	boost::filesystem::remove_all(outputPath);
 	boost::filesystem::create_directories(outputPath);
 
 	// generate doxyfile
@@ -355,19 +358,37 @@ TaskResult task_publish_rsync( const pt::ptree& config )
 		return result;
 	}
 
-	std::vector<std::string> arguments {
-		std::string("--rsh=ssh -o \"BatchMode yes\" -p ") + config.get<std::string>("destination.port"),
-		"--archive", "--delete",
-		config.get<std::string>("source"),
-		config.get<std::string>("destination.user") + std::string("@") + config.get<std::string>("destination.host") + std::string(":")
-		+ config.get<std::string>("destination.base") + std::string("/") + config.get<std::string>("destination.directory")
+	// run ssh:mkdir
+
+	std::vector<std::string> sshArgs {
+		"-o", "BatchMode yes", "-p", config.get<std::string>("destination.port"),
+		config.get<std::string>("destination.user") + std::string("@") + config.get<std::string>("destination.host"),
+		"mkdir", "-p",
+		config.get<std::string>("destination.base") + std::string("/") + config.get<std::string>("destination.directory")
 	};
 
-	// run rsync
-	TextProcessResult rsyncResult = executeTextProcess(config.get<std::string>("binary"), arguments, config.get<std::string>("source"));
+	TextProcessResult sshResult = executeTextProcess(config.get<std::string>("ssh:binary"), sshArgs, config.get<std::string>("source"));
 
-	// generate task output
-	result.output.emplace_back("rsync", createTaskOutput(config.get<std::string>("binary"), arguments, config.get<std::string>("source"), rsyncResult));
+	result.output.emplace_back("ssh:mkdir", createTaskOutput(config.get<std::string>("ssh:binary"), sshArgs, config.get<std::string>("source"), sshResult));
+
+	// run rsync
+	std::vector<std::string> rsyncArgs {
+		std::string("--rsh=") + config.get<std::string>("ssh:binary") + (" -o \"BatchMode yes\" -p ") + config.get<std::string>("destination.port"),
+		"--archive", "--delete", "--verbose",
+		config.get<std::string>("source") + std::string("/"),
+		config.get<std::string>("destination.user") + std::string("@") + config.get<std::string>("destination.host") + std::string(":")
+		+ config.get<std::string>("destination.base") + std::string("/") + config.get<std::string>("destination.directory") + std::string("/")
+	};
+
+	TextProcessResult rsyncResult = executeTextProcess(config.get<std::string>("rsync:binary"), rsyncArgs, config.get<std::string>("source"));
+
+	result.output.emplace_back("rsync", createTaskOutput(config.get<std::string>("rsync:binary"), rsyncArgs, config.get<std::string>("source"), rsyncResult));
+
+	// generate meta data
+	result.message = createTaskMessage(rsyncResult);
+	result.warnings = 0;
+	result.errors = (rsyncResult.exitCode != 0 ? 1 : 0);
+	result.status = (rsyncResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
 
 	return result;
 }

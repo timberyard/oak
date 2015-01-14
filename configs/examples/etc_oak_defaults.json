@@ -19,9 +19,9 @@
 	"publish:rsync": {
 		"enabled": "yes",
 		"destination": {
-			"user": "builds",
+			"user": "niklas",
 			"host": "localhost",
-			"base": "/home/builds/integration"
+			"base": "/home/niklas/integration"
 		}
 	}
 }
