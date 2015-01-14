@@ -3,7 +3,7 @@
 		"make:binary": "make",
 		"c:binary": "cc",
 		"c++:binary": "c++",
-		"source": "${input}",
+		"source": "${input}/src",
 		"output": "${output}/build"
 	},
 	"test:googletest": {
@@ -12,7 +12,7 @@
 	},
 	"test:cppcheck": {
 		"binary": "cppcheck",
-		"source": "${input}",
+		"source": "${input}/src",
 		"output": "${output}/tests/cppcheck.xml",
 		"arguments" : {
 			"enable": "all",
@@ -21,7 +21,7 @@
 	},
 	"doc:doxygen": {
 		"binary": "doxygen",
-		"source": "${input}",
+		"source": "${input}/src",
 		"output": "${output}/docs",
 		"doxyfile" : {
 			"FILE_PATTERNS": "*.h*",
