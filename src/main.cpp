@@ -296,7 +296,7 @@ int main( int argc, const char* const* argv )
 	bool task_with_error = false;
 
 	// run configurations
-	js::Array outputTasks;
+	js::Object outputTasks;
 	try
 	{
 		for ( auto& taskConfig : config.get_child("tasks") )
@@ -373,7 +373,7 @@ int main( int argc, const char* const* argv )
 				outputTask.push_back( js::Pair("status", toString(result.status)));
 				outputTask.push_back( js::Pair("details", result.output ));
 
-				outputTasks.push_back(outputTask);
+				outputTasks.emplace_back(taskConfig.first, outputTask);
 			}
 			else
 				throw std::runtime_error(std::string("invalid task type: ") + taskType);

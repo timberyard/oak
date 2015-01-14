@@ -142,8 +142,7 @@ TaskResult task_test_googletest( const ptree& config )
 		table_outline.emplace_back("all", row);
 	}
 
-//	js::Array testsuites;  // if we want the task list as array
-	js::Object testsuites; // if we want the task list as object ...
+	js::Object testsuites;
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == string("<xmlattr>"))
@@ -165,7 +164,7 @@ TaskResult task_test_googletest( const ptree& config )
 	result.output.emplace_back("testsuites", table_outline);
 
 	// generate details table
-	js::Array table_details;
+	js::Object table_details;
 	for ( auto& testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == string("<xmlattr>"))
@@ -176,14 +175,16 @@ TaskResult task_test_googletest( const ptree& config )
 			if(testcase.first == string("<xmlattr>"))
 				continue;
 
+			std::string name = testcase.second.get<string>("<xmlattr>.classname")+string(".")+testcase.second.get<string>("<xmlattr>.name");
+
 			js::Object row;
-			row.emplace_back("name", testcase.second.get<string>("<xmlattr>.classname")+string(".")+testcase.second.get<string>("<xmlattr>.name"));
+			row.emplace_back("name", name);
 			row.emplace_back("status", testcase.second.get<string>("<xmlattr>.status"));
 			row.emplace_back("failure", (testcase.second.count("failure") > 0 ? testcase.second.get<string>("failure.<xmlattr>.message") : string("")));
 			row.emplace_back("time", testcase.second.get<string>("<xmlattr>.time"));
 			row.emplace_back("count", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
 
-			table_details.push_back(row);
+			table_details.emplace_back(name, row);
 		}
 	}
 
