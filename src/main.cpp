@@ -48,14 +48,14 @@ void getFromEnvironment(std::string& variable, const char* const environ_name)
 {
 	if( not variable.empty() )
 		return;
-	
+
 	auto e = getenv(environ_name);
-	
+
 	if(e == NULL)
 	{
 		return;
 	}
-	
+
 	variable = std::string(e);
 }
 
@@ -76,14 +76,14 @@ boost::filesystem::path normalize(const boost::filesystem::path& path)
 	boost::filesystem::path absPath = boost::filesystem::absolute(path);
 	boost::filesystem::path::iterator it = absPath.begin();
 	boost::filesystem::path result = *it++;
-	
+
 	// Get canonical version of the existing part
 	for (; exists(result / *it) && it != absPath.end(); ++it)
 	{
 		result /= *it;
 	}
 	result = boost::filesystem::canonical(result);
-	
+
 	// For the rest remove ".." and "." in a path with no symlinks
 	for (; it != absPath.end(); ++it)
 	{
@@ -106,7 +106,7 @@ boost::filesystem::path normalize(const boost::filesystem::path& path)
 int main( int argc, const char* const* argv )
 {
 	po::options_description desc;
-	
+
 	const std::string sysconfigDesc = "the JSON system config file (optional. compile-time default is " + oakSysConfigDefault + ")";
 	desc.add_options()
 		("mode,m"      , po::value<std::string>(&argMode)      , "the operational mode (standard [default], jenkins)")
@@ -150,7 +150,7 @@ int main( int argc, const char* const* argv )
 		{
 			argBranch = argBranch.substr(7);
 		}
-		
+
 		getFromEnvironment(argCommit   , "GIT_COMMIT");
 		getFromEnvironment(argTimestamp, "BUILD_ID"  );
 		getFromEnvironment(argInput    , "WORKSPACE" );
@@ -250,7 +250,7 @@ int main( int argc, const char* const* argv )
 			std::ifstream configStream;
 			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 			configStream.open( argSysConfig );
-			
+
 			pt::ptree systemDefaultsConfig;
 			read_json( configStream, systemDefaultsConfig );
 			ptree_merge( defaultsConfig, systemDefaultsConfig );
