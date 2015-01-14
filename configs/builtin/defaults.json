@@ -12,12 +12,7 @@
 	},
 	"test:cppcheck": {
 		"binary": "cppcheck",
-		"source": "${input}/src",
-		"output": "${output}/tests/cppcheck.xml",
-		"arguments" : {
-			"enable": "all",
-			"suppress": "missingIncludeSystem"
-		}
+		"source": "${input}/src"
 	},
 	"doc:doxygen": {
 		"binary": "doxygen",

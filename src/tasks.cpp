@@ -214,11 +214,70 @@ TaskResult task_test_cppcheck( const ptree& config )
 {
 	TaskResult result;
 
-	result.output.emplace_back("cppcheck", "under construction...");
-	result.message = "under construction...";
+	vector<string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", "." };
+
+	TextProcessResult checkResult = executeTextProcess(
+		config.get<string>("binary"),
+		arguments,
+		config.get<string>("source"));
+
+	if(checkResult.exitCode == 0)
+	{
+		std::string xmlCheckData;
+
+		for(auto line = checkResult.output.begin(); line != checkResult.output.end(); )
+		{
+			if(line->first == TextProcessResult::ERROR_LINE)
+			{
+				xmlCheckData += line->second + std::string("\n");
+				line = checkResult.output.erase(line);
+			}
+			else
+			{
+				++line;
+			}
+		}
+
+		// read XML result data
+		ptree xmlCheckResult;
+
+		std::istringstream xmlCheckResultStream(xmlCheckData);
+		xmlCheckResultStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+
+		read_xml( xmlCheckResultStream, xmlCheckResult, xml_parser::trim_whitespace );
+
+		// interpret xml data
+		js::Array errors;
+		for ( auto& error : xmlCheckResult.get_child("results.errors") )
+		{
+			if(error.first == string("<xmlattr>"))
+				continue;
+
+			js::Object row;
+			row.emplace_back("type", error.second.get<string>("<xmlattr>.id"));
+			row.emplace_back("severity", error.second.get<string>("<xmlattr>.severity"));
+			row.emplace_back("message", error.second.get<string>("<xmlattr>.msg"));
+
+			errors.push_back(row);
+		}
+		result.output.emplace_back("errors", errors);
+
+		result.errors = errors.size();
+	}
+	else
+	{
+		result.errors = 1;
+	}
+
+	result.output.emplace_back("cmake", createTaskOutput(
+		config.get<string>("binary"),
+		arguments,
+		config.get<string>("source"),
+		checkResult));
+
+	result.message = createTaskMessage(checkResult);
 	result.warnings = 0;
-	result.errors = 1;
-	result.status = TaskResult::STATUS_ERROR;
+	result.status = (result.errors > 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
 
 	return result;
 }
