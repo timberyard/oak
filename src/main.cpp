@@ -194,21 +194,11 @@ int main( int argc, const char* const* argv )
 	}
 #endif
 
-	if(argInput.empty() || argOutput.empty() || argConfig.empty() || argResult.empty())
-	{
-		std::cout << desc << "\n"
-		"This is oak version " << oakVersion << "\n\n";
-		return 1;
-	}
-
-	argInput = normalize(argInput).string();
-	argOutput = normalize(argOutput).string();
-	argConfig = normalize(argConfig).string();
-	argResult = normalize(argResult).string();
-
 	// use + instead of || to avoid short-circtuiting and report all errors at once
 	if( complainIfNotSet(argInput, "input path")
 		+ complainIfNotSet(argOutput, "output path" )
+		+ complainIfNotSet(argConfig, "config JSON file" )
+		+ complainIfNotSet(argResult, "result JSON file" )
 		+ complainIfNotSet(argMachine, "node name")
 		+ complainIfNotSet(argRepository, "repository URL")
 		+ complainIfNotSet(argBranch, "branch name")
@@ -220,6 +210,11 @@ int main( int argc, const char* const* argv )
 			"This is oak version " << oakVersion << "\n\n";
 		return 1;
 	}
+
+	argInput = normalize(argInput).string();
+	argOutput = normalize(argOutput).string();
+	argConfig = normalize(argConfig).string();
+	argResult = normalize(argResult).string();
 
 	// read configuration
 	pt::ptree config;
