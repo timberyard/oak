@@ -167,6 +167,11 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
+	argInput = boost::filesystem::canonical(argInput).string();
+	argOutput = boost::filesystem::canonical(argOutput).string();
+	argConfig = boost::filesystem::canonical(argConfig).string();
+	argResult = boost::filesystem::canonical(argResult).string();
+
 	// read configuration
 	pt::ptree config;
 
