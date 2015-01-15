@@ -23,12 +23,11 @@ std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
 std::string argMachine, argRepository, argBranch, argCommit, argTimestamp;
 
 // GNU ld generates these funny symbols when generating .o files from arbitrary binary files:
-extern const unsigned char _binary_configs_builtin_defaults_json_start[];
-extern const unsigned char _binary_configs_builtin_defaults_json_end[];
+extern unsigned char configs_builtin_defaults_json[];
+extern unsigned int configs_builtin_defaults_json_len;
 
-extern const unsigned char _binary_configs_builtin_tasks_c___json_start[];
-extern const unsigned char _binary_configs_builtin_tasks_c___json_end[];
-
+extern unsigned char configs_builtin_tasks_c___json[];
+extern unsigned int configs_builtin_tasks_c___json_len;
 
 struct CompileTimeData
 {
@@ -39,7 +38,7 @@ struct CompileTimeData
 // currently we support only one variant. But for future use... :-)
 const std::map<std::string, CompileTimeData> variants =
 	{
-		{"c++", { _binary_configs_builtin_tasks_c___json_start, _binary_configs_builtin_tasks_c___json_end } }
+		{"c++", { configs_builtin_tasks_c___json, configs_builtin_tasks_c___json + configs_builtin_tasks_c___json_len } }
 	};
 
 
@@ -238,7 +237,7 @@ int main( int argc, const char* const* argv )
 
 		pt::ptree defaultsConfig;
 		{
-			std::istringstream stream(std::string(_binary_configs_builtin_defaults_json_start, _binary_configs_builtin_defaults_json_end));
+			std::istringstream stream(std::string(configs_builtin_defaults_json, configs_builtin_defaults_json + configs_builtin_defaults_json_len));
 			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 			read_json( stream, defaultsConfig );
 		}

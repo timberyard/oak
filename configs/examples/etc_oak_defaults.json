@@ -14,7 +14,8 @@
 			"architecture": "x86",
 			"bitness": "64",
 			"os": "linux"
-		}
+		},
+		"verbose": "true"
 	},
 	"test:cppcheck": {
 		"binary": "/usr/bin/cppcheck"

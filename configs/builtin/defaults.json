@@ -10,7 +10,8 @@
 			"c++:binary": "c++"
 		},
 		"source": "${input}",
-		"output": "${output}/build"
+		"output": "${output}/build",
+		"verbose": "false"
 	},
 	"test:googletest": {
 		"binary": "${output}/build/tests",

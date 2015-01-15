@@ -50,6 +50,8 @@ TaskResult task_build_cmake( const pt::ptree& config )
 		config.get<std::string>("source")
 	};
 
+	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_VERBOSE_MAKEFILE:BOOLEAN=ON"));
+
 #ifdef _WIN32
 	cmakeParams.push_back("-G");
 	cmakeParams.push_back("MSYS Makefiles");
