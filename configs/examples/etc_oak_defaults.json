@@ -3,11 +3,17 @@
 		"make:binary": "/usr/bin/make",
 		"local" : {
 			"c:binary": "/usr/bin/gcc",
-			"c++:binary": "/usr/bin/g++"
+			"c++:binary": "/usr/bin/g++",
+			"architecture": "x86",
+			"bitness": "64",
+			"os": "linux"
 		},
 		"target" : {
 			"c:binary": "/usr/bin/gcc",
-			"c++:binary": "/usr/bin/g++"
+			"c++:binary": "/usr/bin/g++",
+			"architecture": "x86",
+			"bitness": "64",
+			"os": "linux"
 		}
 	},
 	"test:cppcheck": {

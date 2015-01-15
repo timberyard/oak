@@ -34,10 +34,19 @@ TaskResult task_build_cmake( const pt::ptree& config )
 	TaskResult result;
 
 	std::vector<std::string> cmakeParams {
+
 		std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<std::string>("target.c:binary"),
 		std::string("-DCMAKE_CXX_COMPILER:STRING=") + config.get<std::string>("target.c++:binary"),
+		std::string("-DTARGET_ARCHITECTURE:STRING=") + config.get<std::string>("target.architecture"),
+		std::string("-DTARGET_BITNESS:STRING=") + config.get<std::string>("target.bitness"),
+		std::string("-DTARGET_OS:STRING=") + config.get<std::string>("target.os"),
+
 		std::string("-DLOCAL_C_COMPILER:STRING=") + config.get<std::string>("local.c:binary"),
 		std::string("-DLOCAL_CXX_COMPILER:STRING=") + config.get<std::string>("local.c++:binary"),
+		std::string("-DLOCAL_ARCHITECTURE:STRING=") + config.get<std::string>("local.architecture"),
+		std::string("-DLOCAL_BITNESS:STRING=") + config.get<std::string>("local.bitness"),
+		std::string("-DLOCAL_OS:STRING=") + config.get<std::string>("local.os"),
+
 		config.get<std::string>("source")
 	};
 
