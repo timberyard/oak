@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <iostream>
 
 #include <boost/asio.hpp>
 #include <boost/filesystem.hpp>
