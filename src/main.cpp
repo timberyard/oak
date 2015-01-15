@@ -287,6 +287,11 @@ int main( int argc, const char* const* argv )
 		config.add_child("defaults", defaultsConfig);
 		config.add_child("tasks", variantConfig);
 		ptree_merge( config, projectConfig );
+
+		// print config
+		std::stringstream mergedConfigStream;
+		write_json(mergedConfigStream, config);
+		std::cout << mergedConfigStream.str() << std::endl;
 	}
 	catch ( const pt::ptree_error& exception )
 	{
@@ -368,6 +373,8 @@ int main( int argc, const char* const* argv )
 					result.errors = 1;
 					result.message = "exception occured";
 					result.output.push_back( js::Pair("exception", e.what()));
+
+					std::cout << "An exception occured: " << e.what() << std::endl;
 				}
 
 				if(result.status == TaskResult::STATUS_ERROR)
