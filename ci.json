@@ -1,0 +1,13 @@
+{	"name": "oak",
+	"variant": "c++",
+	"tasks": {
+		"build": {
+			"settings": {
+				"source": "${input}/src"
+			}
+		},
+		"unittests": {
+			"enabled": "false"
+		}
+	}
+}
