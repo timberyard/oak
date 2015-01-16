@@ -15,7 +15,8 @@
 	},
 	"test:googletest": {
 		"binary": "${output}/build/tests",
-		"output": "${output}/tests/googletest.xml"
+		"output": "${output}/tests/googletest.xml",
+		"filter": "*"
 	},
 	"test:cppcheck": {
 		"binary": "cppcheck",

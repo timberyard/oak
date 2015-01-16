@@ -122,7 +122,10 @@ TaskResult task_test_googletest( const pt::ptree& config )
 
 	boost::filesystem::create_directories(parentPath);
 
-	std::vector<std::string> arguments = { "--gtest_output=xml:" + xmlFilePath.string() };
+	std::vector<std::string> arguments = {
+		"--gtest_output=xml:" + xmlFilePath.string(),
+		"--gtest_filter=" + config.get<std::string>("filter")
+	};
 
 	// run test
 	TextProcessResult testResult = executeTextProcess(config.get<std::string>("binary"), arguments, parentPath.string());
