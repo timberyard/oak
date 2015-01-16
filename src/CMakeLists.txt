@@ -36,7 +36,9 @@ include_directories( ${BOOST_ROOT}/include )
 include_directories( ${PROJECT_SOURCE_DIR}/../libs/boost-process)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
 
-add_definitions(-std=c++11 -L${BOOST_ROOT}/lib)
+link_directories(${BOOST_ROOT}/lib)
+
+add_definitions(-std=c++11)
 
 add_custom_command(OUTPUT config_defaults.cpp
 	COMMAND xxd -i configs/builtin/defaults.json ${PROJECT_BINARY_DIR}/config_defaults.cpp
