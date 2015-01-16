@@ -193,9 +193,9 @@ TaskResult task_test_googletest( const pt::ptree& config )
 			js::Object row;
 			row.emplace_back("name", name);
 			row.emplace_back("status", testcase.second.get<std::string>("<xmlattr>.status"));
-			row.emplace_back("failure", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : ""));
+			row.emplace_back("message", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : ""));
 			row.emplace_back("time", testcase.second.get<std::string>("<xmlattr>.time"));
-			row.emplace_back("count", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
+			row.emplace_back("status", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
 
 			table_details.emplace_back(name, row);
 		}
@@ -294,10 +294,12 @@ TaskResult task_test_cppcheck( const pt::ptree& config )
 		}
 		result.output.emplace_back("errors", errors);
 
-		result.errors = errors.size();
+		result.warnings = errors.size();
+		result.errors = 0;
 	}
 	else
 	{
+		result.warnings = 0;
 		result.errors = 1;
 	}
 
@@ -308,8 +310,7 @@ TaskResult task_test_cppcheck( const pt::ptree& config )
 		checkResult));
 
 	result.message = createTaskMessage(checkResult);
-	result.warnings = 0;
-	result.status = (result.errors > 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
+	result.status = (result.errors > 0 ? TaskResult::STATUS_ERROR : (result.warnings > 0 ?  TaskResult::STATUS_WARNING : TaskResult::STATUS_OK));
 
 	return result;
 }
