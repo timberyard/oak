@@ -29,8 +29,10 @@ else()
 endif()
 
 # set windows toolset
-if( MSVC )
-    set( TOOLSET "msvc-selected")
+if( WIN32 )
+	if( MSVC )
+		set( TOOLSET "msvc-selected" )
+	endif()
 endif()
 
 set( ARM_OPTIONS "")
@@ -48,14 +50,15 @@ endif()
 set( B2_ARGS
 	-q -j4
 	address-model=${TARGET_BITNESS}
-	cxxflags=-Wno-unused-local-typedefs
 	link=static
 	threading=multi
 	variant=${BOOST_VARIANT}
 	${ARM_OPTIONS}
-	--toolset=${TOOLSET}
+	--layout=system
 	--without-python
 	--without-mpi
+	--without-coroutine
+	--without-context
 	-s BZIP2_INCLUDE=${CMAKE_CURRENT_BINARY_DIR}/dependencies/include
 	-s BZIP2_LIBPATH=${CMAKE_CURRENT_BINARY_DIR}/dependencies/lib/
 	-s ZLIB_INCLUDE=${CMAKE_CURRENT_BINARY_DIR}/dependencies/include
@@ -67,15 +70,23 @@ set( B2_ARGS
 if( MSVC )
     set( BOOST_CMDS
 	    CONFIGURE_COMMAND bootstrap.bat
-	    BUILD_COMMAND b2 ${B2_ARGS} toolset=${TOOLSET}
+	    BUILD_COMMAND b2 toolset=${TOOLSET} ${B2_ARGS}
 	    INSTALL_COMMAND b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install
     )
 else()
-    set( BOOST_CMDS
-	    CONFIGURE_COMMAND ./bootstrap.sh
-	    BUILD_COMMAND ./b2 ${B2_ARGS} toolset=${TOOLSET}
-	    INSTALL_COMMAND ./b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install
-    )
+	if( WIN32 )
+		set( BOOST_CMDS
+			CONFIGURE_COMMAND ./bootstrap.sh --with-toolset=mingw COMMAND sed -i.bak "s/mingw/gcc/g" <SOURCE_DIR>/project-config.jam
+			BUILD_COMMAND ./b2 toolset=${TOOLSET} ${B2_ARGS}
+			INSTALL_COMMAND ./b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install
+		)
+	else()
+		set( BOOST_CMDS
+			CONFIGURE_COMMAND ./bootstrap.sh
+			BUILD_COMMAND ./b2 toolset=${TOOLSET} ${B2_ARGS}
+			INSTALL_COMMAND ./b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install
+		)
+	endif()
 endif()
 
 ExternalProject_Add( ${TARGET_NAME}
