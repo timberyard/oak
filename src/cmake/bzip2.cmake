@@ -23,6 +23,7 @@ if(WIN32)
         GIT_REPOSITORY ${BZIP2_URL}
         GIT_TAG ${BZIP2_VERSION}
         BUILD_IN_SOURCE 1
+        PATCH_COMMAND sed -i.bak s/chmod/echo chmod/g <SOURCE_DIR>/Makefile
         CONFIGURE_COMMAND ""
         BUILD_COMMAND make CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CFLAGS='-fPIC'
         INSTALL_COMMAND make install PREFIX=<INSTALL_DIR>
