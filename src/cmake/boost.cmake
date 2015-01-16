@@ -64,7 +64,7 @@ set( B2_ARGS
 
 # set external project commands
 # don't provide toolset to bootstrap, since it should just build with local achitecture
-if( WIN32 )
+if( MSVC )
     set( BOOST_CMDS
 	    CONFIGURE_COMMAND bootstrap.bat
 	    BUILD_COMMAND b2 ${B2_ARGS} toolset=${TOOLSET}
