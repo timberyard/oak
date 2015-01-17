@@ -159,7 +159,7 @@ int main( int argc, const char* const* argv )
 		{
 			if(argInput.length() > 0 && argBranch.length() > 0 && argTimestamp.length() > 0 && argCommit.length() > 0)
 			{
-				argOutput = argInput + "/oak/" + argBranch + "/" + argTimestamp + "_" + argCommit.substr(0, 7);
+				argOutput = argInput + "/integration";
 			}
 		}
 
@@ -168,7 +168,7 @@ int main( int argc, const char* const* argv )
 		{
 			if(argInput.length() > 0)
 			{
-				argConfig = argInput + "/ci.json";
+				argConfig = argInput + "/integration.json";
 			}
 		}
 
