@@ -426,7 +426,7 @@ int main( int argc, const char* const* argv )
 				);
 
 				// check if it is enabled/disabled
-				if(config.get<std::string>("enabled") != "yes")
+				if(settings.get<std::string>("enabled") != "yes")
 				{
 					std::cout << "Task disabled: " << taskConfig.first << std::endl;
 					std::cout << "type: " << taskType << std::endl;
