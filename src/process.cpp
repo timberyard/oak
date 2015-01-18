@@ -86,7 +86,7 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 		}
 	}
 
-	binary = boost::filesystem::canonical(binary).native();
+	binary = boost::filesystem::canonical(binary).string();
 	std::cout << "canonical path to binary: " << binary << std::endl;
 
 	std::cout << "-------------------------------------------------------------------------" << std::endl;
