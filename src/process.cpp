@@ -43,10 +43,53 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw std::runtime_error("working directory does not exist");
 
-	if(binary.find('/') == std::string::npos && binary.find('\\') == std::string::npos)
+	if(boost::filesystem::path(binary).is_relative())
 	{
-		binary = boost::process::search_path(binary);
+		auto found = boost::process::search_path(binary, workingDirectory);
+
+		if(found.length() > 0)
+		{
+			binary = found;
+			std::cout << "binary found via working directory: " << binary << std::endl;
+		}
+		else
+		{
+			found = boost::process::search_path(binary);
+
+			if(found.length() > 0)
+			{
+				binary = found;
+				std::cout << "binary found via path: " << binary << std::endl;
+			}
+			else
+			{
+				std::cout << "could not find binary via relative path: " << binary << std::endl;
+				throw std::runtime_error(std::string("could not find binary via relative path: ") + binary);
+			}
+		}
 	}
+	else
+	{
+		auto found = boost::process::search_path(
+			boost::filesystem::path(binary).relative_path().string(),
+			boost::filesystem::path(workingDirectory).root_path().string());
+
+		if(found.length() > 0)
+		{
+			binary = found;
+			std::cout << "binary found via absolute path: " << binary << std::endl;
+		}
+		else
+		{
+			std::cout << "could not find binary via absolute path: " << binary << std::endl;
+			throw std::runtime_error(std::string("could not find binary via absolute path: ") + binary);
+		}
+	}
+
+	binary = boost::filesystem::canonical(binary).native();
+	std::cout << "canonical path to binary: " << binary << std::endl;
+
+	std::cout << "-------------------------------------------------------------------------" << std::endl;
 
 	arguments.insert(arguments.begin(), binary);
 
