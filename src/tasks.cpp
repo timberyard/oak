@@ -29,7 +29,8 @@ std::map<std::string, std::function<TaskResult(const pt::ptree&)>> taskTypes =
 
 TaskResult task_build_cmake( const pt::ptree& config )
 {
-	boost::filesystem::create_directories(config.get<std::string>("output"));
+	boost::filesystem::create_directories(config.get<std::string>("build:output"));
+	boost::filesystem::create_directories(config.get<std::string>("install:output"));
 
 	TaskResult result;
 
@@ -60,12 +61,12 @@ TaskResult task_build_cmake( const pt::ptree& config )
 	TextProcessResult cmakeResult = executeTextProcess(
 		config.get<std::string>("cmake:binary"),
 		cmakeParams,
-		config.get<std::string>("output"));
+		config.get<std::string>("build:output"));
 
 	result.output.emplace_back("cmake", createTaskOutput(
 		config.get<std::string>("cmake:binary"),
 		cmakeParams,
-		config.get<std::string>("output"),
+		config.get<std::string>("build:output"),
 		cmakeResult));
 
 	result.message = createTaskMessage(cmakeResult);
@@ -78,12 +79,12 @@ TaskResult task_build_cmake( const pt::ptree& config )
 		TextProcessResult makeResult = executeTextProcess(
 			config.get<std::string>("make:binary"),
 			std::vector<std::string>{ },
-			config.get<std::string>("output"));
+			config.get<std::string>("build:output"));
 
 		result.output.emplace_back("make", createTaskOutput(
 			config.get<std::string>("make:binary"),
 			std::vector<std::string>{ },
-			config.get<std::string>("output"),
+			config.get<std::string>("build:output"),
 			makeResult));
 
 		result.message = createTaskMessage(makeResult);
@@ -375,6 +376,16 @@ TaskResult task_publish_rsync( const pt::ptree& config )
 	TextProcessResult sshResult = executeTextProcess(config.get<std::string>("ssh:binary"), sshArgs, config.get<std::string>("source"));
 
 	result.output.emplace_back("ssh:mkdir", createTaskOutput(config.get<std::string>("ssh:binary"), sshArgs, config.get<std::string>("source"), sshResult));
+
+	if(sshResult.exitCode != 0)
+	{
+		result.message = createTaskMessage(sshResult);
+		result.warnings = 0;
+		result.errors = 1;
+		result.status = TaskResult::STATUS_ERROR;
+
+		return result;
+	}
 
 	// run rsync
 	std::vector<std::string> rsyncArgs {
