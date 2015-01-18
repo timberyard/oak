@@ -106,12 +106,17 @@ boost::filesystem::path normalize(const boost::filesystem::path& path)
 }
 
 #ifdef _WIN32
+
+#undef __CRT__NO_INLINE
+#include <Strsafe.h>
+#define __CRT__NO_INLINE
+
 void DeleteDirectoryAndAllSubfolders(LPCWSTR wzDirectory)
 {
     WCHAR szDir[MAX_PATH+1];  // +1 for the double null terminate
     SHFILEOPSTRUCTW fos = {0};
 
-    StringCchCopy(szDir, MAX_PATH, wzDirectory);
+    StringCchCopyW(szDir, MAX_PATH, wzDirectory);
     int len = lstrlenW(szDir);
     szDir[len+1] = 0; // double null terminate for SHFileOperation
 
@@ -119,7 +124,7 @@ void DeleteDirectoryAndAllSubfolders(LPCWSTR wzDirectory)
     fos.wFunc = FO_DELETE;
     fos.pFrom = szDir;
     fos.fFlags = FOF_NO_UI;
-    if( SHFileOperation( &fos ) != 0 )
+    if( SHFileOperationW( &fos ) != 0 )
     {
     	throw std::runtime_error("could not delete directory");
     }
@@ -350,7 +355,7 @@ int main( int argc, const char* const* argv )
 	try
 	{
 #ifdef _WIN32
-		DeleteDirectoryAndAllSubfolders(boot::filesystem::path(argOutput).native().c_str());
+		DeleteDirectoryAndAllSubfolders(boost::filesystem::path(argOutput).native().c_str());
 #else
 		boost::filesystem::remove_all(argOutput);
 #endif
