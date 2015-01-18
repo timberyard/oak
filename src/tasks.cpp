@@ -14,17 +14,17 @@ namespace js = json_spirit;
 
 TaskResult task_build_cmake    ( const pt::ptree& config );
 TaskResult task_test_googletest( const pt::ptree& config );
-TaskResult task_test_cppcheck  ( const pt::ptree& config );
+TaskResult task_analysis_cppcheck  ( const pt::ptree& config );
 TaskResult task_doc_doxygen    ( const pt::ptree& config );
 TaskResult task_publish_rsync  ( const pt::ptree& config );
 
 std::map<std::string, std::function<TaskResult(const pt::ptree&)>> taskTypes =
 {
-	{ "build:cmake",     task_build_cmake },
-	{ "test:googletest", task_test_googletest },
-	{ "test:cppcheck",   task_test_cppcheck },
-	{ "doc:doxygen",     task_doc_doxygen },
-	{ "publish:rsync",   task_publish_rsync }
+	{ "build:cmake",       task_build_cmake },
+	{ "test:googletest",   task_test_googletest },
+	{ "analysis:cppcheck", task_analysis_cppcheck },
+	{ "doc:doxygen",       task_doc_doxygen },
+	{ "publish:rsync",     task_publish_rsync }
 };
 
 TaskResult task_build_cmake( const pt::ptree& config )
@@ -229,7 +229,7 @@ TaskResult task_test_googletest( const pt::ptree& config )
 }
 
 
-TaskResult task_test_cppcheck( const pt::ptree& config )
+TaskResult task_analysis_cppcheck( const pt::ptree& config )
 {
 	boost::filesystem::path xmlFilePath = config.get<std::string>("output");
 	boost::filesystem::path parentPath = xmlFilePath.branch_path();
@@ -362,16 +362,6 @@ TaskResult task_doc_doxygen( const pt::ptree& config )
 TaskResult task_publish_rsync( const pt::ptree& config )
 {
 	TaskResult result;
-
-	if(config.get<std::string>("enabled") != "yes")
-	{
-		result.message = "publishing via rsync disabled";
-		result.warnings = 0;
-		result.errors = 0;
-		result.status = TaskResult::STATUS_OK;
-
-		return result;
-	}
 
 	// run ssh:mkdir
 

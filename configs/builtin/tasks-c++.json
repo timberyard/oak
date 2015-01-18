@@ -1,16 +1,13 @@
 {	"build": {
 		"type": "build:cmake"
 	},
-	"unittests": {
+	"test": {
 		"type": "test:googletest"
 	},
-	"cppcheck": {
-		"type": "test:cppcheck"
+	"analysis": {
+		"type": "analysis:cppcheck"
 	},
 	"docs": {
 		"type": "doc:doxygen"
-	},
-	"publish": {
-		"type": "publish:rsync"
 	}
 }

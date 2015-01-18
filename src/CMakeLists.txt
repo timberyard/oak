@@ -50,7 +50,15 @@ add_custom_command(OUTPUT config_tasks-c++.cpp
 	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/tasks-c++.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
-add_executable(oak main.cpp process.cpp tasks.cpp task.utils.cpp config_defaults.cpp config_tasks-c++.cpp)
+add_custom_command(OUTPUT config_tasks-none.cpp
+	COMMAND xxd -i configs/builtin/tasks-none.json ${PROJECT_BINARY_DIR}/config_tasks-none.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/tasks-none.json
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
+
+add_executable(oak
+	main.cpp process.cpp tasks.cpp task.utils.cpp
+	config_defaults.cpp config_tasks-c++.cpp config_tasks-none.cpp
+)
 
 add_dependencies(oak boost)
 

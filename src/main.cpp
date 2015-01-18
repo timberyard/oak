@@ -16,10 +16,10 @@ namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.4";
-const std::string oakSysConfigDefault = "/etc/oak/defaults.json";
+const std::string oakVersion = "0.5";
+const std::string oakSysConfigDefault = "/etc/oak/config.json";
 
-std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult;
+std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult, argPubResult;
 std::string argMachine, argRepository, argBranch, argCommit, argTimestamp;
 
 // GNU ld generates these funny symbols when generating .o files from arbitrary binary files:
@@ -28,6 +28,9 @@ extern unsigned int configs_builtin_defaults_json_len;
 
 extern unsigned char configs_builtin_tasks_c___json[];
 extern unsigned int configs_builtin_tasks_c___json_len;
+
+extern unsigned char configs_builtin_tasks_none_json[];
+extern unsigned int configs_builtin_tasks_none_json_len;
 
 struct CompileTimeData
 {
@@ -38,6 +41,7 @@ struct CompileTimeData
 // currently we support only one variant. But for future use... :-)
 const std::map<std::string, CompileTimeData> variants =
 	{
+		{"none", { configs_builtin_tasks_none_json, configs_builtin_tasks_none_json + configs_builtin_tasks_none_json_len } },
 		{"c++", { configs_builtin_tasks_c___json, configs_builtin_tasks_c___json + configs_builtin_tasks_c___json_len } }
 	};
 
@@ -101,6 +105,26 @@ boost::filesystem::path normalize(const boost::filesystem::path& path)
 	return result;
 }
 
+#ifdef _WIN32
+void DeleteDirectoryAndAllSubfolders(LPCWSTR wzDirectory)
+{
+    WCHAR szDir[MAX_PATH+1];  // +1 for the double null terminate
+    SHFILEOPSTRUCTW fos = {0};
+
+    StringCchCopy(szDir, MAX_PATH, wzDirectory);
+    int len = lstrlenW(szDir);
+    szDir[len+1] = 0; // double null terminate for SHFileOperation
+
+    // delete the folder and everything inside
+    fos.wFunc = FO_DELETE;
+    fos.pFrom = szDir;
+    fos.fFlags = FOF_NO_UI;
+    if( SHFileOperation( &fos ) != 0 )
+    {
+    	throw std::runtime_error("could not delete directory");
+    }
+}
+#endif
 
 int main( int argc, const char* const* argv )
 {
@@ -114,6 +138,7 @@ int main( int argc, const char* const* argv )
 		("sysconfig,s" , po::value<std::string>(&argSysConfig) , sysconfigDesc.c_str() )
 		("config,c"    , po::value<std::string>(&argConfig)    , "the JSON config file (required in standard mode)")
 		("result,r"    , po::value<std::string>(&argResult)    , "the JSON result file (required in standard mode)")
+		("pubresult,p" , po::value<std::string>(&argPubResult) , "the JSON publish result file (required in standard mode)")
 		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (required in standard mode)")
 		("repository,R", po::value<std::string>(&argRepository), "the repository of the commit (required in standard mode)")
 		("branch,B"    , po::value<std::string>(&argBranch)    , "the branch of the commit (required in standard mode")
@@ -172,12 +197,21 @@ int main( int argc, const char* const* argv )
 			}
 		}
 
-		// not output JSON file given? put it into the output path:
+		// not result JSON file given? put it into the output path:
 		if(argResult.empty())
 		{
 			if(argOutput.length() > 0)
 			{
 				argResult = argOutput + "/result.json";
+			}
+		}
+
+		// not publish result JSON file given? put it into the output path:
+		if(argPubResult.empty())
+		{
+			if(argOutput.length() > 0)
+			{
+				argPubResult = argOutput + "/publish.json";
 			}
 		}
 	}
@@ -198,6 +232,7 @@ int main( int argc, const char* const* argv )
 		+ complainIfNotSet(argOutput, "output path" )
 		+ complainIfNotSet(argConfig, "config JSON file" )
 		+ complainIfNotSet(argResult, "result JSON file" )
+		+ complainIfNotSet(argPubResult, "publish result JSON file" )
 		+ complainIfNotSet(argMachine, "node name")
 		+ complainIfNotSet(argRepository, "repository URL")
 		+ complainIfNotSet(argBranch, "branch name")
@@ -214,6 +249,7 @@ int main( int argc, const char* const* argv )
 	argOutput = normalize(argOutput).string();
 	argConfig = normalize(argConfig).string();
 	argResult = normalize(argResult).string();
+	argPubResult = normalize(argPubResult).string();
 
 	// read configuration
 	pt::ptree config;
@@ -232,27 +268,16 @@ int main( int argc, const char* const* argv )
 			read_json( stream, projectConfig );
 		}
 
-		// read builtin defaults
-		std::cout << "Load built-in default configuration..." << std::endl;
-
-		pt::ptree defaultsConfig;
-		{
-			std::istringstream stream(std::string(configs_builtin_defaults_json, configs_builtin_defaults_json + configs_builtin_defaults_json_len));
-			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			read_json( stream, defaultsConfig );
-		}
-
 		// load system defaults
+		pt::ptree sysConfig;
+
 		if(argSysConfig.length() > 0)
 		{
-			std::cout << "Load system default configuration..." << std::endl;
+			std::cout << "Load system configuration..." << std::endl;
 			std::ifstream configStream;
 			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 			configStream.open( argSysConfig );
-
-			pt::ptree systemDefaultsConfig;
-			read_json( configStream, systemDefaultsConfig );
-			ptree_merge( defaultsConfig, systemDefaultsConfig );
+			read_json( configStream, sysConfig );
 		}
 
 		// read variant configuration
@@ -281,11 +306,22 @@ int main( int argc, const char* const* argv )
 			read_json( stream, variantConfig );
 		}
 
+		// read builtin defaults
+		std::cout << "Load built-in default configuration..." << std::endl;
+
+		pt::ptree defaultsConfig;
+		{
+			std::istringstream stream(std::string(configs_builtin_defaults_json, configs_builtin_defaults_json + configs_builtin_defaults_json_len));
+			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+			read_json( stream, defaultsConfig );
+		}
+
 		// merge configurations
 		std::cout << "Merge configurations..." << std::endl;
 
 		config.add_child("defaults", defaultsConfig);
 		config.add_child("tasks", variantConfig);
+		ptree_merge( config, sysConfig );
 		ptree_merge( config, projectConfig );
 
 		// print config
@@ -303,144 +339,211 @@ int main( int argc, const char* const* argv )
 		std::cerr << "Error while reading config file (stream): " << exception.what() << std::endl;
 		return 1;
 	}
+	catch ( ... )
+	{
+		std::cerr << "Error while reading config file (unknown)" << std::endl;
+		return 1;
+	}
 
 	// clean output
-	boost::filesystem::remove_all(argOutput);
-	boost::filesystem::create_directories(argOutput);
+	std::cout << "Prepare output directory..." << std::endl;
+	try
+	{
+#ifdef _WIN32
+		DeleteDirectoryAndAllSubfolders(boot::filesystem::path(argOutput).native().c_str());
+#else
+		boost::filesystem::remove_all(argOutput);
+#endif
+		boost::filesystem::create_directories(argOutput);
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Error while preparing output directory: " << e.what() << std::endl;
+		return 1;
+	}
+	catch(...)
+	{
+		std::cerr << "Error while preparing output directory: unknown" << std::endl;
+		return 1;
+	}
 
-	// run configurations
+	// collect task sets
+	std::vector< std::pair<boost::property_tree::ptree, std::string> > tasksets;
+
+	if(auto tasks = config.get_child_optional("tasks"))
+	{
+		tasksets.push_back( std::pair<boost::property_tree::ptree, std::string>(*tasks, argResult) );
+	}
+
+	if(auto tasks = config.get_child_optional("publish"))
+	{
+		tasksets.push_back( std::pair<boost::property_tree::ptree, std::string>(*tasks, argPubResult) );
+	}
+
+	// run tasks
 	bool task_with_error = false;
 
-	js::Object outputTasks;
-	try
+	for(auto taskset : tasksets)
 	{
-		for ( auto& taskConfig : config.get_child("tasks") )
+		js::Object outputTasks;
+
+		try
 		{
-			std::cout << "*************************************************************************" << std::endl;
-
-			// get task settings
-			std::string taskType = taskConfig.second.get<std::string>( "type" );
-
-			boost::optional<pt::ptree&> settings_defaults = config.get_child_optional( std::string( "defaults." ) + taskType );
-			boost::optional<pt::ptree&> settings_specific = taskConfig.second.get_child_optional( "settings" );
-
-			pt::ptree settings;
-
-			if(settings_defaults)
-				ptree_merge(settings, *settings_defaults);
-
-			if(settings_specific)
-				ptree_merge(settings, *settings_specific);
-
-			// expand variables
-			ptree_traverse
-			(
-				settings,
-				[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
-				{
-					boost::replace_all(child.data(), "${machine}", argMachine);
-					boost::replace_all(child.data(), "${repository}", argRepository);
-					boost::replace_all(child.data(), "${branch}"    , argBranch);
-					boost::replace_all(child.data(), "${commit.id}" , argCommit);
-					boost::replace_all(child.data(), "${commit.short-id}" , argCommit.substr(0, 7));
-					boost::replace_all(child.data(), "${commit.timestamp}", argTimestamp);
-					boost::replace_all(child.data(), "${input}", argInput);
-					boost::replace_all(child.data(), "${output}", argOutput);
-				}
-			);
-
-			// run task
-
-			std::cout << "Running task: " << taskConfig.first << std::endl;
-			std::cout << "type: " << taskType << std::endl;
-
-			std::cout << "*************************************************************************" << std::endl;
-
-			auto task = taskTypes.find(taskType);
-
-			if(task != taskTypes.end())
+			for ( auto& taskConfig : taskset.first )
 			{
-				TaskResult result;
+				std::cout << "*************************************************************************" << std::endl;
 
-				try
+				// get task settings
+				std::string taskType = taskConfig.second.get<std::string>( "type" );
+
+				pt::ptree settings;
+
+				if(auto defaults = config.get_child_optional( std::string( "defaults." ) + taskType ))
+					ptree_merge(settings, *defaults);
+
+				ptree_merge(settings, taskConfig.second);
+
+				// expand variables
+				ptree_traverse
+				(
+					settings,
+					[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
+					{
+						boost::replace_all(child.data(), "${machine}", argMachine);
+						boost::replace_all(child.data(), "${repository}", argRepository);
+						boost::replace_all(child.data(), "${branch}"    , argBranch);
+						boost::replace_all(child.data(), "${commit.id}" , argCommit);
+						boost::replace_all(child.data(), "${commit.short-id}" , argCommit.substr(0, 7));
+						boost::replace_all(child.data(), "${commit.timestamp}", argTimestamp);
+						boost::replace_all(child.data(), "${input}", argInput);
+						boost::replace_all(child.data(), "${output}", argOutput);
+					}
+				);
+
+				// check if it is enabled/disabled
+				if(config.get<std::string>("enabled") != "yes")
 				{
-					result = task->second(settings);
+					std::cout << "Task disabled: " << taskConfig.first << std::endl;
+					std::cout << "type: " << taskType << std::endl;
+
+					std::cout << "*************************************************************************" << std::endl;
+
+					continue;
 				}
-				catch(const std::exception& e)
+
+				// run task
+
+				std::cout << "Running task: " << taskConfig.first << std::endl;
+				std::cout << "type: " << taskType << std::endl;
+
+				std::cout << "*************************************************************************" << std::endl;
+
+				auto task = taskTypes.find(taskType);
+
+				if(task != taskTypes.end())
 				{
-					result.status = TaskResult::STATUS_ERROR;
-					result.warnings = 0;
-					result.errors = 1;
-					result.message = "exception occured";
-					result.output.push_back( js::Pair("exception", e.what()));
+					TaskResult result;
 
-					std::cout << "An exception occured: " << e.what() << std::endl;
+					try
+					{
+						result = task->second(settings);
+					}
+					catch(const std::exception& e)
+					{
+						result.status = TaskResult::STATUS_ERROR;
+						result.warnings = 0;
+						result.errors = 1;
+						result.message = "exception occured";
+						result.output.push_back( js::Pair("exception", e.what()));
+
+						std::cout << "An exception occured: " << e.what() << std::endl;
+					}
+					catch(...)
+					{
+						result.status = TaskResult::STATUS_ERROR;
+						result.warnings = 0;
+						result.errors = 1;
+						result.message = "exception occured";
+						result.output.push_back( js::Pair("exception", "unknown exception"));
+
+						std::cout << "An exception occured: unknown" << std::endl;
+					}
+
+					if(result.status == TaskResult::STATUS_ERROR)
+					{
+						task_with_error = true;
+					}
+
+					js::Object outputTask;
+
+					outputTask.push_back( js::Pair("type", taskType ));
+					outputTask.push_back( js::Pair("name", taskConfig.first ));
+					outputTask.push_back( js::Pair("message", result.message ));
+					outputTask.push_back( js::Pair("warnings", uint64_t(result.warnings)));
+					outputTask.push_back( js::Pair("errors",   uint64_t(result.errors)));
+					outputTask.push_back( js::Pair("status", toString(result.status)));
+					outputTask.push_back( js::Pair("details", result.output ));
+
+					outputTasks.emplace_back(taskConfig.first, outputTask);
 				}
+				else
+					throw std::runtime_error(std::string("invalid task type: ") + taskType);
 
-				if(result.status == TaskResult::STATUS_ERROR)
-				{
-					task_with_error = true;
-				}
-
-				js::Object outputTask;
-
-				outputTask.push_back( js::Pair("type", taskType ));
-				outputTask.push_back( js::Pair("name", taskConfig.first ));
-				outputTask.push_back( js::Pair("message", result.message ));
-				outputTask.push_back( js::Pair("warnings", uint64_t(result.warnings)));
-				outputTask.push_back( js::Pair("errors",   uint64_t(result.errors)));
-				outputTask.push_back( js::Pair("status", toString(result.status)));
-				outputTask.push_back( js::Pair("details", result.output ));
-
-				outputTasks.emplace_back(taskConfig.first, outputTask);
+				std::cout << "*************************************************************************" << std::endl;
 			}
-			else
-				throw std::runtime_error(std::string("invalid task type: ") + taskType);
-
-			std::cout << "*************************************************************************" << std::endl;
 		}
-	}
-	catch ( const pt::ptree_error& exception )
-	{
-		std::cerr << "Error during run (ptree): " << exception.what() << std::endl;
-		return 1;
-	}
-	catch ( const boost::system::system_error& exception )
-	{
-		std::cerr << "Error during run (system): " << exception.what() << std::endl;
-		return 1;
-	}
-	catch ( const std::runtime_error& exception )
-	{
-		std::cerr << "Error during run (runtime): " << exception.what() << std::endl;
-		return 1;
-	}
+		catch ( const pt::ptree_error& exception )
+		{
+			std::cerr << "Error during run (ptree): " << exception.what() << std::endl;
+			return 1;
+		}
+		catch ( const boost::system::system_error& exception )
+		{
+			std::cerr << "Error during run (system): " << exception.what() << std::endl;
+			return 1;
+		}
+		catch ( const std::runtime_error& exception )
+		{
+			std::cerr << "Error during run (runtime): " << exception.what() << std::endl;
+			return 1;
+		}
+		catch ( ... )
+		{
+			std::cerr << "Error during run (unknown)" << std::endl;
+			return 1;
+		}
 
-	// dump output
-	js::Object output;
+		// dump output
+		js::Object output;
 
-	try
-	{
-		output.push_back( js::Pair("oak", oakVersion) );
-		output.push_back( js::Pair("title", config.get<std::string>("name")));
-		output.emplace_back( "buildnode", argMachine);
-		output.emplace_back( "repository", argRepository);
-		output.emplace_back( "branch"    , argBranch);
-		output.emplace_back( "commit"    , argCommit);
-		output.emplace_back( "timestamp" , argTimestamp);
-		output.push_back( js::Pair("tasks", outputTasks));
+		try
+		{
+			output.push_back( js::Pair("oak", oakVersion) );
+			output.push_back( js::Pair("title", config.get<std::string>("name")));
+			output.emplace_back( "buildnode", argMachine);
+			output.emplace_back( "repository", argRepository);
+			output.emplace_back( "branch"    , argBranch);
+			output.emplace_back( "commit"    , argCommit);
+			output.emplace_back( "timestamp" , argTimestamp);
+			output.push_back( js::Pair("tasks", outputTasks));
 
-		const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
+			const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
 
-		std::ofstream stream(argResult.c_str());
-		stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+			std::ofstream stream(taskset.second.c_str());
+			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 
-		js::write(output, stream, options);
-	}
-	catch ( const pt::ptree_error& exception )
-	{
-		std::cerr << "Error on output (ptree): " << exception.what() << std::endl;
-		return 1;
+			js::write(output, stream, options);
+		}
+		catch ( const pt::ptree_error& exception )
+		{
+			std::cerr << "Error on output (ptree): " << exception.what() << std::endl;
+			return 1;
+		}
+		catch ( ... )
+		{
+			std::cerr << "Error on output (unknown)" << std::endl;
+			return 1;
+		}
 	}
 
 	return  task_with_error ? 2 : 0;

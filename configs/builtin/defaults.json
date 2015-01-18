@@ -1,6 +1,8 @@
 {	"build:cmake": {
+		"enabled": "yes",
 		"cmake:binary": "cmake",
 		"make:binary": "make",
+		"make:type": "gnu",
 		"local" : {
 			"c:binary": "cc",
 			"c++:binary": "c++"
@@ -10,23 +12,27 @@
 			"c++:binary": "c++"
 		},
 		"source": "${input}",
-		"output": "${output}/build",
+		"build:output": "${output}/build",
+		"install:output": "${output}/install",
 		"verbose": "false"
 	},
 	"test:googletest": {
-		"binary": "${output}/build/tests",
-		"output": "${output}/tests/googletest.xml",
+		"enabled": "yes",
+		"binary": "${output}/build/test",
+		"output": "${output}/test/googletest.xml",
 		"filter": "*"
 	},
-	"test:cppcheck": {
+	"analysis:cppcheck": {
+		"enabled": "yes",
 		"binary": "cppcheck",
 		"source": "${input}/src",
-		"output": "${output}/tests/cppcheck.xml"
+		"output": "${output}/analysis/cppcheck.xml"
 	},
 	"doc:doxygen": {
+		"enabled": "yes",
 		"binary": "doxygen",
 		"source": "${input}/src",
-		"output": "${output}/docs",
+		"output": "${output}/doc",
 		"doxyfile" : {
 			"FILE_PATTERNS": "*.h*",
 			"RECURSIVE": "YES",
@@ -51,10 +57,10 @@
 		}
 	},
 	"publish:rsync": {
-		"enabled": "no",
+		"enabled": "yes",
 		"rsync:binary": "rsync",
 		"ssh:binary": "ssh",
-		"source": "${output}",
+		"source": "${output}/install",
 		"destination": {
 			"port": "22",
 			"directory": "${repository}/${branch}/${commit.timestamp}_${commit.short-id}/${machine}"
