@@ -48,6 +48,8 @@ TaskResult task_build_cmake( const pt::ptree& config )
 		std::string("-DLOCAL_BITNESS:STRING=") + config.get<std::string>("local.bitness"),
 		std::string("-DLOCAL_OS:STRING=") + config.get<std::string>("local.os"),
 
+		std::string("-DCMAKE_INSTALL_PREFIX=") + config.get<std::string>("install:output"),
+
 		config.get<std::string>("source")
 	};
 
@@ -107,6 +109,30 @@ TaskResult task_build_cmake( const pt::ptree& config )
 				: (result.warnings > 0
 					? TaskResult::STATUS_WARNING
 					: TaskResult::STATUS_OK));
+
+		if(makeResult.exitCode == 0)
+		{
+			TextProcessResult installResult = executeTextProcess(
+				config.get<std::string>("make:binary"),
+				std::vector<std::string>{ "install" },
+				config.get<std::string>("build:output"));
+
+			result.output.emplace_back("install", createTaskOutput(
+				config.get<std::string>("make:binary"),
+				std::vector<std::string>{ "install" },
+				config.get<std::string>("build:output"),
+				installResult));
+
+			result.message = createTaskMessage(installResult);
+			result.errors += (installResult.exitCode != 0 ? 1 : 0);
+
+			result.status =
+				(result.errors
+					? TaskResult::STATUS_ERROR
+					: (result.warnings > 0
+						? TaskResult::STATUS_WARNING
+						: TaskResult::STATUS_OK));
+		}
 	}
 
 	return result;

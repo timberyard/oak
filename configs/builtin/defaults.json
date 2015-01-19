@@ -37,6 +37,10 @@
 		"binary": "doxygen",
 		"source": "${input}/src",
 		"output": "${output}/doc",
+		"install": {
+			"formats": ["html"],
+			"directory": "${output}/install/share/doc/${project}"
+		},
 		"doxyfile" : {
 			"FILE_PATTERNS": "*.h*",
 			"RECURSIVE": "YES",

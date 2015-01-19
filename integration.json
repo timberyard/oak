@@ -2,9 +2,10 @@
 	"variant": "c++",
 	"tasks": {
 		"build": {
-			"settings": {
-				"source": "${input}/src"
-			}
+			"source": "${input}/src"
+		},
+		"test": {
+			"enabled": "no"
 		}
 	}
 }
