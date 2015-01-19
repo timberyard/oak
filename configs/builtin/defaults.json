@@ -1,4 +1,8 @@
-{	"build:cmake": {
+{	"checkout:git": {
+		"enabled": "yes",
+		"binary": "git"
+	},
+	"build:cmake": {
 		"enabled": "yes",
 		"cmake:binary": "cmake",
 		"make:binary": "make",
@@ -63,7 +67,7 @@
 		"source": "${output}/install",
 		"destination": {
 			"port": "22",
-			"directory": "${repository}/${branch}/${commit.timestamp}_${commit.short-id}/${machine}"
+			"directory": "${project}/${branch}/${commit.timestamp.compact}_${commit.short-id}/${machine}"
 		}
 	}
 }

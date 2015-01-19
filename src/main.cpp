@@ -6,9 +6,17 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/system/system_error.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/date_time.hpp>
+
+#ifdef _WIN32
+#include <Winsock2.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "ptree.utils.hpp"
 #include "tasks.hpp"
+#include "process.hpp"
 
 #include "json_spirit/json_spirit.h"
 
@@ -21,6 +29,8 @@ const std::string oakSysConfigDefault = "/etc/oak/config.json";
 
 std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult, argPubResult;
 std::string argMachine, argRepository, argBranch, argCommit, argTimestamp;
+boost::posix_time::ptime argTimestampParsed(boost::date_time::not_a_date_time);
+std::string argTimestampFormatDefault, argTimestampFormatCompact;
 
 // GNU ld generates these funny symbols when generating .o files from arbitrary binary files:
 extern unsigned char configs_builtin_defaults_json[];
@@ -172,22 +182,13 @@ int main( int argc, const char* const* argv )
 
 	if(argMode == "jenkins")
 	{
-		getFromEnvironment(argMachine   , "NODE_NAME" );
-		getFromEnvironment(argRepository, "GIT_URL"   );
-		getFromEnvironment(argBranch    , "GIT_BRANCH");
-		if(argBranch.find("origin/") == 0)
-		{
-			argBranch = argBranch.substr(7);
-		}
-
-		getFromEnvironment(argCommit   , "GIT_COMMIT");
-		getFromEnvironment(argTimestamp, "BUILD_ID"  );
-		getFromEnvironment(argInput    , "WORKSPACE" );
+		getFromEnvironment(argMachine, "NODE_NAME" );
+		getFromEnvironment(argInput  , "WORKSPACE" );
 
 		// build output directory from inpit directory + git infos:
 		if(argOutput.empty())
 		{
-			if(argInput.length() > 0 && argBranch.length() > 0 && argTimestamp.length() > 0 && argCommit.length() > 0)
+			if(argInput.length() > 0)
 			{
 				argOutput = argInput + "/integration";
 			}
@@ -232,18 +233,26 @@ int main( int argc, const char* const* argv )
 	}
 #endif
 
+	if(argMachine.empty())
+	{
+		char hostname[256] = {};
+
+		if(gethostname(hostname, sizeof(hostname)) != 0)
+		{
+			std::cerr << "could not retrieve hostname" << std::endl;
+			return 1;
+		}
+
+		argMachine = hostname;
+	}
+
 	// use + instead of || to avoid short-circtuiting and report all errors at once
 	if( complainIfNotSet(argInput, "input path")
 		+ complainIfNotSet(argOutput, "output path" )
 		+ complainIfNotSet(argConfig, "config JSON file" )
 		+ complainIfNotSet(argResult, "result JSON file" )
 		+ complainIfNotSet(argPubResult, "publish result JSON file" )
-		+ complainIfNotSet(argMachine, "node name")
-		+ complainIfNotSet(argRepository, "repository URL")
-		+ complainIfNotSet(argBranch, "branch name")
-		+ complainIfNotSet(argCommit, "commit ID")
-		+ complainIfNotSet(argTimestamp, "commit timestamp")
-		)
+		+ complainIfNotSet(argMachine, "node name"))
 	{
 		std::cerr << desc << "\n"
 			"This is oak version " << oakVersion << "\n\n";
@@ -350,6 +359,146 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
+	// get repository data
+	if( boost::filesystem::exists(argInput + "/.git") )
+	{
+		if(argRepository.empty())
+		{
+			TextProcessResult gitRepository = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"config", "--get", "remote.origin.url"}, argInput);
+
+			if(gitRepository.exitCode == 0 && gitRepository.output.size() == 1 && gitRepository.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			{
+				argRepository = gitRepository.output[0].second;
+			}
+			else
+			{
+				std::cerr << "Could not detect git repository" << std::endl;
+				return 1;
+			}
+		}
+
+		if(argBranch.empty())
+		{
+			TextProcessResult gitBranch = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, argInput);
+
+			if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			{
+				argBranch = gitBranch.output[0].second;
+			}
+			else
+			{
+				std::cerr << "Could not detect git branch" << std::endl;
+				return 1;
+			}
+		}
+
+		if(argCommit.empty())
+		{
+			TextProcessResult gitCommit = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"rev-parse", "--verify", "-q", "HEAD"}, argInput);
+
+			if(gitCommit.exitCode == 0 && gitCommit.output.size() == 1 && gitCommit.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			{
+				argCommit = gitCommit.output[0].second;
+			}
+			else
+			{
+				std::cerr << "Could not detect git commit id" << std::endl;
+				return 1;
+			}
+		}
+
+		if(argTimestamp.empty())
+		{
+			TextProcessResult gitTimestamp = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"show", "-s", "--format=%ci", argCommit}, argInput);
+
+			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() == 1 && gitTimestamp.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			{
+				argTimestamp = gitTimestamp.output[0].second;
+			}
+			else
+			{
+				std::cerr << "Could not detect git commit timestamp" << std::endl;
+				return 1;
+			}
+		}
+	}
+	else
+	if(argMode == "jenkins")
+	{
+		getFromEnvironment(argRepository, "GIT_URL"   );
+		getFromEnvironment(argBranch    , "GIT_BRANCH");
+		if(argBranch.find("origin/") == 0)
+		{
+			argBranch = argBranch.substr(7);
+		}
+
+		getFromEnvironment(argCommit   , "GIT_COMMIT");
+		getFromEnvironment(argTimestamp, "BUILD_ID"  );
+
+		if(!argTimestamp.empty())
+		{
+			std::stringstream ss(argTimestamp);
+			auto facet = new boost::posix_time::time_input_facet("%Y-%m-%d_%H-%M-%S");
+			ss.imbue(std::locale(ss.getloc(), facet));
+			ss >> argTimestampParsed;
+
+			if(argTimestampParsed.is_not_a_date_time())
+			{
+				std::cerr << "Could not parse timestamp" << std::endl;
+				return 1;
+			}
+		}
+	}
+
+	// use + instead of || to avoid short-circtuiting and report all errors at once
+	if(   complainIfNotSet(argRepository, "repository URL")
+		+ complainIfNotSet(argBranch, "branch name")
+		+ complainIfNotSet(argCommit, "commit ID")
+		+ complainIfNotSet(argTimestamp, "commit timestamp")
+		)
+	{
+		std::cerr << desc << "\n"
+			"This is oak version " << oakVersion << "\n\n";
+		return 1;
+	}
+
+	// parse timestamp
+	if(argTimestampParsed.is_not_a_date_time())
+	{
+		std::stringstream ss(argTimestamp);
+		auto facet = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%S");
+		ss.imbue(std::locale(ss.getloc(), facet));
+		ss >> argTimestampParsed;
+
+		if(argTimestampParsed.is_not_a_date_time())
+		{
+			std::cerr << "Could not parse timestamp" << std::endl;
+			return 1;
+		}
+	}
+
+	// format timestamp
+	{
+		std::stringstream ss;
+		ss << argTimestampParsed;
+		argTimestampFormatDefault = ss.str();
+	}
+
+	{
+		std::stringstream ss;
+		auto facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
+		ss.imbue(std::locale(ss.getloc(), facet));
+		ss << argTimestampParsed;
+		argTimestampFormatCompact = ss.str();
+	}
+
+	// print meta data
+	std::cout << "Machine: " << argMachine << std::endl;
+	std::cout << "Repository: " << argRepository << std::endl;
+	std::cout << "Branch: " << argBranch << std::endl;
+	std::cout << "Commit: " << argCommit << std::endl;
+	std::cout << "Timestamp: " << argTimestampParsed << std::endl;
+
 	// clean output
 	std::cout << "Prepare output directory..." << std::endl;
 	try
@@ -412,14 +561,16 @@ int main( int argc, const char* const* argv )
 				ptree_traverse
 				(
 					settings,
-					[] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
+					[&config] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
 					{
+						boost::replace_all(child.data(), "${project}", config.get<std::string>("name"));
 						boost::replace_all(child.data(), "${machine}", argMachine);
 						boost::replace_all(child.data(), "${repository}", argRepository);
 						boost::replace_all(child.data(), "${branch}"    , argBranch);
 						boost::replace_all(child.data(), "${commit.id}" , argCommit);
 						boost::replace_all(child.data(), "${commit.short-id}" , argCommit.substr(0, 7));
-						boost::replace_all(child.data(), "${commit.timestamp}", argTimestamp);
+						boost::replace_all(child.data(), "${commit.timestamp.default}", argTimestampFormatDefault);
+						boost::replace_all(child.data(), "${commit.timestamp.compact}", argTimestampFormatCompact);
 						boost::replace_all(child.data(), "${input}", argInput);
 						boost::replace_all(child.data(), "${output}", argOutput);
 					}
