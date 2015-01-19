@@ -491,7 +491,7 @@ TaskResult task_publish_rsync( const pt::ptree& config )
 	// run ssh:mkdir
 
 	std::vector<std::string> sshArgs {
-		"-o", "BatchMode yes", "-p", config.get<std::string>("destination.port"),
+		"-o", "BatchMode=yes", "-p", config.get<std::string>("destination.port"),
 		config.get<std::string>("destination.user") + std::string("@") + config.get<std::string>("destination.host"),
 		"mkdir", "-p",
 		config.get<std::string>("destination.base") + std::string("/") + config.get<std::string>("destination.directory")
@@ -513,7 +513,7 @@ TaskResult task_publish_rsync( const pt::ptree& config )
 
 	// run rsync
 	std::vector<std::string> rsyncArgs {
-		std::string("--rsh=") + config.get<std::string>("ssh:binary") + (" -o \"BatchMode yes\" -p ") + config.get<std::string>("destination.port"),
+		std::string("--rsh=") + config.get<std::string>("ssh:binary") + (" -o BatchMode=yes -p ") + config.get<std::string>("destination.port"),
 		"--archive", "--delete", "--verbose", std::string("./"),
 		config.get<std::string>("destination.user") + std::string("@") + config.get<std::string>("destination.host") + std::string(":")
 		+ config.get<std::string>("destination.base") + std::string("/") + config.get<std::string>("destination.directory") + std::string("/")
