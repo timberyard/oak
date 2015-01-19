@@ -131,7 +131,7 @@ TaskResult task_build_cmake( const pt::ptree& config )
 		std::string("-DLOCAL_BITNESS:STRING=") + config.get<std::string>("local.bitness"),
 		std::string("-DLOCAL_OS:STRING=") + config.get<std::string>("local.os"),
 
-		std::string("-DCMAKE_INSTALL_PREFIX=") + config.get<std::string>("install.output"),
+		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + config.get<std::string>("install.output"),
 
 		config.get<std::string>("source")
 	};
