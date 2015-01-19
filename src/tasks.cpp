@@ -6,6 +6,7 @@
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <json_spirit/json_spirit.h>
 
@@ -119,21 +120,21 @@ TaskResult task_build_cmake( const pt::ptree& config )
 
 	std::vector<std::string> cmakeParams {
 
-		std::string("-DCMAKE_C_COMPILER:STRING=") + config.get<std::string>("target.c:binary"),
-		std::string("-DCMAKE_CXX_COMPILER:STRING=") + config.get<std::string>("target.c++:binary"),
+		std::string("-DCMAKE_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get<std::string>("target.c:binary"), "\\", "/"),
+		std::string("-DCMAKE_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get<std::string>("target.c++:binary"), "\\", "/"),
 		std::string("-DTARGET_ARCHITECTURE:STRING=") + config.get<std::string>("target.architecture"),
 		std::string("-DTARGET_BITNESS:STRING=") + config.get<std::string>("target.bitness"),
 		std::string("-DTARGET_OS:STRING=") + config.get<std::string>("target.os"),
 
-		std::string("-DLOCAL_C_COMPILER:STRING=") + config.get<std::string>("local.c:binary"),
-		std::string("-DLOCAL_CXX_COMPILER:STRING=") + config.get<std::string>("local.c++:binary"),
+		std::string("-DLOCAL_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get<std::string>("local.c:binary"), "\\", "/"),
+		std::string("-DLOCAL_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get<std::string>("local.c++:binary"), "\\", "/"),
 		std::string("-DLOCAL_ARCHITECTURE:STRING=") + config.get<std::string>("local.architecture"),
 		std::string("-DLOCAL_BITNESS:STRING=") + config.get<std::string>("local.bitness"),
 		std::string("-DLOCAL_OS:STRING=") + config.get<std::string>("local.os"),
 
-		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + config.get<std::string>("install.output"),
+		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + boost::algorithm::replace_all_copy(config.get<std::string>("install.output"), "\\", "/"),
 
-		config.get<std::string>("source")
+		boost::algorithm::replace_all_copy(config.get<std::string>("source"), "\\", "/")
 	};
 
 	cmakeParams.insert(cmakeParams.begin(), std::string("-DCMAKE_VERBOSE_MAKEFILE:BOOLEAN=ON"));
@@ -513,8 +514,7 @@ TaskResult task_publish_rsync( const pt::ptree& config )
 	// run rsync
 	std::vector<std::string> rsyncArgs {
 		std::string("--rsh=") + config.get<std::string>("ssh:binary") + (" -o \"BatchMode yes\" -p ") + config.get<std::string>("destination.port"),
-		"--archive", "--delete", "--verbose",
-		config.get<std::string>("source") + std::string("/"),
+		"--archive", "--delete", "--verbose", std::string("./"),
 		config.get<std::string>("destination.user") + std::string("@") + config.get<std::string>("destination.host") + std::string(":")
 		+ config.get<std::string>("destination.base") + std::string("/") + config.get<std::string>("destination.directory") + std::string("/")
 	};

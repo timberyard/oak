@@ -31,7 +31,8 @@
 			"destination": {
 				"user": "builds",
 				"host": "build-repo",
-				"base": "/home/builds/integration"
+				"base": "/home/builds/integration",
+				"directory": "${project}/${branch}/${commit.timestamp.compact}_${commit.short-id}/${machine}"
 			}
 		}
 	}
