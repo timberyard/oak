@@ -360,6 +360,15 @@ int main( int argc, const char* const* argv )
 	}
 
 	// get repository data
+	if(argMode == "jenkins")
+	{
+		getFromEnvironment(argBranch, "GIT_BRANCH");
+		if(argBranch.find("origin/") == 0)
+		{
+			argBranch = argBranch.substr(7);
+		}
+	}
+
 	if( boost::filesystem::exists(argInput + "/.git") )
 	{
 		if(argRepository.empty())
@@ -426,14 +435,8 @@ int main( int argc, const char* const* argv )
 	if(argMode == "jenkins")
 	{
 		getFromEnvironment(argRepository, "GIT_URL"   );
-		getFromEnvironment(argBranch    , "GIT_BRANCH");
-		if(argBranch.find("origin/") == 0)
-		{
-			argBranch = argBranch.substr(7);
-		}
-
-		getFromEnvironment(argCommit   , "GIT_COMMIT");
-		getFromEnvironment(argTimestamp, "BUILD_ID"  );
+		getFromEnvironment(argCommit   ,  "GIT_COMMIT");
+		getFromEnvironment(argTimestamp,  "BUILD_ID"  );
 
 		if(!argTimestamp.empty())
 		{
