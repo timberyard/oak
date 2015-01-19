@@ -1,7 +1,11 @@
 
 #include <numeric>
 #include <fstream>
+
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
+
 #include <boost/property_tree/xml_parser.hpp>
 #include <json_spirit/json_spirit.h>
 
@@ -26,6 +30,85 @@ std::map<std::string, std::function<TaskResult(const pt::ptree&)>> taskTypes =
 	{ "doc:doxygen",       task_doc_doxygen },
 	{ "publish:rsync",     task_publish_rsync }
 };
+
+bool copyDir(
+    boost::filesystem::path const & source,
+    boost::filesystem::path const & destination
+)
+{
+    namespace fs = boost::filesystem;
+    try
+    {
+        // Check whether the function call is valid
+        if(
+            !fs::exists(source) ||
+            !fs::is_directory(source)
+        )
+        {
+            std::cerr << "Source directory " << source.string()
+                << " does not exist or is not a directory." << '\n'
+            ;
+            return false;
+        }
+        if(fs::exists(destination))
+        {
+            std::cerr << "Destination directory " << destination.string()
+                << " already exists." << '\n'
+            ;
+            return false;
+        }
+        // Create the destination directory
+        if(!fs::create_directory(destination))
+        {
+            std::cerr << "Unable to create destination directory"
+                << destination.string() << '\n'
+            ;
+            return false;
+        }
+    }
+    catch(fs::filesystem_error const & e)
+    {
+        std::cerr << e.what() << '\n';
+        return false;
+    }
+    // Iterate through the source directory
+    for(
+        fs::directory_iterator file(source);
+        file != fs::directory_iterator(); ++file
+    )
+    {
+        try
+        {
+            fs::path current(file->path());
+            if(fs::is_directory(current))
+            {
+                // Found directory: Recursion
+                if(
+                    !copyDir(
+                        current,
+                        destination / current.filename()
+                    )
+                )
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                // Found file: Copy
+                fs::copy_file(
+                    current,
+                    destination / current.filename()
+                );
+            }
+        }
+        catch(fs::filesystem_error const & e)
+        {
+            std:: cerr << e.what() << '\n';
+        }
+    }
+    return true;
+}
 
 TaskResult task_build_cmake( const pt::ptree& config )
 {
@@ -374,14 +457,28 @@ TaskResult task_doc_doxygen( const pt::ptree& config )
 	// run doxygen
 	TextProcessResult doxygenResult = executeTextProcess(config.get<std::string>("binary"), std::vector<std::string>{doxyfilePath}, outputPath);
 
-	// generate task output
 	result.output.emplace_back("doxygen", createTaskOutput(config.get<std::string>("binary"), std::vector<std::string>{doxyfilePath}, outputPath, doxygenResult));
 
-	// generate meta data
 	result.message = createTaskMessage(doxygenResult);
 	result.warnings = 0;
 	result.errors = (doxygenResult.exitCode != 0 ? 1 : 0);
 	result.status = (doxygenResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
+
+	// install docs
+	if(doxygenResult.exitCode == 0)
+	{
+		auto format = config.get<std::string>("install.format");
+
+		std::cout << "Installing " <<format << " docs..." << std::endl;
+		boost::filesystem::create_directories(config.get<std::string>("install.directory"));
+
+		if(!copyDir(config.get<std::string>("output") + "/" +format, config.get<std::string>("install.directory") + "/" +format))
+		{
+			result.errors += 1;
+			result.status = TaskResult::STATUS_ERROR;
+			result.message = std::string("Could not copy ") +format + std::string(" format output.");
+		}
+	}
 
 	return result;
 }

@@ -38,7 +38,7 @@
 		"source": "${input}/src",
 		"output": "${output}/doc",
 		"install": {
-			"formats": ["html"],
+			"format": "html",
 			"directory": "${output}/install/share/doc/${project}"
 		},
 		"doxyfile" : {

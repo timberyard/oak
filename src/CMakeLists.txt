@@ -32,7 +32,7 @@ ExternalProject_Get_Property( JsonSpirit BINARY_DIR )
 set( JsonSpirit_LIBRARY "${BINARY_DIR}/json_spirit/libjson_spirit.a" )
 # end of Json Spirit
 
-include_directories( ${BOOST_ROOT}/include ${BOOST_ROOT}/include/boost-1_56 )
+include_directories( ${BOOST_ROOT}/include )
 include_directories( ${PROJECT_SOURCE_DIR}/../libs/boost-process)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
 

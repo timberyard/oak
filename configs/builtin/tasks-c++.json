@@ -7,7 +7,7 @@
 	"analysis": {
 		"type": "analysis:cppcheck"
 	},
-	"docs": {
+	"doc": {
 		"type": "doc:doxygen"
 	}
 }
