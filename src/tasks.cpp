@@ -113,7 +113,7 @@ bool copyDir(
 TaskResult task_build_cmake( const pt::ptree& config )
 {
 	boost::filesystem::create_directories(config.get<std::string>("build:output"));
-	boost::filesystem::create_directories(config.get<std::string>("install:output"));
+	boost::filesystem::create_directories(config.get<std::string>("install.output"));
 
 	TaskResult result;
 
@@ -131,7 +131,7 @@ TaskResult task_build_cmake( const pt::ptree& config )
 		std::string("-DLOCAL_BITNESS:STRING=") + config.get<std::string>("local.bitness"),
 		std::string("-DLOCAL_OS:STRING=") + config.get<std::string>("local.os"),
 
-		std::string("-DCMAKE_INSTALL_PREFIX=") + config.get<std::string>("install:output"),
+		std::string("-DCMAKE_INSTALL_PREFIX=") + config.get<std::string>("install.output"),
 
 		config.get<std::string>("source")
 	};
@@ -193,17 +193,17 @@ TaskResult task_build_cmake( const pt::ptree& config )
 					? TaskResult::STATUS_WARNING
 					: TaskResult::STATUS_OK));
 
-		if(makeResult.exitCode == 0)
+		if(makeResult.exitCode == 0 && config.get<std::string>("install.enabled") == "yes")
 		{
 			TextProcessResult installResult = executeTextProcess(
 				config.get<std::string>("make:binary"),
 				std::vector<std::string>{ "install" },
-				config.get<std::string>("build:output"));
+				config.get<std::string>("install.base"));
 
 			result.output.emplace_back("install", createTaskOutput(
 				config.get<std::string>("make:binary"),
 				std::vector<std::string>{ "install" },
-				config.get<std::string>("build:output"),
+				config.get<std::string>("install.base"),
 				installResult));
 
 			result.message = createTaskMessage(installResult);

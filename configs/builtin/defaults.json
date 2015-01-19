@@ -17,7 +17,11 @@
 		},
 		"source": "${input}",
 		"build:output": "${output}/build",
-		"install:output": "${output}/install",
+		"install": {
+			"enabled": "yes",
+			"base": "${output}/build",
+			"output": "${output}/install"
+		},
 		"verbose": "false"
 	},
 	"test:googletest": {
