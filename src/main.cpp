@@ -125,7 +125,7 @@ void DeleteDirectoryAndAllSubfolders(std::string directory)
 {
 	boost::replace_all(directory, "/", "\\");
 
-    WCHAR cdir[MAX_PATH+1];  // +1 for the double null terminate
+    char cdir[MAX_PATH+1];  // +1 for the double null terminate
     SHFILEOPSTRUCTA fos = {0};
 
     StringCchCopyA(cdir, MAX_PATH, directory.c_str());
