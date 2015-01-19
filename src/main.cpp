@@ -422,7 +422,7 @@ int main( int argc, const char* const* argv )
 		{
 			TextProcessResult gitTimestamp = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"show", "-s", "--format=%ci", argCommit}, argInput);
 
-			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() == 1 && gitTimestamp.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == TextProcessResult::LineType::INFO_LINE)
 			{
 				argTimestamp = gitTimestamp.output[0].second;
 			}
