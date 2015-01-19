@@ -67,3 +67,5 @@ if(NOT WIN32)
 else()
 	target_link_libraries( oak ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ws2_32 mswsock )
 endif()
+
+install(TARGETS oak DESTINATION bin )
