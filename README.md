@@ -31,4 +31,3 @@ There are two *modes of operatons*: “direct mode” and "Jenkins mode”. In �
 | 
 
 
-
