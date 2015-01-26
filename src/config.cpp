@@ -81,9 +81,20 @@ std::string ConfigNode::resolve(std::string value)
 	return resolve( value.substr(0, i) + _base.get<std::string>( value.substr( i+2, j-i-2 ) ) + value.substr(j+1) );
 }
 
-void ConfigNode::print(std::ostream& stream)
+void ConfigNode::print(std::ostream& stream, bool resolved)
 {
-	boost::property_tree::write_json(stream, _config);
+	boost::property_tree::ptree config = _config;
+
+	if(resolved)
+	{
+		ptree_utils::traverse(
+			config,
+			[this] (boost::property_tree::ptree &parent, const boost::property_tree::ptree::path_type &childPath, boost::property_tree::ptree &child) {
+				child.data() = resolve(child.data());
+			});
+	}
+
+	boost::property_tree::write_json(stream, config);
 }
 
 ConfigNode::ConfigNode()

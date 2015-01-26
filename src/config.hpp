@@ -40,7 +40,7 @@ namespace config {
 
 		ConfigNode& operator=(const ConfigNode& other);
 
-		void print(std::ostream& stream);
+		void print(std::ostream& stream, bool resolved = true);
 
 	protected:
 		ConfigNode(boost::property_tree::ptree base, boost::property_tree::ptree config);
