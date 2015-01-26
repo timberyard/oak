@@ -285,7 +285,7 @@ int main( int argc, const char* const* argv )
 		if( boost::filesystem::exists(input / ".git") )
 		{
 			// meta.repository
-			process::TextProcessResult gitRepository = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"config", "--get", "remote.origin.url"}, input);
+			process::TextProcessResult gitRepository = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"config", "--get", "remote.origin.url"}, input);
 
 			if(gitRepository.exitCode == 0 && gitRepository.output.size() == 1 && gitRepository.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -298,7 +298,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.branch
-			process::TextProcessResult gitBranch = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
+			process::TextProcessResult gitBranch = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
 
 			if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -311,7 +311,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.id.long
-			process::TextProcessResult gitCommit = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"rev-parse", "--verify", "-q", "HEAD"}, input);
+			process::TextProcessResult gitCommit = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"rev-parse", "--verify", "-q", "HEAD"}, input);
 
 			if(gitCommit.exitCode == 0 && gitCommit.output.size() == 1 && gitCommit.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -324,7 +324,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.timestamp.default
-			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"show", "-s", "--format=%ci", conf.value("meta.commit.id.long")}, input);
+			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"show", "-s", "--format=%ci", conf.value("meta.commit.id.long")}, input);
 
 			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -393,7 +393,7 @@ int main( int argc, const char* const* argv )
 		// task defaults
 		for(auto section : std::vector<std::string>{"checkout", "integrate", "publish"})
 		{
-			for( auto task : conf.node(section).children() )
+			for( auto task : conf.node(std::string("tasks.") + section).children() )
 			{
 				conf.apply(config::Config::Priority::Variant,
 					std::string("tasks.") + section + std::string(".") + task.first,
