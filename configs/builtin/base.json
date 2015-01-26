@@ -1,0 +1,148 @@
+{	"meta": {
+		"oak": {
+			"version": "0.6"
+		},
+		"project": {
+			"name": "unknown",
+			"version": "unknown"
+		},
+		"variants": {
+			"checkout": "nothing",
+			"integrate": "nothing",
+			"publish": "nothing"
+		},
+		"repository": "unknown",
+		"branch": "unknown",
+		"commit": {
+			"id": {
+				"long": "unknown",
+				"short": "unknown"
+			},
+			"timestamp": {
+				"default": "unknown",
+				"compact": "unknown"
+			}
+		},
+		"node": {
+			"name": "unknown",
+			"architecture": "unknown",
+			"bitness": "unknown",
+			"os": "unknown"
+		},
+		"input": ".",
+		"output": "${meta.input}/oak",
+		"configs": {
+			"system": "/etc/oak/system.json",
+			"project": "${meta.input}/project.json"
+		},
+		"results": {
+			"checkout": "${meta.output}/results/checkout.json",
+			"integrate": "${meta.output}/results/integrate.json",
+			"publish": "${meta.output}/results/publish.json"
+		}
+	},
+	"tasks": {
+		"defaults": {
+			"checkout:git": {
+				"enabled": "yes",
+				"binary": "git"
+			},
+			"build:cmake": {
+				"enabled": "yes",
+				"cmake": {
+					"binary": "cmake",
+					"variables": { },
+					"generator": "Unix Makefiles"
+				},
+				"make": {
+					"binary": "make",
+					"type": "gnu",
+					"variables": { }
+				},
+				"local" : {
+					"c": { "binary": "cc" },
+					"c++": { "binary": "c++" },
+					"architecture": "${meta.node.architecture}",
+					"bitness": "${meta.node.bitness}",
+					"os": "${meta.node.os}"
+				},
+				"target" : {
+					"c": { "binary": "cc" },
+					"c++": { "binary": "c++" },
+					"architecture": "${meta.node.architecture}",
+					"bitness": "${meta.node.bitness}",
+					"os": "${meta.node.os}"
+				},
+				"source": "${meta.input}",
+				"build": {
+					"output": "${meta.output}/build"
+				},
+				"install": {
+					"enabled": "yes",
+					"base": "${meta.output}/build",
+					"output": "${meta.output}/install"
+				},
+				"verbose": "no"
+			},
+			"test:googletest": {
+				"enabled": "yes",
+				"binary": "${meta.output}/build/test",
+				"output": "${meta.output}/test/googletest.xml",
+				"filter": "*"
+			},
+			"analysis:cppcheck": {
+				"enabled": "yes",
+				"binary": "cppcheck",
+				"source": "${meta.input}/src",
+				"output": "${meta.output}/analysis/cppcheck.xml"
+			},
+			"doc:doxygen": {
+				"enabled": "yes",
+				"binary": "doxygen",
+				"source": "${meta.input}/src",
+				"output": "${meta.output}/doc",
+				"doxyfile" : {
+					"FILE_PATTERNS": "*.h*",
+					"RECURSIVE": "YES",
+					"CASE_SENSE_NAMES": "NO",
+					"EXTRACT_ALL": "NO",
+					"EXTRACT_PRIVATE": "NO",
+					"EXTRACT_PACKAGE": "NO",
+					"EXTRACT_STATIC": "YES",
+					"EXTRACT_LOCAL_CLASSES": "NO",
+					"EXTRACT_LOCAL_METHODS": "NO",
+					"EXTRACT_ANON_NSPACES": "NO",
+					"HIDE_UNDOC_MEMBERS": "YES",
+					"HIDE_UNDOC_CLASSES": "YES",
+					"HIDE_FRIEND_COMPOUNDS": "YES",
+					"HIDE_IN_BODY_DOCS": "YES",
+					"INTERNAL_DOCS": "NO",
+					"SHOW_INCLUDE_FILES": "NO",
+					"GENERATE_TODOLIST": "NO",
+					"GENERATE_TESTLIST": "NO",
+					"GENERATE_BUGLIST": "NO",
+					"SHOW_USED_FILES": "NO"
+				}
+			},
+			"publish:rsync": {
+				"enabled": "yes",
+				"rsync": { "binary": "rsync" },
+				"ssh": { "binary": "ssh" },
+				"source": "${meta.output}/install",
+				"destination": {
+					"user": "builds",
+					"host": "localhost",
+					"port": "22",
+					"base": "/home/builds/integration",
+					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.node.name}"
+				}
+			}
+		},
+		"checkout": {
+		},
+		"integrate": {
+		},
+		"publish": {
+		}
+	}
+}

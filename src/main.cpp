@@ -1,8 +1,7 @@
 #include <fstream>
 #include <iostream>
+
 #include <boost/program_options.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/system/system_error.hpp>
 #include <boost/filesystem.hpp>
@@ -14,105 +13,63 @@
 #include <unistd.h>
 #endif
 
-#include "ptree.utils.hpp"
+#include <json_spirit/json_spirit.h>
+
 #include "tasks.hpp"
 #include "process.hpp"
-
-#include "json_spirit/json_spirit.h"
 
 namespace pt = boost::property_tree;
 namespace po = boost::program_options;
 namespace js = json_spirit;
 
-const std::string oakVersion = "0.5";
-const std::string oakSysConfigDefault = "/etc/oak/config.json";
-
-std::string argMode, argInput, argOutput, argSysConfig, argConfig, argResult, argPubResult;
-std::string argMachine, argRepository, argBranch, argCommit, argTimestamp;
-boost::posix_time::ptime argTimestampParsed(boost::date_time::not_a_date_time);
-std::string argTimestampFormatDefault, argTimestampFormatCompact;
-
-// GNU ld generates these funny symbols when generating .o files from arbitrary binary files:
-extern unsigned char configs_builtin_defaults_json[];
-extern unsigned int configs_builtin_defaults_json_len;
-
-extern unsigned char configs_builtin_tasks_c___json[];
-extern unsigned int configs_builtin_tasks_c___json_len;
-
-extern unsigned char configs_builtin_tasks_none_json[];
-extern unsigned int configs_builtin_tasks_none_json_len;
-
-struct CompileTimeData
+namespace environment
 {
-	const unsigned char* begin;
-	const unsigned char* end;
-};
-
-// currently we support only one variant. But for future use... :-)
-const std::map<std::string, CompileTimeData> variants =
+	boost::optional<std::string> variable(std::string name)
 	{
-		{"none", { configs_builtin_tasks_none_json, configs_builtin_tasks_none_json + configs_builtin_tasks_none_json_len } },
-		{"c++", { configs_builtin_tasks_c___json, configs_builtin_tasks_c___json + configs_builtin_tasks_c___json_len } }
-	};
+		auto value = getenv(name.c_str());
 
-
-// if 'variable' is "", fetch it from environment, if it exists there
-void getFromEnvironment(std::string& variable, const char* const environ_name)
-{
-	if( not variable.empty() )
-		return;
-
-	auto e = getenv(environ_name);
-
-	if(e == NULL)
-	{
-		return;
-	}
-
-	variable = std::string(e);
-}
-
-
-int complainIfNotSet(const std::string& variable, const char* const complainText)
-{
-	if(variable.empty())
-	{
-		std::cerr << "Problem: No " << complainText << " was given.\n";
-		return 1;
-	}
-	return 0;
-}
-
-
-boost::filesystem::path normalize(const boost::filesystem::path& path)
-{
-	boost::filesystem::path absPath = boost::filesystem::absolute(path);
-	boost::filesystem::path::iterator it = absPath.begin();
-	boost::filesystem::path result = *it++;
-
-	// Get canonical version of the existing part
-	for (; exists(result / *it) && it != absPath.end(); ++it)
-	{
-		result /= *it;
-	}
-	result = boost::filesystem::canonical(result);
-
-	// For the rest remove ".." and "." in a path with no symlinks
-	for (; it != absPath.end(); ++it)
-	{
-		// Just move back on ../
-		if (*it == "..")
+		if(value == NULL)
 		{
-			result = result.parent_path();
+			return boost::optional<std::string>();
 		}
-		// Ignore "."
-		else if (*it != ".")
+
+		return boost::optional<std::string>(value);
+	}
+}
+
+namespace fs_utils
+{
+	boost::filesystem::path normalize(const boost::filesystem::path& path, const boost::filesystem::path& base = boost::filesystem::current_path())
+	{
+		boost::filesystem::path absolute = boost::filesystem::absolute(path, base);
+		boost::filesystem::path::iterator it = absolute.begin();
+		boost::filesystem::path result = *it++;
+
+		// Get canonical version of the existing part
+		for (; exists(result / *it) && it != absolute.end(); ++it)
 		{
-			// Just cat other path entries
 			result /= *it;
 		}
+
+		result = boost::filesystem::canonical(result);
+
+		// For the rest remove ".." and "." in a path with no symlinks
+		for (; it != absolute.end(); ++it)
+		{
+			// Just move back on ../
+			if (*it == "..")
+			{
+				result = result.parent_path();
+			}
+			// Ignore "."
+			else if (*it != ".")
+			{
+				// Just cat other path entries
+				result /= *it;
+			}
+		}
+		return result;
 	}
-	return result;
 }
 
 #ifdef _WIN32
@@ -121,310 +78,257 @@ boost::filesystem::path normalize(const boost::filesystem::path& path)
 #include <Strsafe.h>
 #define __CRT__NO_INLINE
 
-void DeleteDirectoryAndAllSubfolders(std::string directory)
+namespace fs_utils
 {
-	boost::replace_all(directory, "/", "\\");
+	void remove_all(std::string directory)
+	{
+		boost::replace_all(directory, "/", "\\");
 
-    char cdir[MAX_PATH+1];  // +1 for the double null terminate
-    SHFILEOPSTRUCTA fos = {0};
+	    char cdir[MAX_PATH+1];  // +1 for the double null terminate
+	    SHFILEOPSTRUCTA fos = {0};
 
-    StringCchCopyA(cdir, MAX_PATH, directory.c_str());
-    int len = lstrlenA(cdir);
-    cdir[len+1] = 0; // double null terminate for SHFileOperation
+	    StringCchCopyA(cdir, MAX_PATH, directory.c_str());
+	    int len = lstrlenA(cdir);
+	    cdir[len+1] = 0; // double null terminate for SHFileOperation
 
-    // delete the folder and everything inside
-    fos.wFunc = FO_DELETE;
-    fos.pFrom = cdir;
-    fos.fFlags = FOF_NO_UI;
-    if( SHFileOperationA( &fos ) != 0 )
-    {
-    	throw std::runtime_error("could not delete directory");
-    }
+	    // delete the folder and everything inside
+	    fos.wFunc = FO_DELETE;
+	    fos.pFrom = cdir;
+	    fos.fFlags = FOF_NO_UI;
+	    if( SHFileOperationA( &fos ) != 0 )
+	    {
+	    	throw std::runtime_error("could not delete directory");
+	    }
+	}
 }
+
 #endif
 
 int main( int argc, const char* const* argv )
 {
-	po::options_description desc;
-
-	const std::string sysconfigDesc = "the JSON system config file (optional. compile-time default is " + oakSysConfigDefault + ")";
-	desc.add_options()
-		("mode,m"      , po::value<std::string>(&argMode)      , "the operational mode (standard [default], jenkins)")
-		("input,i"     , po::value<std::string>(&argInput)     , "the path where the input files are expected (required in standard mode)")
-		("output,o"    , po::value<std::string>(&argOutput)    , "the path where the output files shall be generated (required in standard mode)")
-		("sysconfig,s" , po::value<std::string>(&argSysConfig) , sysconfigDesc.c_str() )
-		("config,c"    , po::value<std::string>(&argConfig)    , "the JSON config file (required in standard mode)")
-		("result,r"    , po::value<std::string>(&argResult)    , "the JSON result file (required in standard mode)")
-		("pubresult,p" , po::value<std::string>(&argPubResult) , "the JSON publish result file (required in standard mode)")
-		("machine,M"   , po::value<std::string>(&argMachine)   , "the build machine (required in standard mode)")
-		("repository,R", po::value<std::string>(&argRepository), "the repository of the commit (required in standard mode)")
-		("branch,B"    , po::value<std::string>(&argBranch)    , "the branch of the commit (required in standard mode")
-		("commit,C"    , po::value<std::string>(&argCommit)    , "the id of the commit (required in standard mode")
-		("timestamp,T" , po::value<std::string>(&argTimestamp) , "the timestamp of the commit (required in standard mode")
-		("help,h", "show this text")
-		;
-
-	if(argc < 2)
-	{
-		std::cerr << desc << "\n"
-		"This is oak version " << oakVersion << "\n\n";
-		return 1;
-	}
-
-	po::variables_map vm;
-	po::store( po::command_line_parser(argc, argv).options(desc).run(), vm);
-	po::notify(vm);
-
-	if(vm.count("help") > 0)
-	{
-		std::cout << desc << "\n"
-		"This is oak version " << oakVersion << "\n\n";
-		return 0;
-	}
-
-	if(argMode == "jenkins")
-	{
-		getFromEnvironment(argMachine, "NODE_NAME" );
-		getFromEnvironment(argInput  , "WORKSPACE" );
-
-		// build output directory from inpit directory + git infos:
-		if(argOutput.empty())
-		{
-			if(argInput.length() > 0)
-			{
-				argOutput = argInput + "/integration";
-			}
-		}
-
-		// no config file given? search a default config in the input path:
-		if(argConfig.empty())
-		{
-			if(argInput.length() > 0)
-			{
-				argConfig = argInput + "/integration.json";
-			}
-		}
-
-		// not result JSON file given? put it into the output path:
-		if(argResult.empty())
-		{
-			if(argOutput.length() > 0)
-			{
-				argResult = argOutput + "/result.json";
-			}
-		}
-
-		// not publish result JSON file given? put it into the output path:
-		if(argPubResult.empty())
-		{
-			if(argOutput.length() > 0)
-			{
-				argPubResult = argOutput + "/publish.json";
-			}
-		}
-	}
-
-	getFromEnvironment(argSysConfig, "OAK_SYSCONFIG");
-#ifndef _WIN32
-	if(argSysConfig.empty())
-	{
-		if(boost::filesystem::exists(oakSysConfigDefault))
-		{
-			argSysConfig = oakSysConfigDefault;
-		}
-	}
-#endif
-
-	if(argMachine.empty())
-	{
-		char hostname[256] = {};
-
-		if(gethostname(hostname, sizeof(hostname)) != 0)
-		{
-			std::cerr << "could not retrieve hostname" << std::endl;
-			return 1;
-		}
-
-		argMachine = hostname;
-	}
-
-	// use + instead of || to avoid short-circtuiting and report all errors at once
-	if( complainIfNotSet(argInput, "input path")
-		+ complainIfNotSet(argOutput, "output path" )
-		+ complainIfNotSet(argConfig, "config JSON file" )
-		+ complainIfNotSet(argResult, "result JSON file" )
-		+ complainIfNotSet(argPubResult, "publish result JSON file" )
-		+ complainIfNotSet(argMachine, "node name"))
-	{
-		std::cerr << desc << "\n"
-			"This is oak version " << oakVersion << "\n\n";
-		return 1;
-	}
-
-	argInput = normalize(argInput).string();
-	argOutput = normalize(argOutput).string();
-	argConfig = normalize(argConfig).string();
-	argResult = normalize(argResult).string();
-	argPubResult = normalize(argPubResult).string();
-
-	// read configuration
-	pt::ptree config;
+	config::Config conf;
+	boost::filesystem::path input, output;
 
 	try
 	{
-		// read project config
-		std::cout << "Load project configuration..." << std::endl;
+		bool commitTimestampParsed = false;
 
-		pt::ptree projectConfig;
+		// read base configuration
+		std::cout << "Load builtin base configuration..." << std::endl;
+		conf.apply(config::Config::Priority::Base, config::builtin::base);
+
+		// read arguments
+		std::cout << "Reading arguments..." << std::endl;
+
+		std::string argMode = "standard", argInput, argOutput;
+		std::vector<std::string> argOptions;
 
 		{
-			std::ifstream stream;
-			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			stream.open( argConfig );
-			read_json( stream, projectConfig );
+			po::options_description optdescr;
+
+			optdescr.add_options()
+				("mode,m", po::value<std::string>(&argMode), "mode: standard [default], jenkins")
+				("input,in", po::value<std::string>(&argInput), "input directory")
+				("output,out", po::value<std::string>(&argOutput), "output directory")
+				("options,opt", po::value<std::vector<std::string>>(&argOptions)->multitoken(), "options: key=value ...")
+				("help,h", "show this text")
+				;
+
+			po::variables_map vm;
+			po::store( po::command_line_parser(argc, argv).options(optdescr).run(), vm);
+			po::notify(vm);
+
+			if(vm.count("help") > 0)
+			{
+				std::cout << optdescr << "\n";
+				return 0;
+			}
 		}
 
-		// load system defaults
-		pt::ptree sysConfig;
+		{
+			char hostname[256] = {};
 
-		if(argSysConfig.length() > 0)
+			if(gethostname(hostname, sizeof(hostname)) != 0)
+			{
+				std::cerr << "could not retrieve hostname" << std::endl;
+				return 1;
+			}
+
+			conf.apply(config::Config::Priority::Arguments, "meta.node.name", hostname);
+		}
+
+		if(argMode == "jenkins")
+		{
+			if(auto nodeName = environment::variable("NODE_NAME"))
+			{
+				conf.apply(config::Config::Priority::Arguments, "meta.node.name", *nodeName);
+			}
+
+			if(auto workspace = environment::variable("WORKSPACE"))
+			{
+				conf.apply(config::Config::Priority::Arguments, "meta.input", *workspace);
+			}
+		}
+
+		if(auto env = environment::variable("OAK_SYSCONFIG"))
+		{
+			conf.apply(config::Config::Priority::Environment, "meta.configs.system", *env);
+		}
+
+		if(!argInput.empty())
+		{
+			conf.apply(config::Config::Priority::Arguments, "meta.input", argInput);
+		}
+
+		if(!argOutput.empty())
+		{
+			conf.apply(config::Config::Priority::Arguments, "meta.output", argOutput);
+		}
+
+		conf.apply(config::Config::Priority::Arguments, argOptions);
+
+		// apply system configuration
+		boost::filesystem::path sysconf = conf.value("meta.configs.system");
+
+		if(boost::filesystem::exists(sysconf))
 		{
 			std::cout << "Load system configuration..." << std::endl;
-			std::ifstream configStream;
-			configStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			configStream.open( argSysConfig );
-			read_json( configStream, sysConfig );
+			conf.apply(config::Config::Priority::System, sysconf);
 		}
 
-		// read variant configuration
-		const std::string variantName = projectConfig.get<std::string>( "variant" );
-		const auto v = variants.find( variantName );
-		if(v==variants.end())
+		// apply project configuration
+		boost::filesystem::path projectconf = conf.value("meta.configs.project");
+
+		if(boost::filesystem::exists(projectconf))
 		{
-			std::cerr << "Unknown variant: \"" << variantName << "\"!\nKnown variants are:\n";
-			for(auto q : variants)
+			std::cout << "Load project configuration..." << std::endl;
+			conf.apply(config::Config::Priority::Project, projectconf);
+		}
+
+		// apply checkout variant configuration
+		std::cout << "Load checkout variant configuration..." << std::endl;
+		conf.apply(config::Config::Priority::Variant, config::builtin::variants::checkout.at(conf.value("meta.variants.checkout")));
+
+		// apply integrate variant configuration
+		std::cout << "Load integrate variant configuration..." << std::endl;
+		conf.apply(config::Config::Priority::Variant, config::builtin::variants::integrate.at(conf.value("meta.variants.integrate")));
+
+		// apply publish variant configuration
+		std::cout << "Load publish variant configuration..." << std::endl;
+		conf.apply(config::Config::Priority::Variant, config::builtin::variants::publish.at(conf.value("meta.variants.publish")));
+
+		// detect meta data
+		std::cout << "Detecting meta data..." << std::endl;
+
+		if(argMode == "jenkins")
+		{
+			if(auto branch = environment::variable("GIT_BRANCH"))
 			{
-				std::cerr << "\t\"" << q.first << "\"\n";
+				auto b = *branch;
+
+				if(b.find("origin/") == 0)
+				{
+					b = b.substr(7);
+				}
+
+				conf.apply(config::Config::Priority::Environment, "meta.branch", b);
 			}
-			return 1;
-		}
 
-		const std::string variantData = std::string(v->second.begin, v->second.end);
-
-		std::cout << "Load built-in variant configuration for \"" << variantName << "\"..." << std::endl;
-
-		pt::ptree variantConfig;
-
-		{
-			std::istringstream stream(variantData);
-			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-
-			read_json( stream, variantConfig );
-		}
-
-		// read builtin defaults
-		std::cout << "Load built-in default configuration..." << std::endl;
-
-		pt::ptree defaultsConfig;
-		{
-			std::istringstream stream(std::string(configs_builtin_defaults_json, configs_builtin_defaults_json + configs_builtin_defaults_json_len));
-			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			read_json( stream, defaultsConfig );
-		}
-
-		// merge configurations
-		std::cout << "Merge configurations..." << std::endl;
-
-		config.add_child("defaults", defaultsConfig);
-		config.add_child("tasks", variantConfig);
-		ptree_merge( config, sysConfig );
-		ptree_merge( config, projectConfig );
-
-		// print config
-		std::stringstream mergedConfigStream;
-		write_json(mergedConfigStream, config);
-		std::cout << mergedConfigStream.str() << std::endl;
-	}
-	catch ( const pt::ptree_error& exception )
-	{
-		std::cerr << "Error while reading config file (ptree): " << exception.what() << std::endl;
-		return 1;
-	}
-	catch ( const std::ifstream::failure& exception )
-	{
-		std::cerr << "Error while reading config file (stream): " << exception.what() << std::endl;
-		return 1;
-	}
-	catch ( ... )
-	{
-		std::cerr << "Error while reading config file (unknown)" << std::endl;
-		return 1;
-	}
-
-	// get repository data
-	if(argMode == "jenkins")
-	{
-		getFromEnvironment(argBranch, "GIT_BRANCH");
-		if(argBranch.find("origin/") == 0)
-		{
-			argBranch = argBranch.substr(7);
-		}
-	}
-
-	if( boost::filesystem::exists(argInput + "/.git") )
-	{
-		if(argRepository.empty())
-		{
-			TextProcessResult gitRepository = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"config", "--get", "remote.origin.url"}, argInput);
-
-			if(gitRepository.exitCode == 0 && gitRepository.output.size() == 1 && gitRepository.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			if(auto repo = environment::variable("GIT_URL"))
 			{
-				argRepository = gitRepository.output[0].second;
+				conf.apply(config::Config::Priority::Environment, "meta.repository", *repo);
+			}
+
+			if(auto commit = environment::variable("GIT_COMMIT"))
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.commit.id.long", *commit);
+			}
+
+			if(auto timestampstr = environment::variable("BUILD_ID"))
+			{
+				// parse timestamp
+				boost::posix_time::ptime timestamp;
+
+				std::stringstream ps(*timestampstr);
+				auto input_facet = new boost::posix_time::time_input_facet("%Y-%m-%d_%H-%M-%S");
+				ps.imbue(std::locale(ps.getloc(), input_facet));
+				ps >> timestamp;
+
+				if(timestamp.is_not_a_date_time())
+				{
+					std::cerr << "Could not parse timestamp" << std::endl;
+					return 1;
+				}
+
+				// default format
+				std::stringstream fs1;
+				fs1 << timestamp;
+
+				conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.default", fs1.str());
+
+				// compact format
+				std::stringstream fs2;
+
+				auto output_facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
+				fs2.imbue(std::locale(fs2.getloc(), output_facet));
+				fs2 << timestamp;
+
+				conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.compact", fs2.str());
+
+				// set state to parsed
+				commitTimestampParsed = true;
+			}
+		}
+
+		input = fs_utils::normalize(conf.value("meta.input"));
+
+		if( boost::filesystem::exists(input / ".git") )
+		{
+			// meta.repository
+			process::TextProcessResult gitRepository = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"config", "--get", "remote.origin.url"}, input);
+
+			if(gitRepository.exitCode == 0 && gitRepository.output.size() == 1 && gitRepository.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.repository", gitRepository.output[0].second);
 			}
 			else
 			{
 				std::cerr << "Could not detect git repository" << std::endl;
 				return 1;
 			}
-		}
 
-		if(argBranch.empty())
-		{
-			TextProcessResult gitBranch = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, argInput);
+			// meta.branch
+			process::TextProcessResult gitBranch = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
 
-			if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
-				argBranch = gitBranch.output[0].second;
+				conf.apply(config::Config::Priority::Environment, "meta.branch", gitBranch.output[0].second);
 			}
 			else
 			{
 				std::cerr << "Could not detect git branch" << std::endl;
 				return 1;
 			}
-		}
 
-		if(argCommit.empty())
-		{
-			TextProcessResult gitCommit = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"rev-parse", "--verify", "-q", "HEAD"}, argInput);
+			// meta.commit.id.long
+			process::TextProcessResult gitCommit = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"rev-parse", "--verify", "-q", "HEAD"}, input);
 
-			if(gitCommit.exitCode == 0 && gitCommit.output.size() == 1 && gitCommit.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			if(gitCommit.exitCode == 0 && gitCommit.output.size() == 1 && gitCommit.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
-				argCommit = gitCommit.output[0].second;
+				conf.apply(config::Config::Priority::Environment, "meta.commit.id.long", gitCommit.output[0].second);
 			}
 			else
 			{
 				std::cerr << "Could not detect git commit id" << std::endl;
 				return 1;
 			}
-		}
 
-		if(argTimestamp.empty())
-		{
-			TextProcessResult gitTimestamp = executeTextProcess(config.get<std::string>("defaults.checkout:git.binary"), {"show", "-s", "--format=%ci", argCommit}, argInput);
+			// meta.commit.timestamp.default
+			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.value("defaults.checkout:git.binary"), {"show", "-s", "--format=%ci", conf.value("meta.commit.id.long")}, input);
 
-			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == TextProcessResult::LineType::INFO_LINE)
+			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
-				argTimestamp = gitTimestamp.output[0].second;
+				conf.apply(config::Config::Priority::Environment, "meta.commit.timestamp.default", gitTimestamp.output[0].second);
 			}
 			else
 			{
@@ -432,88 +336,97 @@ int main( int argc, const char* const* argv )
 				return 1;
 			}
 		}
-	}
-	else
-	if(argMode == "jenkins")
-	{
-		getFromEnvironment(argRepository, "GIT_URL"   );
-		getFromEnvironment(argCommit   ,  "GIT_COMMIT");
-		getFromEnvironment(argTimestamp,  "BUILD_ID"  );
 
-		if(!argTimestamp.empty())
+		// computing values
+		std::cout << "Computing additional configuration parameter..." << std::endl;
+
+		// ids
+		conf.apply(config::Config::Priority::Environment, "meta.commit.id.short", conf.value("meta.commit.id.long").substr(0, 7));
+
+		// timestamps
+		if(!commitTimestampParsed)
 		{
-			std::stringstream ss(argTimestamp);
-			auto facet = new boost::posix_time::time_input_facet("%Y-%m-%d_%H-%M-%S");
-			ss.imbue(std::locale(ss.getloc(), facet));
-			ss >> argTimestampParsed;
+			// parse timestamp
+			boost::posix_time::ptime timestamp;
 
-			if(argTimestampParsed.is_not_a_date_time())
+			std::stringstream ps(conf.value("meta.commit.timestamp.default"));
+			auto input_facet = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%S");
+			ps.imbue(std::locale(ps.getloc(), input_facet));
+			ps >> timestamp;
+
+			if(timestamp.is_not_a_date_time())
 			{
 				std::cerr << "Could not parse timestamp" << std::endl;
 				return 1;
 			}
+
+			// default format
+			std::stringstream fs1;
+			fs1 << timestamp;
+
+			conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.default", fs1.str());
+
+			// compact format
+			std::stringstream fs2;
+
+			auto output_facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
+			fs2.imbue(std::locale(fs2.getloc(), output_facet));
+			fs2 << timestamp;
+
+			conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.compact", fs2.str());
+		}
+
+		// paths
+		input = fs_utils::normalize(conf.value("meta.input"));
+		output = fs_utils::normalize(conf.value("meta.output"));
+
+		conf.apply(config::Config::Priority::Computed, "meta.input",  input.string());
+		conf.apply(config::Config::Priority::Computed, "meta.output", output.string());
+
+		conf.apply(config::Config::Priority::Computed, "meta.configs.system",  fs_utils::normalize(conf.value("meta.configs.system") ).string());
+		conf.apply(config::Config::Priority::Computed, "meta.configs.project", fs_utils::normalize(conf.value("meta.configs.project")).string());
+
+		conf.apply(config::Config::Priority::Computed, "meta.results.checkout",  fs_utils::normalize(conf.value("meta.results.checkout") ).string());
+		conf.apply(config::Config::Priority::Computed, "meta.results.integrate", fs_utils::normalize(conf.value("meta.results.integrate")).string());
+		conf.apply(config::Config::Priority::Computed, "meta.results.publish",   fs_utils::normalize(conf.value("meta.results.publish")  ).string());
+
+		// task defaults
+		for(auto section : std::vector<std::string>{"checkout", "integrate", "publish"})
+		{
+			for( auto task : conf.node(section).children() )
+			{
+				conf.apply(config::Config::Priority::Variant,
+					std::string("tasks.") + section + std::string(".") + task.first,
+					task.second
+				);
+			}
 		}
 	}
-
-	// use + instead of || to avoid short-circtuiting and report all errors at once
-	if(   complainIfNotSet(argRepository, "repository URL")
-		+ complainIfNotSet(argBranch, "branch name")
-		+ complainIfNotSet(argCommit, "commit ID")
-		+ complainIfNotSet(argTimestamp, "commit timestamp")
-		)
+	catch ( const std::exception& e )
 	{
-		std::cerr << desc << "\n"
-			"This is oak version " << oakVersion << "\n\n";
+		std::cerr << "Error while preparing configuration: " << e.what() << std::endl;
+		return 1;
+	}
+	catch ( ... )
+	{
+		std::cerr << "Error while preparing configuration: unknown" << std::endl;
 		return 1;
 	}
 
-	// parse timestamp
-	if(argTimestampParsed.is_not_a_date_time())
-	{
-		std::stringstream ss(argTimestamp);
-		auto facet = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%S");
-		ss.imbue(std::locale(ss.getloc(), facet));
-		ss >> argTimestampParsed;
-
-		if(argTimestampParsed.is_not_a_date_time())
-		{
-			std::cerr << "Could not parse timestamp" << std::endl;
-			return 1;
-		}
-	}
-
-	// format timestamp
-	{
-		std::stringstream ss;
-		ss << argTimestampParsed;
-		argTimestampFormatDefault = ss.str();
-	}
-
-	{
-		std::stringstream ss;
-		auto facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
-		ss.imbue(std::locale(ss.getloc(), facet));
-		ss << argTimestampParsed;
-		argTimestampFormatCompact = ss.str();
-	}
-
-	// print meta data
-	std::cout << "Machine: " << argMachine << std::endl;
-	std::cout << "Repository: " << argRepository << std::endl;
-	std::cout << "Branch: " << argBranch << std::endl;
-	std::cout << "Commit: " << argCommit << std::endl;
-	std::cout << "Timestamp: " << argTimestampParsed << std::endl;
+	// print configuration
+	std::cout << "Printing configuration..." << std::endl;
+	conf.print(std::cout);
 
 	// clean output
 	std::cout << "Prepare output directory..." << std::endl;
 	try
 	{
 #ifdef _WIN32
-		DeleteDirectoryAndAllSubfolders(argOutput);
+		fs_utils::remove_all(output);
 #else
-		boost::filesystem::remove_all(argOutput);
+		boost::filesystem::remove_all(output);
 #endif
-		boost::filesystem::create_directories(argOutput);
+		boost::filesystem::create_directories(output);
 	}
 	catch(const std::exception& e)
 	{
@@ -527,17 +440,11 @@ int main( int argc, const char* const* argv )
 	}
 
 	// collect task sets
-	std::vector< std::pair<boost::property_tree::ptree, std::string> > tasksets;
-
-	if(auto tasks = config.get_child_optional("tasks"))
-	{
-		tasksets.push_back( std::pair<boost::property_tree::ptree, std::string>(*tasks, argResult) );
-	}
-
-	if(auto tasks = config.get_child_optional("publish"))
-	{
-		tasksets.push_back( std::pair<boost::property_tree::ptree, std::string>(*tasks, argPubResult) );
-	}
+	std::vector< std::pair<config::ConfigNode, std::string> > tasksets {
+		std::pair<config::ConfigNode, std::string> { conf.node("tasks.checkout"), conf.value("meta.results.checkout") },
+		std::pair<config::ConfigNode, std::string> { conf.node("tasks.integrate"), conf.value("meta.results.integrate") },
+		std::pair<config::ConfigNode, std::string> { conf.node("tasks.publish"), conf.value("meta.results.publish") }
+	};
 
 	// run tasks
 	bool task_with_error = false;
@@ -548,47 +455,23 @@ int main( int argc, const char* const* argv )
 
 		try
 		{
-			for ( auto& taskConfig : taskset.first )
+			for ( auto& taskConfig : taskset.first.children() )
 			{
+				auto taskType = taskConfig.second.value( "type" );
+
 				std::cout << "*************************************************************************" << std::endl;
 
-				// get task settings
-				std::string taskType = taskConfig.second.get<std::string>( "type" );
-
-				pt::ptree settings;
-
-				if(auto defaults = config.get_child_optional( std::string( "defaults." ) + taskType ))
-					ptree_merge(settings, *defaults);
-
-				ptree_merge(settings, taskConfig.second);
-
-				// expand variables
-				ptree_traverse
-				(
-					settings,
-					[&config] (pt::ptree &parent, const pt::ptree::path_type &childPath, pt::ptree &child)
-					{
-						boost::replace_all(child.data(), "${project}", config.get<std::string>("name"));
-						boost::replace_all(child.data(), "${machine}", argMachine);
-						boost::replace_all(child.data(), "${repository}", argRepository);
-						boost::replace_all(child.data(), "${branch}"    , argBranch);
-						boost::replace_all(child.data(), "${commit.id}" , argCommit);
-						boost::replace_all(child.data(), "${commit.short-id}" , argCommit.substr(0, 7));
-						boost::replace_all(child.data(), "${commit.timestamp.default}", argTimestampFormatDefault);
-						boost::replace_all(child.data(), "${commit.timestamp.compact}", argTimestampFormatCompact);
-						boost::replace_all(child.data(), "${input}", argInput);
-						boost::replace_all(child.data(), "${output}", argOutput);
-					}
-				);
-
 				// check if it is enabled/disabled
-				if(settings.get<std::string>("enabled") != "yes")
+				if(taskConfig.second.value("enabled") != "yes")
 				{
 					std::cout << "Task disabled: " << taskConfig.first << std::endl;
 					std::cout << "type: " << taskType << std::endl;
 
-					std::cout << "*************************************************************************" << std::endl;
+					std::cout << "config: " << std::endl;
+					taskConfig.second.print(std::cout);
+					std::cout << std::endl;
 
+					std::cout << "*************************************************************************" << std::endl;
 					continue;
 				}
 
@@ -597,21 +480,25 @@ int main( int argc, const char* const* argv )
 				std::cout << "Running task: " << taskConfig.first << std::endl;
 				std::cout << "type: " << taskType << std::endl;
 
+				std::cout << "config: " << std::endl;
+				taskConfig.second.print(std::cout);
+				std::cout << std::endl;
+
 				std::cout << "*************************************************************************" << std::endl;
 
-				auto task = taskTypes.find(taskType);
+				auto task = tasks::taskTypes.find(taskType);
 
-				if(task != taskTypes.end())
+				if(task != tasks::taskTypes.end())
 				{
-					TaskResult result;
+					tasks::TaskResult result;
 
 					try
 					{
-						result = task->second(settings);
+						result = task->second(taskConfig.second);
 					}
 					catch(const std::exception& e)
 					{
-						result.status = TaskResult::STATUS_ERROR;
+						result.status = tasks::TaskResult::STATUS_ERROR;
 						result.warnings = 0;
 						result.errors = 1;
 						result.message = "exception occured";
@@ -621,7 +508,7 @@ int main( int argc, const char* const* argv )
 					}
 					catch(...)
 					{
-						result.status = TaskResult::STATUS_ERROR;
+						result.status = tasks::TaskResult::STATUS_ERROR;
 						result.warnings = 0;
 						result.errors = 1;
 						result.message = "exception occured";
@@ -630,7 +517,7 @@ int main( int argc, const char* const* argv )
 						std::cout << "An exception occured: unknown" << std::endl;
 					}
 
-					if(result.status == TaskResult::STATUS_ERROR)
+					if(result.status == tasks::TaskResult::STATUS_ERROR)
 					{
 						task_with_error = true;
 					}
@@ -653,24 +540,14 @@ int main( int argc, const char* const* argv )
 				std::cout << "*************************************************************************" << std::endl;
 			}
 		}
-		catch ( const pt::ptree_error& exception )
+		catch ( const std::exception& e )
 		{
-			std::cerr << "Error during run (ptree): " << exception.what() << std::endl;
-			return 1;
-		}
-		catch ( const boost::system::system_error& exception )
-		{
-			std::cerr << "Error during run (system): " << exception.what() << std::endl;
-			return 1;
-		}
-		catch ( const std::runtime_error& exception )
-		{
-			std::cerr << "Error during run (runtime): " << exception.what() << std::endl;
+			std::cerr << "Error during task execution: " << e.what() << std::endl;
 			return 1;
 		}
 		catch ( ... )
 		{
-			std::cerr << "Error during run (unknown)" << std::endl;
+			std::cerr << "Error during task execution: unknown" << std::endl;
 			return 1;
 		}
 
@@ -679,13 +556,13 @@ int main( int argc, const char* const* argv )
 
 		try
 		{
-			output.push_back( js::Pair("oak", oakVersion) );
-			output.push_back( js::Pair("title", config.get<std::string>("name")));
-			output.emplace_back( "buildnode", argMachine);
-			output.emplace_back( "repository", argRepository);
-			output.emplace_back( "branch"    , argBranch);
-			output.emplace_back( "commit"    , argCommit);
-			output.emplace_back( "timestamp" , argTimestamp);
+			//output.push_back( js::Pair("oak", oakVersion) );
+			//output.push_back( js::Pair("title", conf.value("name")));
+			//output.emplace_back( "buildnode", argMachine);
+			//output.emplace_back( "repository", argRepository);
+			//output.emplace_back( "branch"    , argBranch);
+			//output.emplace_back( "commit"    , argCommit);
+			//output.emplace_back( "timestamp" , argTimestamp);
 			output.push_back( js::Pair("tasks", outputTasks));
 
 			const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
@@ -695,17 +572,17 @@ int main( int argc, const char* const* argv )
 
 			js::write(output, stream, options);
 		}
-		catch ( const pt::ptree_error& exception )
+		catch ( const std::exception& e )
 		{
-			std::cerr << "Error on output (ptree): " << exception.what() << std::endl;
+			std::cerr << "Error on output: " << e.what() << std::endl;
 			return 1;
 		}
 		catch ( ... )
 		{
-			std::cerr << "Error on output (unknown)" << std::endl;
+			std::cerr << "Error on output: unknown" << std::endl;
 			return 1;
 		}
 	}
 
-	return  task_with_error ? 2 : 0;
+	return task_with_error ? 2 : 0;
 }

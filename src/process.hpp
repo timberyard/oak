@@ -4,6 +4,12 @@
 #include <utility>
 #include <string>
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
+#include <boost/filesystem.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
+
+namespace process {
+
 struct TextProcessResult
 {
 	enum LineType
@@ -23,5 +29,6 @@ struct TextProcessResult
 
 std::string toString(TextProcessResult::LineType lineType);
 
-TextProcessResult executeTextProcess(std::string binary, std::vector<std::string> arguments, const std::string& workingDirectory);
+TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector<std::string> arguments, boost::filesystem::path workingDirectory);
 
+} // namespace: process

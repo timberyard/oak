@@ -3,9 +3,12 @@
 #include <string>
 #include <map>
 #include <functional>
-#include <boost/property_tree/ptree.hpp>
 
 #include <json_spirit/json_spirit.h>
+
+#include "config.hpp"
+
+namespace tasks {
 
 struct TaskResult
 {
@@ -32,4 +35,6 @@ struct TaskResult
 
 std::string toString(TaskResult::Status status);
 
-extern std::map<std::string, std::function<TaskResult(const boost::property_tree::ptree&)>> taskTypes;
+extern std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes;
+
+} // namespace: tasks

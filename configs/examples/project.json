@@ -1,0 +1,10 @@
+{	"meta": {
+		"project": {
+			"name": "example",
+			"version": "0.1"
+		},
+		"variant": {
+			"integrate": "c++"
+		}
+	}
+}

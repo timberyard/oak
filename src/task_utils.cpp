@@ -1,14 +1,16 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <json_spirit/json_spirit.h>
-#include "task.utils.hpp"
 
+#include "task_utils.hpp"
 
 #define OUTPUT_LINES_ARE_ARRAYS 1
 
+namespace task_utils {
+
 namespace js = json_spirit;
 
-json_spirit::Object createTaskOutput(const std::string& binary, const std::vector<std::string>& arguments, const std::string& workingDirectory, const TextProcessResult& processResult)
+json_spirit::Object createTaskOutput(const std::string& binary, const std::vector<std::string>& arguments, const std::string& workingDirectory, const process::TextProcessResult& processResult)
 {
 	json_spirit::Object result;
 	result.push_back( js::Pair("binary", binary) );
@@ -37,9 +39,9 @@ json_spirit::Object createTaskOutput(const std::string& binary, const std::vecto
 	return result;
 }
 
-
-std::string createTaskMessage(const TextProcessResult& processResult)
+std::string createTaskMessage(const process::TextProcessResult& processResult)
 {
 	return processResult.output.size() > 0 ? processResult.output.back().second : "-";
 }
 
+} // namespace: task_utils

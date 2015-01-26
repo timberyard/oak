@@ -16,6 +16,8 @@
 
 #include "process.hpp"
 
+namespace process {
+
 namespace bp  = boost::process;
 namespace bpi = boost::process::initializers;
 namespace bio = boost::iostreams;
@@ -32,66 +34,64 @@ boost::process::pipe create_async_pipe()
 #endif
 }
 
-TextProcessResult executeTextProcess(std::string binary, std::vector<std::string> arguments, const std::string& workingDirectory)
+TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector<std::string> arguments, boost::filesystem::path workingDirectory)
 {
 	std::cout << "-------------------------------------------------------------------------" << std::endl;
-	std::cout << "Running process: " << binary << std::endl;
+	std::cout << "Running process: " << binary.string() << std::endl;
 	std::cout << "arguments: " << boost::algorithm::join(arguments, " ") << std::endl;
-	std::cout << "working_dir: " << workingDirectory << std::endl;
+	std::cout << "working_dir: " << workingDirectory.string() << std::endl;
 	std::cout << "-------------------------------------------------------------------------" << std::endl;
 
 	if(!boost::filesystem::is_directory(workingDirectory))
 		throw std::runtime_error("working directory does not exist");
 
-	if(boost::filesystem::path(binary).is_relative())
+	if(binary.is_relative())
 	{
-		auto found = boost::process::search_path(binary, workingDirectory);
+		auto found = boost::process::search_path(binary.string(), workingDirectory.string());
 
 		if(found.length() > 0)
 		{
 			binary = found;
-			std::cout << "binary found via working directory: " << binary << std::endl;
+			std::cout << "binary found via working directory: " << binary.string() << std::endl;
 		}
 		else
 		{
-			found = boost::process::search_path(binary);
+			found = boost::process::search_path(binary.string());
 
 			if(found.length() > 0)
 			{
 				binary = found;
-				std::cout << "binary found via path: " << binary << std::endl;
+				std::cout << "binary found via path: " << binary.string() << std::endl;
 			}
 			else
 			{
-				std::cout << "could not find binary via relative path: " << binary << std::endl;
-				throw std::runtime_error(std::string("could not find binary via relative path: ") + binary);
+				std::cout << "could not find binary via relative path: " << binary.string() << std::endl;
+				throw std::runtime_error(std::string("could not find binary via relative path: ") + binary.string());
 			}
 		}
 	}
 	else
 	{
-		auto found = boost::process::search_path(
-			boost::filesystem::path(binary).relative_path().string(),
-			boost::filesystem::path(workingDirectory).root_path().string());
+		auto found = boost::process::search_path(binary.relative_path().string(), workingDirectory.root_path().string());
 
 		if(found.length() > 0)
 		{
 			binary = found;
-			std::cout << "binary found via absolute path: " << binary << std::endl;
+			std::cout << "binary found via absolute path: " << binary.string() << std::endl;
 		}
 		else
 		{
-			std::cout << "could not find binary via absolute path: " << binary << std::endl;
-			throw std::runtime_error(std::string("could not find binary via absolute path: ") + binary);
+			std::cout << "could not find binary via absolute path: " << binary.string() << std::endl;
+			throw std::runtime_error(std::string("could not find binary via absolute path: ") + binary.string());
 		}
 	}
 
-	binary = boost::filesystem::canonical(binary).string();
-	std::cout << "canonical path to binary: " << binary << std::endl;
+	binary = boost::filesystem::canonical(binary);
+	std::cout << "canonical path to binary: " << binary.string() << std::endl;
 
 	std::cout << "-------------------------------------------------------------------------" << std::endl;
 
-	arguments.insert(arguments.begin(), binary);
+	arguments.insert(arguments.begin(), binary.string());
 
 	TextProcessResult result;
 
@@ -105,9 +105,9 @@ TextProcessResult executeTextProcess(std::string binary, std::vector<std::string
 		bio::file_descriptor_sink pipeErrSink(pipeErr.sink, bio::close_handle);
 
 		process = std::make_shared<bp::child>( bp::execute(
-			bpi::run_exe(binary),
+			bpi::run_exe(binary.string()),
 			bpi::set_args(arguments),
-			bpi::start_in_dir(workingDirectory),
+			bpi::start_in_dir(workingDirectory.string()),
 			bpi::inherit_env(),
 			bpi::bind_stdout(pipeOutSink),
 			bpi::bind_stderr(pipeErrSink),
@@ -181,3 +181,5 @@ std::string toString(TextProcessResult::LineType lineType)
 	}
 	throw std::logic_error( "Unknown TextProcessResult::LineType!" );
 }
+
+} // namespace: process

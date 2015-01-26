@@ -1,0 +1,17 @@
+{	"tasks": {
+		"integrate": {
+			"build": {
+				"type": "build:cmake"
+			},
+			"test": {
+				"type": "test:googletest"
+			},
+			"analysis": {
+				"type": "analysis:cppcheck"
+			},
+			"doc": {
+				"type": "doc:doxygen"
+			}
+		}
+	}
+}

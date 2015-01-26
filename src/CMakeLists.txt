@@ -40,24 +40,37 @@ link_directories(${BOOST_ROOT}/lib)
 
 add_definitions(-std=c++11)
 
-add_custom_command(OUTPUT config_defaults.cpp
-	COMMAND xxd -i configs/builtin/defaults.json ${PROJECT_BINARY_DIR}/config_defaults.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/defaults.json
+add_custom_command(OUTPUT config_base.cpp
+	COMMAND xxd -i configs/builtin/base.json ${PROJECT_BINARY_DIR}/config_base.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/base.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
-add_custom_command(OUTPUT config_tasks-c++.cpp
-	COMMAND xxd -i configs/builtin/tasks-c++.json ${PROJECT_BINARY_DIR}/config_tasks-c++.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/tasks-c++.json
+add_custom_command(OUTPUT config_checkout-nothing.cpp
+	COMMAND xxd -i configs/builtin/checkout-nothing.json ${PROJECT_BINARY_DIR}/config_checkout-nothing.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/checkout-nothing.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
-add_custom_command(OUTPUT config_tasks-none.cpp
-	COMMAND xxd -i configs/builtin/tasks-none.json ${PROJECT_BINARY_DIR}/config_tasks-none.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/tasks-none.json
+add_custom_command(OUTPUT config_integrate-c++.cpp
+	COMMAND xxd -i configs/builtin/integrate-c++.json ${PROJECT_BINARY_DIR}/config_integrate-c++.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/integrate-c++.json
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
+
+add_custom_command(OUTPUT config_integrate-nothing.cpp
+	COMMAND xxd -i configs/builtin/integrate-nothing.json ${PROJECT_BINARY_DIR}/config_integrate-nothing.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/integrate-nothing.json
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
+
+add_custom_command(OUTPUT config_publish-nothing.cpp
+	COMMAND xxd -i configs/builtin/publish-nothing.json ${PROJECT_BINARY_DIR}/config_publish-nothing.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-nothing.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
 add_executable(oak
-	main.cpp process.cpp tasks.cpp task.utils.cpp
-	config_defaults.cpp config_tasks-c++.cpp config_tasks-none.cpp
+	main.cpp process.cpp tasks.cpp task_utils.cpp config.cpp
+	config_base.cpp
+	config_checkout-nothing.cpp
+	config_integrate-c++.cpp config_integrate-nothing.cpp
+	config_publish-nothing.cpp
 )
 
 add_dependencies(oak boost)
