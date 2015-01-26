@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/replace.hpp>
@@ -154,19 +155,19 @@ int main( int argc, const char* const* argv )
 				return 1;
 			}
 
-			conf.apply(config::Config::Priority::Arguments, "meta.system.name", hostname);
+			conf.apply(config::Config::Priority::Environment, "meta.system.name", hostname);
 		}
 
 		if(argMode == "jenkins")
 		{
 			if(auto nodeName = environment::variable("NODE_NAME"))
 			{
-				conf.apply(config::Config::Priority::Arguments, "meta.system.name", *nodeName);
+				conf.apply(config::Config::Priority::Environment, "meta.system.name", *nodeName);
 			}
 
 			if(auto workspace = environment::variable("WORKSPACE"))
 			{
-				conf.apply(config::Config::Priority::Arguments, "meta.input", *workspace);
+				conf.apply(config::Config::Priority::Environment, "meta.input", *workspace);
 			}
 		}
 
@@ -174,6 +175,112 @@ int main( int argc, const char* const* argv )
 		{
 			conf.apply(config::Config::Priority::Environment, "meta.configs.system", *env);
 		}
+
+#if defined(__x86_64__) or defined(_M_X64)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "x86");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "64");
+#elif defined(_X86_) or defined(__i386__) or defined(_M_IX86)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "x86");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "32");
+#elif defined(__aarch64__)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "arm");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "64");
+#elif defined(__arm__) or defined(_M_ARM)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "arm");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "32");
+#endif
+
+#if defined(__linux__) or defined(__APPLE__)
+		{
+			// lsb release id
+			process::TextProcessResult getConfLongBit = process::executeTextProcess("getconf", {"LONG_BIT"}, boost::filesystem::current_path());
+
+			if(getConfLongBit.exitCode == 0 && getConfLongBit.output.size() == 1 && getConfLongBit.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", getConfLongBit.output[0].second);
+			}
+			else
+			{
+				std::cerr << "Could not detect long bit value via getconf" << std::endl;
+				return 1;
+			}
+		}
+#elif defined(_WIN64)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "64");
+#elif defined(__MINGW32__) or defined(_WIN32)
+		{
+		    BOOL f64 = FALSE;
+		    if(IsWow64Process(GetCurrentProcess(), &f64) == 0)
+		    {
+				std::cerr << "Could not detect bitness of current windows" << std::endl;
+				return 1;
+		    }
+
+		    conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", f64 ? "64" : "32");
+		}
+#endif
+
+#if defined(__linux__)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", "linux");
+#elif defined(__MINGW32__) or defined(_WIN32)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", "windows");
+#elif defined(__APPLE__)
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", "macos");
+#endif
+
+#if defined(__linux__)
+		{
+			std::string distribution;
+
+			// lsb release id
+			process::TextProcessResult lsbReleaseId = process::executeTextProcess("lsb_release", {"-s", "-i"}, boost::filesystem::current_path());
+
+			if(lsbReleaseId.exitCode == 0 && lsbReleaseId.output.size() == 1 && lsbReleaseId.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				distribution += lsbReleaseId.output[0].second;
+			}
+			else
+			{
+				std::cerr << "Could not detect lsb release id" << std::endl;
+				return 1;
+			}
+
+			// lsb release version
+			process::TextProcessResult lsbReleaseVersion = process::executeTextProcess("lsb_release", {"-s", "-r"}, boost::filesystem::current_path());
+
+			if(lsbReleaseVersion.exitCode == 0 && lsbReleaseVersion.output.size() == 1 && lsbReleaseVersion.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				distribution += std::string("-") + lsbReleaseVersion.output[0].second;
+			}
+			else
+			{
+				std::cerr << "Could not detect lsb release version" << std::endl;
+				return 1;
+			}
+
+			// meta.system.arch.distribution
+			std::transform(distribution.begin(), distribution.end(), distribution.begin(), ::tolower);
+			conf.apply(config::Config::Priority::Environment, "meta.system.arch.distribution", distribution);
+		}
+#elif defined(__MINGW32__) or defined(_WIN32)
+		{
+			OSVERSIONINFO vi;
+			memset(&vi, 0, sizeof(vi));
+			vi.dwOSVersionInfoSize = sizeof(vi);
+			GetVersionEx(&vi);
+
+			distribution = std::to_string(vi.dwMajorVersion) + "." + std::to_string(vi.dwMinorVersion) + "." + std::to_string(vi.dwBuildNumber);
+		}
+#elif defined(__APPLE__)
+		{
+			SInt32 major, minor, bugfix;
+			Gestalt(gestaltSystemVersionMajor, &major);
+			Gestalt(gestaltSystemVersionMinor, &minor);
+			Gestalt(gestaltSystemVersionBugFix, &bugfix);
+
+			distribution = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(bugfix);
+		}
+#endif
 
 		if(!argInput.empty())
 		{
@@ -269,7 +376,7 @@ int main( int argc, const char* const* argv )
 				fs1.imbue(std::locale(fs1.getloc(), output_facet));
 				fs1 << timestamp;
 
-				conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.default", fs1.str());
+				conf.apply(config::Config::Priority::Environment, "meta.commit.timestamp.default", fs1.str());
 
 				// compact format
 				std::stringstream fs2;
@@ -278,7 +385,7 @@ int main( int argc, const char* const* argv )
 				fs2.imbue(std::locale(fs2.getloc(), output_facet));
 				fs2 << timestamp;
 
-				conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.compact", fs2.str());
+				conf.apply(config::Config::Priority::Environment, "meta.commit.timestamp.compact", fs2.str());
 			}
 		}
 
@@ -371,7 +478,7 @@ int main( int argc, const char* const* argv )
 			fs1.imbue(std::locale(fs1.getloc(), output_facet));
 			fs1 << timestamp;
 
-			conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.default", fs1.str());
+			conf.apply(config::Config::Priority::Environment, "meta.commit.timestamp.default", fs1.str());
 
 			// compact format
 			std::stringstream fs2;
@@ -380,7 +487,7 @@ int main( int argc, const char* const* argv )
 			fs2.imbue(std::locale(fs2.getloc(), output_facet));
 			fs2 << timestamp;
 
-			conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.compact", fs2.str());
+			conf.apply(config::Config::Priority::Environment, "meta.commit.timestamp.compact", fs2.str());
 		}
 
 		// paths
