@@ -246,6 +246,8 @@ int main( int argc, const char* const* argv )
 
 			if(auto timestampstr = environment::variable("BUILD_ID"))
 			{
+				commitTimestampParsed = true;
+
 				// parse timestamp
 				boost::posix_time::ptime timestamp;
 
@@ -262,6 +264,9 @@ int main( int argc, const char* const* argv )
 
 				// default format
 				std::stringstream fs1;
+
+				auto output_facet = new boost::posix_time::time_facet("%Y-%m-%d_%H-%M-%S");
+				fs1.imbue(std::locale(fs1.getloc(), output_facet));
 				fs1 << timestamp;
 
 				conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.default", fs1.str());
@@ -269,14 +274,11 @@ int main( int argc, const char* const* argv )
 				// compact format
 				std::stringstream fs2;
 
-				auto output_facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
+				output_facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
 				fs2.imbue(std::locale(fs2.getloc(), output_facet));
 				fs2 << timestamp;
 
 				conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.compact", fs2.str());
-
-				// set state to parsed
-				commitTimestampParsed = true;
 			}
 		}
 
@@ -346,6 +348,8 @@ int main( int argc, const char* const* argv )
 		// timestamps
 		if(!commitTimestampParsed)
 		{
+			commitTimestampParsed = true;
+
 			// parse timestamp
 			boost::posix_time::ptime timestamp;
 
@@ -362,6 +366,9 @@ int main( int argc, const char* const* argv )
 
 			// default format
 			std::stringstream fs1;
+
+			auto output_facet = new boost::posix_time::time_facet("%Y-%m-%d %H:%M:%S");
+			fs1.imbue(std::locale(fs1.getloc(), output_facet));
 			fs1 << timestamp;
 
 			conf.apply(config::Config::Priority::Computed, "meta.commit.timestamp.default", fs1.str());
@@ -369,7 +376,7 @@ int main( int argc, const char* const* argv )
 			// compact format
 			std::stringstream fs2;
 
-			auto output_facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
+			output_facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
 			fs2.imbue(std::locale(fs2.getloc(), output_facet));
 			fs2 << timestamp;
 
@@ -397,7 +404,7 @@ int main( int argc, const char* const* argv )
 			{
 				conf.apply(config::Config::Priority::Variant,
 					std::string("tasks.") + section + std::string(".") + task.first,
-					task.second
+					conf.node( std::string("tasks.defaults.") + task.second.value("type") )
 				);
 			}
 		}
@@ -556,6 +563,8 @@ int main( int argc, const char* const* argv )
 
 		try
 		{
+			// add meta data
+
 			//output.push_back( js::Pair("oak", oakVersion) );
 			//output.push_back( js::Pair("title", conf.value("name")));
 			//output.emplace_back( "buildnode", argMachine);
@@ -565,6 +574,10 @@ int main( int argc, const char* const* argv )
 			//output.emplace_back( "timestamp" , argTimestamp);
 			output.push_back( js::Pair("tasks", outputTasks));
 
+			// ensure parent directory is created
+			boost::filesystem::create_directories(boost::filesystem::path(taskset.second).branch_path());
+
+			// write file
 			const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
 
 			std::ofstream stream(taskset.second.c_str());

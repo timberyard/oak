@@ -492,22 +492,6 @@ TaskResult task_doc_doxygen( config::ConfigNode config )
 	result.errors = (doxygenResult.exitCode != 0 ? 1 : 0);
 	result.status = (doxygenResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
 
-	// install docs
-	if(doxygenResult.exitCode == 0)
-	{
-		auto format = config.value("install.format");
-
-		std::cout << "Installing " <<format << " docs..." << std::endl;
-		boost::filesystem::create_directories(config.value("install.directory"));
-
-		if(!copyDir(config.value("output") + "/" +format, config.value("install.directory") + "/" +format))
-		{
-			result.errors += 1;
-			result.status = TaskResult::STATUS_ERROR;
-			result.message = std::string("Could not copy ") +format + std::string(" format output.");
-		}
-	}
-
 	return result;
 }
 
