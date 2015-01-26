@@ -35,12 +35,11 @@
 		},
 		"publish": {
 			"repo": {
-				"type": "publish:rsync",
+				"type": "publish:rsync+ssh",
 				"destination": {
 					"user": "builds",
 					"host": "build-repo",
-					"base": "/home/builds/integration",
-					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.node.name}"
+					"base": "/home/builds/integration"
 				}
 			}
 		}

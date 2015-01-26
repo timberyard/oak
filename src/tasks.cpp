@@ -18,11 +18,12 @@ namespace tasks {
 namespace pt = boost::property_tree;
 namespace js = json_spirit;
 
-TaskResult task_build_cmake    ( config::ConfigNode config );
-TaskResult task_test_googletest( config::ConfigNode config );
+TaskResult task_build_cmake        ( config::ConfigNode config );
+TaskResult task_test_googletest    ( config::ConfigNode config );
 TaskResult task_analysis_cppcheck  ( config::ConfigNode config );
-TaskResult task_doc_doxygen    ( config::ConfigNode config );
-TaskResult task_publish_rsync  ( config::ConfigNode config );
+TaskResult task_doc_doxygen        ( config::ConfigNode config );
+TaskResult task_publish_rsync_ssh  ( config::ConfigNode config );
+TaskResult task_publish_mongo_ssh  ( config::ConfigNode config );
 
 std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes =
 {
@@ -30,7 +31,8 @@ std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes =
 	{ "test:googletest",   task_test_googletest },
 	{ "analysis:cppcheck", task_analysis_cppcheck },
 	{ "doc:doxygen",       task_doc_doxygen },
-	{ "publish:rsync",     task_publish_rsync }
+	{ "publish:rsync+ssh", task_publish_rsync_ssh },
+	{ "publish:mongo+ssh", task_publish_mongo_ssh }
 };
 
 bool copyDir(
@@ -122,20 +124,27 @@ TaskResult task_build_cmake( config::ConfigNode config )
 	TaskResult result;
 
 	std::vector<std::string> cmakeParams {
+		std::string("-DCMAKE_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c.binary"), "\\", "/"),
+		std::string("-DCMAKE_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c++.binary"), "\\", "/"),
+		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + boost::algorithm::replace_all_copy(config.value("install.output"), "\\", "/"),
 
-		std::string("-DCMAKE_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("target.c.binary"), "\\", "/"),
-		std::string("-DCMAKE_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("target.c++.binary"), "\\", "/"),
-		std::string("-DTARGET_ARCHITECTURE:STRING=") + config.value("target.architecture"),
-		std::string("-DTARGET_BITNESS:STRING=") + config.value("target.bitness"),
-		std::string("-DTARGET_OS:STRING=") + config.value("target.os"),
+		std::string("-DARCH_HOST_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c.binary"), "\\", "/"),
+		std::string("-DARCH_HOST_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c++.binary"), "\\", "/"),
+		std::string("-DARCH_HOST_OS:STRING=") + config.value("arch.host.os"),
+		std::string("-DARCH_HOST_DISTRIBUTION:STRING=") + config.value("arch.host.distribution"),
+		std::string("-DARCH_HOST_FAMILY:STRING=") + config.value("arch.host.family"),
+		std::string("-DARCH_HOST_BITNESS:STRING=") + config.value("arch.host.bitness"),
+		std::string("-DARCH_HOST_MISC:STRING=") + config.value("arch.host.misc"),
+		std::string("-DARCH_HOST_DESCRIPTOR:STRING=") + config.value("arch.host.descriptor"),
 
-		std::string("-DLOCAL_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("local.c.binary"), "\\", "/"),
-		std::string("-DLOCAL_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("local.c++.binary"), "\\", "/"),
-		std::string("-DLOCAL_ARCHITECTURE:STRING=") + config.value("local.architecture"),
-		std::string("-DLOCAL_BITNESS:STRING=") + config.value("local.bitness"),
-		std::string("-DLOCAL_OS:STRING=") + config.value("local.os"),
-
-		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + boost::algorithm::replace_all_copy(config.value("install.output"), "\\", "/")
+		std::string("-DARCH_BUILD_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.build.c.binary"), "\\", "/"),
+		std::string("-DARCH_BUILD_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.build.c++.binary"), "\\", "/"),
+		std::string("-DARCH_BUILD_OS:STRING=") + config.value("arch.build.os"),
+		std::string("-DARCH_BUILD_DISTRIBUTION:STRING=") + config.value("arch.build.distribution"),
+		std::string("-DARCH_BUILD_FAMILY:STRING=") + config.value("arch.build.family"),
+		std::string("-DARCH_BUILD_BITNESS:STRING=") + config.value("arch.build.bitness"),
+		std::string("-DARCH_BUILD_MISC:STRING=") + config.value("arch.build.misc"),
+		std::string("-DARCH_BUILD_DESCRIPTOR:STRING=") + config.value("arch.build.descriptor")
 	};
 
 	if(config.value("verbose") == "yes")
@@ -495,7 +504,7 @@ TaskResult task_doc_doxygen( config::ConfigNode config )
 	return result;
 }
 
-TaskResult task_publish_rsync( config::ConfigNode config )
+TaskResult task_publish_rsync_ssh( config::ConfigNode config )
 {
 	TaskResult result;
 
@@ -539,6 +548,18 @@ TaskResult task_publish_rsync( config::ConfigNode config )
 	result.warnings = 0;
 	result.errors = (rsyncResult.exitCode != 0 ? 1 : 0);
 	result.status = (rsyncResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
+
+	return result;
+}
+
+TaskResult task_publish_mongo_ssh( config::ConfigNode config )
+{
+	TaskResult result;
+
+	result.message = "not implemented";
+	result.warnings = 0;
+	result.errors = 1;
+	result.status = TaskResult::STATUS_ERROR;
 
 	return result;
 }

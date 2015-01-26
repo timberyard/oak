@@ -23,11 +23,35 @@
 				"compact": "unknown"
 			}
 		},
-		"node": {
+		"system": {
 			"name": "unknown",
-			"architecture": "unknown",
-			"bitness": "unknown",
-			"os": "unknown"
+			"user": "unknown",
+			"arch": {
+				"os": "unknown",
+				"distribution": "unknown",
+				"family": "unknown",
+				"bitness": "unknown",
+				"misc": "default",
+				"descriptor": "${meta.system.arch.os}_${meta.system.arch.distribution}_${meta.system.arch.family}-${meta.system.arch.bitness}_${meta.system.arch.misc}"
+			}
+		},
+		"arch": {
+			"build": {
+				"os": "${meta.system.arch.os}",
+				"distribution": "${meta.system.arch.distribution}",
+				"family": "${meta.system.arch.family}",
+				"bitness": "${meta.system.arch.bitness}",
+				"misc": "${meta.system.arch.misc}",
+				"descriptor": "${meta.arch.build.os}_${meta.arch.build.distribution}_${meta.arch.build.family}-${meta.arch.build.bitness}_${meta.arch.build.misc}"
+			},
+			"host": {
+				"os": "${meta.system.arch.os}",
+				"distribution": "${meta.system.arch.distribution}",
+				"family": "${meta.system.arch.family}",
+				"bitness": "${meta.system.arch.bitness}",
+				"misc": "${meta.system.arch.misc}",
+				"descriptor": "${meta.arch.host.os}_${meta.arch.host.distribution}_${meta.arch.host.family}-${meta.arch.host.bitness}_${meta.arch.host.misc}"
+			}
 		},
 		"input": ".",
 		"output": "${meta.input}/oak",
@@ -59,28 +83,36 @@
 					"type": "gnu",
 					"variables": { }
 				},
-				"local" : {
-					"c": { "binary": "cc" },
-					"c++": { "binary": "c++" },
-					"architecture": "${meta.node.architecture}",
-					"bitness": "${meta.node.bitness}",
-					"os": "${meta.node.os}"
-				},
-				"target" : {
-					"c": { "binary": "cc" },
-					"c++": { "binary": "c++" },
-					"architecture": "${meta.node.architecture}",
-					"bitness": "${meta.node.bitness}",
-					"os": "${meta.node.os}"
+				"arch": {
+					"build" : {
+						"c": { "binary": "cc" },
+						"c++": { "binary": "c++" },
+						"os": "${meta.arch.build.os}",
+						"distribution": "${meta.arch.build.distribution}",
+						"family": "${meta.arch.build.family}",
+						"bitness": "${meta.arch.build.bitness}",
+						"misc": "${meta.arch.build.misc}",
+						"descriptor": "${tasks.defaults.build:cmake.arch.build.os}_${tasks.defaults.build:cmake.arch.build.distribution}_${tasks.defaults.build:cmake.arch.build.family}-${tasks.defaults.build:cmake.arch.build.bitness}_${tasks.defaults.build:cmake.arch.build.misc}"
+					},
+					"host" : {
+						"c": { "binary": "cc" },
+						"c++": { "binary": "c++" },
+						"os": "${meta.arch.host.os}",
+						"distribution": "${meta.arch.host.distribution}",
+						"family": "${meta.arch.host.family}",
+						"bitness": "${meta.arch.host.bitness}",
+						"misc": "${meta.arch.host.misc}",
+						"descriptor": "${tasks.defaults.build:cmake.arch.host.os}_${tasks.defaults.build:cmake.arch.host.distribution}_${tasks.defaults.build:cmake.arch.host.family}-${tasks.defaults.build:cmake.arch.host.bitness}_${tasks.defaults.build:cmake.arch.host.misc}"
+					}
 				},
 				"source": "${meta.input}",
 				"build": {
-					"output": "${meta.output}/build"
+					"output": "${meta.output}/build_work"
 				},
 				"install": {
 					"enabled": "yes",
-					"base": "${meta.output}/build",
-					"output": "${meta.output}/install"
+					"base": "${meta.output}/build_work",
+					"output": "${meta.output}/build"
 				},
 				"verbose": "no"
 			},
@@ -124,17 +156,38 @@
 					"SHOW_USED_FILES": "NO"
 				}
 			},
-			"publish:rsync": {
+			"publish:rsync+ssh": {
 				"enabled": "yes",
 				"rsync": { "binary": "rsync" },
 				"ssh": { "binary": "ssh" },
-				"source": "${meta.output}/install",
+				"sources": {
+					"build": "${meta.output}/build",
+					"doc": "${meta.output}/doc"
+				},
 				"destination": {
-					"user": "builds",
+					"user": "${meta.system.user}",
 					"host": "localhost",
 					"port": "22",
-					"base": "/home/builds/integration",
-					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.node.name}"
+					"base": "/home/${meta.system.user}/repository",
+					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.os}_${meta.arch.host.family}_${meta.arch.host.bitness}",
+					"mkdir": { "binary": "mkdir" }
+				}
+			},
+			"publish:mongo+ssh": {
+				"enabled": "yes",
+				"ssh": { "binary": "ssh" },
+				"scp": { "binary": "scp" },
+				"sources": {
+					"integrate.json": "${meta.output}/results/integrate.json"
+				},
+				"destination": {
+					"user": "${meta.system.user}",
+					"host": "localhost",
+					"port": "22",
+					"base": "/home/${meta.system.user}/repository",
+					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.system.name}",
+					"mkdir": { "binary": "mkdir" },
+					"mongoimport": { "binary": "mongoimport" }
 				}
 			}
 		},

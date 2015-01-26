@@ -154,14 +154,14 @@ int main( int argc, const char* const* argv )
 				return 1;
 			}
 
-			conf.apply(config::Config::Priority::Arguments, "meta.node.name", hostname);
+			conf.apply(config::Config::Priority::Arguments, "meta.system.name", hostname);
 		}
 
 		if(argMode == "jenkins")
 		{
 			if(auto nodeName = environment::variable("NODE_NAME"))
 			{
-				conf.apply(config::Config::Priority::Arguments, "meta.node.name", *nodeName);
+				conf.apply(config::Config::Priority::Arguments, "meta.system.name", *nodeName);
 			}
 
 			if(auto workspace = environment::variable("WORKSPACE"))
