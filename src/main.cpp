@@ -535,7 +535,7 @@ int main( int argc, const char* const* argv )
 		{
 			for( auto task : conf.node(std::string("tasks.") + section).children() )
 			{
-				conf.apply(config::Config::Priority::Variant,
+				conf.apply(config::Config::Priority::Base,
 					std::string("tasks.") + section + std::string(".") + task.first,
 					conf.node( std::string("tasks.defaults.") + task.second.value("type") )
 				);
