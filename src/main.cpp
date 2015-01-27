@@ -570,11 +570,17 @@ int main( int argc, const char* const* argv )
 
 	for(auto section : std::vector<std::string>{"checkout", "integrate", "publish"})
 	{
+		std::cout << "#########################################################################" << std::endl;
+		std::cout << "Section: " << section << std::endl;
+		std::cout << "#########################################################################" << std::endl;
+
 		boost::filesystem::path resultPath( conf.value(std::string("meta.results.") + section) );
 		js::Object taskResults;
 
 		try
 		{
+			std::cout << "Task order: ";
+
 			std::vector<std::string> taskOrder;
 			std::set<std::string> taskResolved;
 
@@ -595,12 +601,15 @@ int main( int argc, const char* const* argv )
 
 				taskOrder.push_back(task);
 				taskResolved.insert(task);
+				std::cout << task << " ";
 			};
 
 			for ( auto task : conf.node(std::string("tasks.")+section).children() )
 			{
 				resolve(task.first);
 			}
+
+			std::cout << std::endl;
 
 			for ( auto task : taskOrder )
 			{
