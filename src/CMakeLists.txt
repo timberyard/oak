@@ -41,7 +41,7 @@ link_directories(${BOOST_ROOT}/lib)
 add_definitions(-std=c++11)
 
 if(APPLE)
-	add_definitions(-framework CoreServices)
+	SET( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreServices" )
 endif()
 
 add_custom_command(OUTPUT config_base.cpp
