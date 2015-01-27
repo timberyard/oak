@@ -15,6 +15,10 @@
 #include <pwd.h>
 #endif
 
+#ifdef __APPLE__
+#include <CoreServices/CoreServices.h>
+#endif
+
 #include <json_spirit/json_spirit.h>
 
 #include "tasks.hpp"
@@ -265,21 +269,27 @@ int main( int argc, const char* const* argv )
 		}
 #elif defined(__MINGW32__) or defined(_WIN32)
 		{
+			std::string distribution;
+
 			OSVERSIONINFO vi;
 			memset(&vi, 0, sizeof(vi));
 			vi.dwOSVersionInfoSize = sizeof(vi);
 			GetVersionEx(&vi);
 
 			distribution = std::to_string(vi.dwMajorVersion) + "." + std::to_string(vi.dwMinorVersion) + "." + std::to_string(vi.dwBuildNumber);
+			conf.apply(config::Config::Priority::Environment, "meta.system.arch.distribution", distribution);
 		}
 #elif defined(__APPLE__)
 		{
+			std::string distribution;
+
 			SInt32 major, minor, bugfix;
 			Gestalt(gestaltSystemVersionMajor, &major);
 			Gestalt(gestaltSystemVersionMinor, &minor);
 			Gestalt(gestaltSystemVersionBugFix, &bugfix);
 
 			distribution = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(bugfix);
+			conf.apply(config::Config::Priority::Environment, "meta.system.arch.distribution", distribution);
 		}
 #endif
 
