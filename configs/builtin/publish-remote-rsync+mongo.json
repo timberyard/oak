@@ -4,7 +4,8 @@
 				"type": "publish:rsync+ssh"
 			},
 			"result": {
-				"type": "publish:mongo+rsync+ssh"
+				"type": "publish:mongo+rsync+ssh",
+				"enabled": "no"
 			}
 		}
 	}

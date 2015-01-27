@@ -463,6 +463,7 @@ int main( int argc, const char* const* argv )
 			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
 				conf.apply(config::Config::Priority::Environment, "meta.commit.timestamp.default", gitTimestamp.output[0].second);
+				commitTimestampParsed = false;
 			}
 			else
 			{
