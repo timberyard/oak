@@ -688,7 +688,7 @@ int main( int argc, const char* const* argv )
 					taskResult.push_back( js::Pair("errors",   uint64_t(result.errors)));
 					taskResult.push_back( js::Pair("status", toString(result.status)));
 					taskResult.push_back( js::Pair("details", result.output ));
-					taskResult.push_back( js::Pair("settings",  taskConfig.toSpirit()));
+					taskResult.push_back( js::Pair("config",  taskConfig.toSpirit()));
 
 					taskResults.emplace_back(task, taskResult);
 				}

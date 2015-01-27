@@ -158,7 +158,7 @@ TaskResult task_build_cmake( config::ConfigNode config )
 			+ variable.second.value("value") );
 	}
 
-	cmakeParams.push_back(boost::algorithm::replace_all_copy(config.value("source"), "\\", "/"));
+	cmakeParams.push_back(boost::algorithm::replace_all_copy(config.value("source.input"), "\\", "/"));
 
 #ifdef _WIN32
 	cmakeParams.push_back("-G");
@@ -198,6 +198,8 @@ TaskResult task_build_cmake( config::ConfigNode config )
 
 		json_spirit::Array details;
 
+		auto basePath = boost::algorithm::replace_all_copy(config.value("source.base"), "\\", "/");
+
 		for(auto line : makeResult.output)
 		{
 			auto i_filename = line.second.find(":");
@@ -223,6 +225,15 @@ TaskResult task_build_cmake( config::ConfigNode config )
 				boost::trim(column);
 				boost::trim(type);
 				boost::trim(message);
+
+				boost::algorithm::replace_all(filename, "\\", "/");
+
+				if(filename.find(basePath) == 0)
+				{
+					filename = filename.substr(basePath.length());
+				}
+
+				boost::trim_left_if(filename, boost::is_any_of("/"));
 
 				js::Object details_row;
 				details_row.emplace_back("type", type);

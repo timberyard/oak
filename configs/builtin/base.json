@@ -107,7 +107,10 @@
 						"descriptor": "${tasks.defaults.build:cmake.arch.host.os}_${tasks.defaults.build:cmake.arch.host.distribution}_${tasks.defaults.build:cmake.arch.host.family}-${tasks.defaults.build:cmake.arch.host.bitness}_${tasks.defaults.build:cmake.arch.host.misc}"
 					}
 				},
-				"source": "${meta.input}",
+				"source": {
+					"input": "${meta.input}",
+					"base": "${meta.input}"
+				},
 				"build": {
 					"output": "${meta.output}/build_work"
 				},
