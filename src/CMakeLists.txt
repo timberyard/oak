@@ -40,6 +40,10 @@ link_directories(${BOOST_ROOT}/lib)
 
 add_definitions(-std=c++11)
 
+if(APPLE)
+	add_definitions(-framework CoreServices)
+endif()
+
 add_custom_command(OUTPUT config_base.cpp
 	COMMAND xxd -i configs/builtin/base.json ${PROJECT_BINARY_DIR}/config_base.cpp
 	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/base.json
