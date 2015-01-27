@@ -558,7 +558,7 @@ int main( int argc, const char* const* argv )
 	try
 	{
 #ifdef _WIN32
-		fs_utils::remove_all(output);
+		fs_utils::remove_all(output.string());
 #else
 		boost::filesystem::remove_all(output);
 #endif
@@ -734,7 +734,7 @@ int main( int argc, const char* const* argv )
 			// write file
 			const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
 
-			std::ofstream stream(resultPath.c_str());
+			std::ofstream stream(resultPath.string());
 			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 
 			js::write(output, stream, options);
