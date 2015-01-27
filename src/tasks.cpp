@@ -8,6 +8,7 @@
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string/trim.hpp>
 
 #include "tasks.hpp"
 #include "process.hpp"
@@ -194,6 +195,47 @@ TaskResult task_build_cmake( config::ConfigNode config )
 			config.value("make.binary"),
 			makeParams,
 			config.value("build.output"));
+
+		json_spirit::Array details;
+
+		for(auto line : makeResult.output)
+		{
+			auto i_filename = line.second.find(":");
+			auto i_row = line.second.find(":", i_filename+1);
+			auto i_column = line.second.find(":", i_row+1);
+
+			auto i_warning = line.second.find("warning:", i_column+1);
+			auto i_error = line.second.find("error:", i_column+1);
+
+			if(	   i_filename != std::string::npos
+				&& i_row != std::string::npos
+				&& i_column != std::string::npos
+				&& ( i_warning != std::string::npos || i_error != std::string::npos ) )
+			{
+				auto filename = line.second.substr(0, i_filename);
+				auto row = line.second.substr(i_filename+1, i_row-i_filename-1);
+				auto column = line.second.substr(i_row+1, i_column-i_row-1);
+				std::string type = (i_error != std::string::npos) ? "error" : "warning";
+				auto message = line.second.substr((i_error != std::string::npos) ? i_error+6 : i_warning+8);
+
+				boost::trim(filename);
+				boost::trim(row);
+				boost::trim(column);
+				boost::trim(type);
+				boost::trim(message);
+
+				js::Object details_row;
+				details_row.emplace_back("type", type);
+				details_row.emplace_back("message", message);
+				details_row.emplace_back("filename", filename);
+				details_row.emplace_back("row", row);
+				details_row.emplace_back("column", column);
+
+				details.push_back(details_row);
+			}
+		}
+
+		result.output.emplace(result.output.begin(), "result", details);
 
 		result.output.emplace_back("make", task_utils::createTaskOutput(
 			config.value("make.binary"),
