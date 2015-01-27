@@ -178,7 +178,7 @@
 					"host": "localhost",
 					"port": "22",
 					"base": "/home/${meta.system.user}/repository",
-					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.os}_${meta.arch.host.family}_${meta.arch.host.bitness}",
+					"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.os}_${meta.arch.host.family}_${meta.arch.host.bitness}",
 					"mkdir": { "binary": "mkdir" }
 				}
 			},
@@ -195,7 +195,7 @@
 					"host": "localhost",
 					"port": "22",
 					"base": "/home/${meta.system.user}/repository",
-					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.system.name}",
+					"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.system.name}",
 					"mkdir": { "binary": "mkdir" },
 					"mongoimport": {
 						"binary": "mongoimport",
