@@ -69,10 +69,12 @@
 		"defaults": {
 			"checkout:git": {
 				"enabled": "yes",
+				"dependencies": { },
 				"binary": "git"
 			},
 			"build:cmake": {
 				"enabled": "yes",
+				"dependencies": { },
 				"cmake": {
 					"binary": "cmake",
 					"variables": { },
@@ -118,18 +120,21 @@
 			},
 			"test:googletest": {
 				"enabled": "yes",
+				"dependencies": { },
 				"binary": "${meta.output}/build/test",
 				"output": "${meta.output}/test/googletest.xml",
 				"filter": "*"
 			},
 			"analysis:cppcheck": {
 				"enabled": "yes",
+				"dependencies": { },
 				"binary": "cppcheck",
 				"source": "${meta.input}/src",
 				"output": "${meta.output}/analysis/cppcheck.xml"
 			},
 			"doc:doxygen": {
 				"enabled": "yes",
+				"dependencies": { },
 				"binary": "doxygen",
 				"source": "${meta.input}/src",
 				"output": "${meta.output}/doc",
@@ -158,6 +163,7 @@
 			},
 			"publish:rsync+ssh": {
 				"enabled": "yes",
+				"dependencies": { },
 				"rsync": { "binary": "rsync" },
 				"ssh": { "binary": "ssh" },
 				"sources": {
@@ -175,6 +181,7 @@
 			},
 			"publish:mongo+rsync+ssh": {
 				"enabled": "yes",
+				"dependencies": { },
 				"rsync": { "binary": "rsync" },
 				"ssh": { "binary": "ssh" },
 				"sources": {

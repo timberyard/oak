@@ -575,20 +575,48 @@ int main( int argc, const char* const* argv )
 
 		try
 		{
-			for ( auto& taskConfig : conf.node(std::string("tasks.")+section).children() )
+			std::vector<std::string> taskOrder;
+			std::set<std::string> taskResolved;
+
+			std::function<void(std::string)> resolve = [&resolve, &conf, &taskOrder, &taskResolved, section] (std::string task)
 			{
-				auto taskType = taskConfig.second.value( "type" );
+				if(taskResolved.find(task) != taskResolved.end())
+					return;
+
+				auto deps = conf.node(std::string("tasks.")+section+std::string(".")+task+std::string(".dependencies")).children();
+
+				for(auto dep : deps)
+				{
+					if(dep.second.value() == "on")
+					{
+						resolve(dep.first);
+					}
+				}
+
+				taskOrder.push_back(task);
+				taskResolved.insert(task);
+			};
+
+			for ( auto task : conf.node(std::string("tasks.")+section).children() )
+			{
+				resolve(task.first);
+			}
+
+			for ( auto task : taskOrder )
+			{
+				auto taskConfig = conf.node(std::string("tasks.")+section+std::string(".")+task);
+				auto taskType = taskConfig.value( "type" );
 
 				std::cout << "*************************************************************************" << std::endl;
 
 				// check if it is enabled/disabled
-				if(taskConfig.second.value("enabled") != "yes")
+				if(taskConfig.value("enabled") != "yes")
 				{
-					std::cout << "Task disabled: " << taskConfig.first << std::endl;
+					std::cout << "Task disabled: " << task << std::endl;
 					std::cout << "type: " << taskType << std::endl;
 
 					std::cout << "config: " << std::endl;
-					taskConfig.second.print(std::cout);
+					taskConfig.print(std::cout);
 					std::cout << std::endl;
 
 					std::cout << "*************************************************************************" << std::endl;
@@ -597,24 +625,24 @@ int main( int argc, const char* const* argv )
 
 				// run task
 
-				std::cout << "Running task: " << taskConfig.first << std::endl;
+				std::cout << "Running task: " << task << std::endl;
 				std::cout << "type: " << taskType << std::endl;
 
 				std::cout << "config: " << std::endl;
-				taskConfig.second.print(std::cout);
+				taskConfig.print(std::cout);
 				std::cout << std::endl;
 
 				std::cout << "*************************************************************************" << std::endl;
 
-				auto task = tasks::taskTypes.find(taskType);
+				auto taskFunc = tasks::taskTypes.find(taskType);
 
-				if(task != tasks::taskTypes.end())
+				if(taskFunc != tasks::taskTypes.end())
 				{
 					tasks::TaskResult result;
 
 					try
 					{
-						result = task->second(taskConfig.second);
+						result = taskFunc->second(taskConfig);
 					}
 					catch(const std::exception& e)
 					{
@@ -645,15 +673,15 @@ int main( int argc, const char* const* argv )
 					js::Object taskResult;
 
 					taskResult.push_back( js::Pair("type", taskType ));
-					taskResult.push_back( js::Pair("name", taskConfig.first ));
+					taskResult.push_back( js::Pair("name", task ));
 					taskResult.push_back( js::Pair("message", result.message ));
 					taskResult.push_back( js::Pair("warnings", uint64_t(result.warnings)));
 					taskResult.push_back( js::Pair("errors",   uint64_t(result.errors)));
 					taskResult.push_back( js::Pair("status", toString(result.status)));
 					taskResult.push_back( js::Pair("details", result.output ));
-					taskResult.push_back( js::Pair("settings",  taskConfig.second.toSpirit()));
+					taskResult.push_back( js::Pair("settings",  taskConfig.toSpirit()));
 
-					taskResults.emplace_back(taskConfig.first, taskResult);
+					taskResults.emplace_back(task, taskResult);
 				}
 				else
 					throw std::runtime_error(std::string("invalid task type: ") + taskType);

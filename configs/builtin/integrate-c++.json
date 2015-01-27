@@ -4,7 +4,10 @@
 				"type": "build:cmake"
 			},
 			"test": {
-				"type": "test:googletest"
+				"type": "test:googletest",
+				"dependencies": {
+					"build": "on"
+				}
 			},
 			"analysis": {
 				"type": "analysis:cppcheck"
