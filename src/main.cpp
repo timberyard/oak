@@ -429,16 +429,19 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.branch
-			process::TextProcessResult gitBranch = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
+			if(argMode != "jenkins")
+			{
+				process::TextProcessResult gitBranch = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
 
-			if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
-			{
-				conf.apply(config::Config::Priority::Environment, "meta.branch", gitBranch.output[0].second);
-			}
-			else
-			{
-				std::cerr << "Could not detect git branch" << std::endl;
-				return 1;
+				if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+				{
+					conf.apply(config::Config::Priority::Environment, "meta.branch", gitBranch.output[0].second);
+				}
+				else
+				{
+					std::cerr << "Could not detect git branch" << std::endl;
+					return 1;
+				}
 			}
 
 			// meta.commit.id.long
