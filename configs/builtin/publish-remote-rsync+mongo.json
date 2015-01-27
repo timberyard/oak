@@ -1,0 +1,11 @@
+{	"tasks": {
+		"publish": {
+			"build+doc": {
+				"type": "publish:rsync+ssh"
+			},
+			"result": {
+				"type": "publish:mongo+rsync+ssh"
+			}
+		}
+	}
+}

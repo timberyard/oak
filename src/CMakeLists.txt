@@ -69,12 +69,17 @@ add_custom_command(OUTPUT config_publish-nothing.cpp
 	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-nothing.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
+add_custom_command(OUTPUT config_publish-remote-rsync+mongo.cpp
+	COMMAND xxd -i configs/builtin/publish-remote-rsync+mongo.json ${PROJECT_BINARY_DIR}/config_publish-remote-rsync+mongo.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-remote-rsync+mongo.json
+	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
+
 add_executable(oak
 	main.cpp process.cpp tasks.cpp task_utils.cpp config.cpp
 	config_base.cpp
 	config_checkout-nothing.cpp
 	config_integrate-c++.cpp config_integrate-nothing.cpp
-	config_publish-nothing.cpp
+	config_publish-nothing.cpp config_publish-remote-rsync+mongo.cpp
 )
 
 add_dependencies(oak boost)
