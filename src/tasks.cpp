@@ -246,7 +246,7 @@ TaskResult task_build_cmake( config::ConfigNode config )
 			}
 		}
 
-		result.output.emplace(result.output.begin(), "result", details);
+		result.output.emplace(result.output.begin(), "results", details);
 
 		result.output.emplace_back("make", task_utils::createTaskOutput(
 			config.value("make.binary"),
