@@ -7,6 +7,8 @@
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/property_tree/json_parser.hpp>
 
+#include <json_spirit/json_spirit.h>
+
 namespace config {
 
 	namespace builtin {
@@ -41,6 +43,7 @@ namespace config {
 		ConfigNode& operator=(const ConfigNode& other);
 
 		void print(std::ostream& stream, bool resolved = true);
+		json_spirit::Object toSpirit(bool resolved = true);
 
 	protected:
 		ConfigNode(boost::property_tree::ptree base, boost::property_tree::ptree config);

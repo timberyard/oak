@@ -97,6 +97,45 @@ void ConfigNode::print(std::ostream& stream, bool resolved)
 	boost::property_tree::write_json(stream, config);
 }
 
+json_spirit::Object ConfigNode::toSpirit(bool resolved)
+{
+	std::function<json_spirit::Object(boost::property_tree::ptree)> traverse
+		= [this, resolved, &traverse] (boost::property_tree::ptree parent) -> json_spirit::Object
+	{
+		json_spirit::Object result;
+
+		for(auto i : parent)
+		{
+			if(i.second.empty())
+			{
+				if(i.second.data().length() == 0)
+				{
+					result.push_back(json_spirit::Pair(i.first, json_spirit::Value()));
+				}
+				else
+				{
+					if(resolved)
+					{
+						result.push_back(json_spirit::Pair(i.first, resolve(i.second.data())));
+					}
+					else
+					{
+						result.push_back(json_spirit::Pair(i.first, i.second.data()));
+					}
+				}
+			}
+			else
+			{
+				result.push_back(json_spirit::Pair(i.first, traverse(i.second)));
+			}
+		}
+
+		return result;
+	};
+
+	return traverse(_config);
+}
+
 ConfigNode::ConfigNode()
 {
 }

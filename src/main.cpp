@@ -12,6 +12,7 @@
 #include <Winsock2.h>
 #else
 #include <unistd.h>
+#include <pwd.h>
 #endif
 
 #include <json_spirit/json_spirit.h>
@@ -279,6 +280,17 @@ int main( int argc, const char* const* argv )
 			Gestalt(gestaltSystemVersionBugFix, &bugfix);
 
 			distribution = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(bugfix);
+		}
+#endif
+
+#if defined(__linux__)
+		{
+			uid_t uid = geteuid();
+			struct passwd *pw = getpwuid(uid);
+			if (pw)
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.system.user", pw->pw_name);
+			}
 		}
 #endif
 
@@ -553,23 +565,17 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
-	// collect task sets
-	std::vector< std::pair<config::ConfigNode, std::string> > tasksets {
-		std::pair<config::ConfigNode, std::string> { conf.node("tasks.checkout"), conf.value("meta.results.checkout") },
-		std::pair<config::ConfigNode, std::string> { conf.node("tasks.integrate"), conf.value("meta.results.integrate") },
-		std::pair<config::ConfigNode, std::string> { conf.node("tasks.publish"), conf.value("meta.results.publish") }
-	};
-
 	// run tasks
 	bool task_with_error = false;
 
-	for(auto taskset : tasksets)
+	for(auto section : std::vector<std::string>{"checkout", "integrate", "publish"})
 	{
-		js::Object outputTasks;
+		boost::filesystem::path resultPath( conf.value(std::string("meta.results.") + section) );
+		js::Object taskResults;
 
 		try
 		{
-			for ( auto& taskConfig : taskset.first.children() )
+			for ( auto& taskConfig : conf.node(std::string("tasks.")+section).children() )
 			{
 				auto taskType = taskConfig.second.value( "type" );
 
@@ -636,17 +642,18 @@ int main( int argc, const char* const* argv )
 						task_with_error = true;
 					}
 
-					js::Object outputTask;
+					js::Object taskResult;
 
-					outputTask.push_back( js::Pair("type", taskType ));
-					outputTask.push_back( js::Pair("name", taskConfig.first ));
-					outputTask.push_back( js::Pair("message", result.message ));
-					outputTask.push_back( js::Pair("warnings", uint64_t(result.warnings)));
-					outputTask.push_back( js::Pair("errors",   uint64_t(result.errors)));
-					outputTask.push_back( js::Pair("status", toString(result.status)));
-					outputTask.push_back( js::Pair("details", result.output ));
+					taskResult.push_back( js::Pair("type", taskType ));
+					taskResult.push_back( js::Pair("name", taskConfig.first ));
+					taskResult.push_back( js::Pair("message", result.message ));
+					taskResult.push_back( js::Pair("warnings", uint64_t(result.warnings)));
+					taskResult.push_back( js::Pair("errors",   uint64_t(result.errors)));
+					taskResult.push_back( js::Pair("status", toString(result.status)));
+					taskResult.push_back( js::Pair("details", result.output ));
+					taskResult.push_back( js::Pair("settings",  taskConfig.second.toSpirit()));
 
-					outputTasks.emplace_back(taskConfig.first, outputTask);
+					taskResults.emplace_back(taskConfig.first, taskResult);
 				}
 				else
 					throw std::runtime_error(std::string("invalid task type: ") + taskType);
@@ -670,24 +677,17 @@ int main( int argc, const char* const* argv )
 
 		try
 		{
-			// add meta data
-
-			//output.push_back( js::Pair("oak", oakVersion) );
-			//output.push_back( js::Pair("title", conf.value("name")));
-			//output.emplace_back( "buildnode", argMachine);
-			//output.emplace_back( "repository", argRepository);
-			//output.emplace_back( "branch"    , argBranch);
-			//output.emplace_back( "commit"    , argCommit);
-			//output.emplace_back( "timestamp" , argTimestamp);
-			output.push_back( js::Pair("tasks", outputTasks));
+			// assemble result
+			output.push_back(js::Pair("meta", conf.node("meta").toSpirit()));
+			output.push_back(js::Pair("tasks", js::Object { js::Pair(section, taskResults) }));
 
 			// ensure parent directory is created
-			boost::filesystem::create_directories(boost::filesystem::path(taskset.second).branch_path());
+			boost::filesystem::create_directories(resultPath.branch_path());
 
 			// write file
 			const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
 
-			std::ofstream stream(taskset.second.c_str());
+			std::ofstream stream(resultPath.c_str());
 			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 
 			js::write(output, stream, options);
