@@ -18,21 +18,21 @@ namespace tasks {
 namespace pt = boost::property_tree;
 namespace js = json_spirit;
 
-TaskResult task_build_cmake        ( config::ConfigNode config );
-TaskResult task_test_googletest    ( config::ConfigNode config );
-TaskResult task_analysis_cppcheck  ( config::ConfigNode config );
-TaskResult task_doc_doxygen        ( config::ConfigNode config );
-TaskResult task_publish_rsync_ssh  ( config::ConfigNode config );
-TaskResult task_publish_mongo_ssh  ( config::ConfigNode config );
+TaskResult task_build_cmake             ( config::ConfigNode config );
+TaskResult task_test_googletest         ( config::ConfigNode config );
+TaskResult task_analysis_cppcheck       ( config::ConfigNode config );
+TaskResult task_doc_doxygen             ( config::ConfigNode config );
+TaskResult task_publish_rsync_ssh       ( config::ConfigNode config );
+TaskResult task_publish_mongo_rsync_ssh ( config::ConfigNode config );
 
 std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes =
 {
-	{ "build:cmake",       task_build_cmake },
-	{ "test:googletest",   task_test_googletest },
-	{ "analysis:cppcheck", task_analysis_cppcheck },
-	{ "doc:doxygen",       task_doc_doxygen },
-	{ "publish:rsync+ssh", task_publish_rsync_ssh },
-	{ "publish:mongo+ssh", task_publish_mongo_ssh }
+	{ "build:cmake",             task_build_cmake },
+	{ "test:googletest",         task_test_googletest },
+	{ "analysis:cppcheck",       task_analysis_cppcheck },
+	{ "doc:doxygen",             task_doc_doxygen },
+	{ "publish:rsync+ssh",       task_publish_rsync_ssh },
+	{ "publish:mongo+rsync+ssh", task_publish_mongo_rsync_ssh }
 };
 
 bool copyDir(
@@ -508,58 +508,89 @@ TaskResult task_publish_rsync_ssh( config::ConfigNode config )
 {
 	TaskResult result;
 
-	// run ssh:mkdir
-
-	std::vector<std::string> sshArgs {
-		"-o", "BatchMode=yes", "-p", config.value("destination.port"),
-		config.value("destination.user") + std::string("@") + config.value("destination.host"),
-		"mkdir", "-p",
-		config.value("destination.base") + std::string("/") + config.value("destination.directory")
-	};
-
-	process::TextProcessResult sshResult = process::executeTextProcess(config.value("ssh.binary"), sshArgs, config.value("source"));
-
-	result.output.emplace_back("ssh:mkdir", task_utils::createTaskOutput(config.value("ssh.binary"), sshArgs, config.value("source"), sshResult));
-
-	if(sshResult.exitCode != 0)
+	for( auto source : config.node("sources").children() )
 	{
-		result.message = task_utils::createTaskMessage(sshResult);
-		result.warnings = 0;
-		result.errors = 1;
-		result.status = TaskResult::STATUS_ERROR;
+		std::string srcdir = source.second.value();
+		std::string remote = config.value("destination.user") + std::string("@") + config.value("destination.host");
+		std::string destdir = config.value("destination.base") + std::string("/") + config.value("destination.directory") + std::string("/") + source.first;
 
-		return result;
+		// run ssh:mkdir
+		std::vector<std::string> sshArgs { "-o", "BatchMode=yes", "-p", config.value("destination.port"), remote, config.value("destination.mkdir.binary"), "-p", destdir };
+
+		process::TextProcessResult sshResult = process::executeTextProcess(config.value("ssh.binary"), sshArgs, srcdir);
+
+		result.output.emplace_back("ssh:mkdir", task_utils::createTaskOutput(config.value("ssh.binary"), sshArgs, srcdir, sshResult));
+		result.message = task_utils::createTaskMessage(sshResult);
+
+		if(sshResult.exitCode != 0)
+		{
+			result.errors = 1;
+			result.status = TaskResult::STATUS_ERROR;
+			return result;
+		}
+
+		// run rsync
+		std::vector<std::string> rsyncArgs {
+			std::string("--rsh=") + config.value("ssh.binary") + (" -o BatchMode=yes -p ") + config.value("destination.port"), "--archive", "--delete", "--verbose", std::string("./"),
+			remote + std::string(":") + destdir + std::string("/")
+		};
+
+		process::TextProcessResult rsyncResult = process::executeTextProcess(config.value("rsync.binary"), rsyncArgs, srcdir);
+
+		result.output.emplace_back("rsync", task_utils::createTaskOutput(config.value("rsync.binary"), rsyncArgs, srcdir, rsyncResult));
+		result.message = task_utils::createTaskMessage(rsyncResult);
+
+		if(rsyncResult.exitCode != 0)
+		{
+			result.errors = 1;
+			result.status = TaskResult::STATUS_ERROR;
+			return result;
+		}
 	}
 
-	// run rsync
-	std::vector<std::string> rsyncArgs {
-		std::string("--rsh=") + config.value("ssh.binary") + (" -o BatchMode=yes -p ") + config.value("destination.port"),
-		"--archive", "--delete", "--verbose", std::string("./"),
-		config.value("destination.user") + std::string("@") + config.value("destination.host") + std::string(":")
-		+ config.value("destination.base") + std::string("/") + config.value("destination.directory") + std::string("/")
-	};
-
-	process::TextProcessResult rsyncResult = process::executeTextProcess(config.value("rsync.binary"), rsyncArgs, config.value("source"));
-
-	result.output.emplace_back("rsync", task_utils::createTaskOutput(config.value("rsync.binary"), rsyncArgs, config.value("source"), rsyncResult));
-
-	// generate meta data
-	result.message = task_utils::createTaskMessage(rsyncResult);
 	result.warnings = 0;
-	result.errors = (rsyncResult.exitCode != 0 ? 1 : 0);
-	result.status = (rsyncResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
+	result.errors = 0;
+	result.status = TaskResult::STATUS_OK;
 
 	return result;
 }
 
-TaskResult task_publish_mongo_ssh( config::ConfigNode config )
+TaskResult task_publish_mongo_rsync_ssh( config::ConfigNode config )
 {
-	TaskResult result;
+	// rsync stuff
+	TaskResult result = task_publish_rsync_ssh(config);
 
-	result.message = "not implemented";
-	result.warnings = 0;
-	result.errors = 1;
-	result.status = TaskResult::STATUS_ERROR;
+	if(result.status == TaskResult::STATUS_ERROR)
+	{
+		return result;
+	}
+
+	// import to mongo database
+	for( auto source : config.node("sources").children() )
+	{
+		std::string srcdir = source.second.value();
+		std::string remote = config.value("destination.user") + std::string("@") + config.value("destination.host");
+		std::string destfile = config.value("destination.base") + std::string("/") + config.value("destination.directory") + std::string("/") + source.first;
+
+		// run ssh:mongoimport
+		std::vector<std::string> mongoArgs { "-o", "BatchMode=yes", "-p", config.value("destination.port"), remote,
+			config.value("destination.mongoimport.binary"),
+			"--db", config.value("destination.mongoimport.database"),
+			"--collection", config.value("destination.mongoimport.collection"),
+			destfile };
+
+		process::TextProcessResult mongoResult = process::executeTextProcess(config.value("ssh.binary"), mongoArgs, srcdir);
+
+		result.output.emplace_back("ssh:mongoimport", task_utils::createTaskOutput(config.value("ssh.binary"), mongoArgs, srcdir, mongoResult));
+		result.message = task_utils::createTaskMessage(mongoResult);
+
+		if(mongoResult.exitCode != 0)
+		{
+			result.errors = 1;
+			result.status = TaskResult::STATUS_ERROR;
+			return result;
+		}
+	}
 
 	return result;
 }

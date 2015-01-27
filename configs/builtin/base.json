@@ -173,10 +173,10 @@
 					"mkdir": { "binary": "mkdir" }
 				}
 			},
-			"publish:mongo+ssh": {
+			"publish:mongo+rsync+ssh": {
 				"enabled": "yes",
+				"rsync": { "binary": "rsync" },
 				"ssh": { "binary": "ssh" },
-				"scp": { "binary": "scp" },
 				"sources": {
 					"integrate.json": "${meta.output}/results/integrate.json"
 				},
@@ -187,7 +187,11 @@
 					"base": "/home/${meta.system.user}/repository",
 					"directory": "${meta.project}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.system.name}",
 					"mkdir": { "binary": "mkdir" },
-					"mongoimport": { "binary": "mongoimport" }
+					"mongoimport": {
+						"binary": "mongoimport",
+						"database": "taskresults",
+						"collection": "integration"
+					}
 				}
 			}
 		},
