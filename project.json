@@ -1,0 +1,21 @@
+{	"meta": {
+		"project": {
+			"name": "oak"
+		},
+		"variants": {
+			"integrate": "c++"
+		}
+	},
+	"tasks": {
+		"integrate": {
+			"build": {
+				"source": {
+					"input": "${meta.input}/src"
+				}
+			},
+			"test": {
+				"enabled": "no"
+			}
+		}
+	}
+}

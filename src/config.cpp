@@ -251,7 +251,7 @@ void Config::merge()
 	_config = boost::property_tree::ptree();
 
 	for( auto p : std::vector<Priority> {
-			Priority::Base, Priority::System, Priority::Variant, Priority::Project,
+			Priority::Base, Priority::Variant, Priority::Project, Priority::System,
 			Priority::Environment, Priority::Arguments, Priority::Computed
 		} )
 	{

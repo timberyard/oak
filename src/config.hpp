@@ -60,9 +60,9 @@ namespace config {
 	public:
 		enum class Priority {
 			Base,
-			System,
 			Variant,
 			Project,
+			System,
 			Environment,
 			Arguments,
 			Computed
