@@ -29,6 +29,6 @@ struct TextProcessResult
 
 std::string toString(TextProcessResult::LineType lineType);
 
-TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector<std::string> arguments, boost::filesystem::path workingDirectory);
+TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector<std::string> arguments, boost::filesystem::path workingDirectory, boost::optional<std::string> stdindata = boost::optional<std::string>());
 
 } // namespace: process

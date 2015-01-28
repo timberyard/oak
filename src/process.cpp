@@ -34,7 +34,7 @@ boost::process::pipe create_async_pipe()
 #endif
 }
 
-TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector<std::string> arguments, boost::filesystem::path workingDirectory)
+TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector<std::string> arguments, boost::filesystem::path workingDirectory, boost::optional<std::string> stdindata)
 {
 	std::cout << "-------------------------------------------------------------------------" << std::endl;
 	std::cout << "Running process: " << binary.string() << std::endl;
@@ -95,12 +95,14 @@ TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector
 
 	TextProcessResult result;
 
+	boost::process::pipe pipeIn = create_async_pipe();
 	boost::process::pipe pipeOut = create_async_pipe();
 	boost::process::pipe pipeErr = create_async_pipe();
 
 	std::shared_ptr<bp::child> process;
 
 	{
+		bio::file_descriptor_source pipeInSource(pipeIn.source, bio::close_handle);
 		bio::file_descriptor_sink pipeOutSink(pipeOut.sink, bio::close_handle);
 		bio::file_descriptor_sink pipeErrSink(pipeErr.sink, bio::close_handle);
 
@@ -109,8 +111,12 @@ TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector
 			bpi::set_args(arguments),
 			bpi::start_in_dir(workingDirectory.string()),
 			bpi::inherit_env(),
+			bpi::bind_stdin(pipeInSource),
 			bpi::bind_stdout(pipeOutSink),
 			bpi::bind_stderr(pipeErrSink),
+#if defined(BOOST_POSIX_API)
+			bpi::close_fds(std::vector<int>{pipeIn.sink, pipeOut.source, pipeErr.source}),
+#endif
 			bpi::throw_on_error()
 		));
 	}
@@ -123,6 +129,7 @@ TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector
 
 	boost::asio::io_service io;
 
+	pipe_end pipeInEnd(io, pipeIn.sink);
 	pipe_end pipeOutEnd(io, pipeOut.source);
 	pipe_end pipeErrEnd(io, pipeErr.source);
 
@@ -160,6 +167,25 @@ TextProcessResult executeTextProcess(boost::filesystem::path binary, std::vector
 
 	readLine(pipeOutEnd, lineBufOut, TextProcessResult::INFO_LINE);
 	readLine(pipeErrEnd, lineBufErr, TextProcessResult::ERROR_LINE);
+
+	if(stdindata)
+	{
+		boost::asio::async_write(
+			pipeInEnd, boost::asio::buffer(stdindata->data(), stdindata->length()),
+			[&pipeInEnd](const boost::system::error_code& error, std::size_t size)
+			{
+				if(!error)
+				{
+					std::cout << size << " bytes written to stdin" << std::endl;
+				}
+				else
+				{
+					std::cout << "writing to stdin failed!" << std::endl;
+				}
+				pipeInEnd.close();
+			}
+		);
+	}
 
 	io.run();
 

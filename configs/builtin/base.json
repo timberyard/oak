@@ -203,6 +203,23 @@
 						"collection": "integration"
 					}
 				}
+			},
+			"publish:email": {
+				"enabled": "yes",
+				"dependencies": { },
+				"results": { },
+				"sections": {
+					"integrate": "on"
+				},
+				"receivers": {
+					"repository": "${meta.input}",
+					"authors": "2 days",
+					"committers": "2 days"
+				},
+				"subject": "Project: ${meta.project.name} | Branch: ${meta.branch} | Commit: ${meta.commit.id.short} | Date: ${meta.commit.timestamp.default}",
+				"message": "",
+				"git": { "binary": "git" },
+				"mail": { "binary": "mail" }
 			}
 		},
 		"checkout": {

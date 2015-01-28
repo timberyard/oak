@@ -1,6 +1,7 @@
 
 #include <numeric>
 #include <fstream>
+#include <set>
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -25,6 +26,7 @@ TaskResult task_analysis_cppcheck       ( config::ConfigNode config );
 TaskResult task_doc_doxygen             ( config::ConfigNode config );
 TaskResult task_publish_rsync_ssh       ( config::ConfigNode config );
 TaskResult task_publish_mongo_rsync_ssh ( config::ConfigNode config );
+TaskResult task_publish_email           ( config::ConfigNode config );
 
 std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes =
 {
@@ -33,7 +35,8 @@ std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes =
 	{ "analysis:cppcheck",       task_analysis_cppcheck },
 	{ "doc:doxygen",             task_doc_doxygen },
 	{ "publish:rsync+ssh",       task_publish_rsync_ssh },
-	{ "publish:mongo+rsync+ssh", task_publish_mongo_rsync_ssh }
+	{ "publish:mongo+rsync+ssh", task_publish_mongo_rsync_ssh },
+	{ "publish:email",           task_publish_email }
 };
 
 bool copyDir(
@@ -645,6 +648,88 @@ TaskResult task_publish_mongo_rsync_ssh( config::ConfigNode config )
 		}
 	}
 
+	return result;
+}
+
+TaskResult task_publish_email( config::ConfigNode config )
+{
+	TaskResult result;
+	result.warnings = 0;
+	result.errors = 0;
+
+	// detect authors
+	process::TextProcessResult gitAuthors = process::executeTextProcess(
+		config.value("git.binary"), {"log", "--pretty=%ae", std::string("--since=")+config.value("receivers.authors")},
+		config.value("receivers.repository"));
+
+	result.message = task_utils::createTaskMessage(gitAuthors);
+
+	if(gitAuthors.exitCode != 0)
+	{
+		result.errors = 1;
+		result.status = TaskResult::STATUS_ERROR;
+		return result;
+	}
+
+	// detect committers
+	process::TextProcessResult gitCommitters = process::executeTextProcess(
+		config.value("git.binary"), {"log", "--pretty=%ae", std::string("--since=")+config.value("receivers.committers")},
+		config.value("receivers.repository"));
+
+	result.message = task_utils::createTaskMessage(gitCommitters);
+
+	if(gitCommitters.exitCode != 0)
+	{
+		result.errors = 1;
+		result.status = TaskResult::STATUS_ERROR;
+		return result;
+	}
+
+	// generate set of receivers
+	std::set<std::string> receivers;
+
+	for(auto receiver : gitAuthors.output)
+	{
+		if(    receiver.second.length() > 0
+			&& receiver.first == process::TextProcessResult::LineType::INFO_LINE
+			&& receivers.find(receiver.second) == receivers.end())
+		{
+			receivers.insert(receiver.second);
+		}
+	}
+
+	for(auto receiver : gitCommitters.output)
+	{
+		if(    receiver.second.length() > 0
+			&& receiver.first == process::TextProcessResult::LineType::INFO_LINE
+			&& receivers.find(receiver.second) == receivers.end())
+		{
+			receivers.insert(receiver.second);
+		}
+	}
+
+	// generate message
+	std::string message = "placeholder";
+
+	// send mail
+	std::vector<std::string> mailArgs{"-s", config.value("subject")};
+	mailArgs.insert(mailArgs.end(), receivers.begin(), receivers.end());
+
+	process::TextProcessResult mailResult = process::executeTextProcess(
+		config.value("mail.binary"), mailArgs,
+		config.value("receivers.repository"),
+		message);
+
+	result.message = task_utils::createTaskMessage(mailResult);
+
+	if(mailResult.exitCode != 0)
+	{
+		result.errors = 1;
+		result.status = TaskResult::STATUS_ERROR;
+		return result;
+	}
+
+	result.status = TaskResult::STATUS_OK;
 	return result;
 }
 

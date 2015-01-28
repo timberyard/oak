@@ -26,6 +26,7 @@ public:
     void on_exec_setup(PosixExecutor&) const
     {
         ::dup2(source_.handle(), STDIN_FILENO);
+        ::close(source_.handle());
     }
 
 private:
