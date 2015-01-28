@@ -25,7 +25,6 @@ struct TaskResult
 
 	std::string message;
 	json_spirit::Object output;
-	std::string emailOutput;
 
 	TaskResult()
 	: status(STATUS_ERROR)

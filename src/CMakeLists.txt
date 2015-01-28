@@ -75,7 +75,7 @@ add_custom_command(OUTPUT config_publish-remote-rsync+mongo.cpp
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
 add_executable(oak
-	main.cpp process.cpp tasks.cpp task_utils.cpp config.cpp
+	main.cpp process.cpp tasks.cpp task_utils.cpp config.cpp formatter_markdown.cpp
 	config_base.cpp
 	config_checkout-nothing.cpp
 	config_integrate-c++.cpp config_integrate-nothing.cpp

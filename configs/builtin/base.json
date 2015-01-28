@@ -208,8 +208,8 @@
 				"enabled": "yes",
 				"dependencies": { },
 				"results": { },
-				"sections": {
-					"integrate": "on"
+				"reports": {
+					"integrate": "${meta.output}/results/integrate.json"
 				},
 				"receivers": {
 					"repository": "${meta.input}",
@@ -217,7 +217,6 @@
 					"committers": "2 days"
 				},
 				"subject": "Project: ${meta.project.name} | Branch: ${meta.branch} | Commit: ${meta.commit.id.short} | Date: ${meta.commit.timestamp.default}",
-				"message": "",
 				"git": { "binary": "git" },
 				"mail": { "binary": "mail" }
 			}

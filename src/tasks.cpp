@@ -14,6 +14,7 @@
 #include "tasks.hpp"
 #include "process.hpp"
 #include "task_utils.hpp"
+#include "formatter.hpp"
 
 namespace tasks {
 
@@ -353,7 +354,7 @@ TaskResult task_test_googletest( config::ConfigNode config )
 		row.emplace_back("errors", xmlTestResult.get<std::string>("testsuites.<xmlattr>.errors"));
 		row.emplace_back("disabled", xmlTestResult.get<std::string>("testsuites.<xmlattr>.disabled"));
 		row.emplace_back("time", xmlTestResult.get<std::string>("testsuites.<xmlattr>.time"));
-		row.emplace_back("status", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+		row.emplace_back("result", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
 		table_outline.emplace_back("all", row);
 	}
@@ -371,7 +372,7 @@ TaskResult task_test_googletest( config::ConfigNode config )
 		row.emplace_back("errors", testsuite.second.get<std::string>("<xmlattr>.errors"));
 		row.emplace_back("disabled", testsuite.second.get<std::string>("<xmlattr>.disabled"));
 		row.emplace_back("time", testsuite.second.get<std::string>("<xmlattr>.time"));
-		row.emplace_back("status", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+		row.emplace_back("result", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
 		// testsuites.push_back(row); // if we want the task list as array
 		testsuites.emplace_back( testsuite.second.get<std::string>("<xmlattr>.name"), row ); // if we want the task list as object with the task name as key
@@ -398,7 +399,7 @@ TaskResult task_test_googletest( config::ConfigNode config )
 			row.emplace_back("status", testcase.second.get<std::string>("<xmlattr>.status"));
 			row.emplace_back("message", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : ""));
 			row.emplace_back("time", testcase.second.get<std::string>("<xmlattr>.time"));
-			row.emplace_back("status", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
+			row.emplace_back("result", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
 
 			table_details.emplace_back(name, row);
 		}
@@ -709,16 +710,33 @@ TaskResult task_publish_email( config::ConfigNode config )
 	}
 
 	// generate message
-	std::string message = "placeholder";
+	std::stringstream message;
+
+	for(auto report : config.node("reports").children())
+	{
+		// load report
+		std::ifstream reportstream;
+		reportstream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+		reportstream.open( report.second.value() );
+
+		boost::property_tree::ptree reporttree;
+		boost::property_tree::read_json( reportstream, reporttree );
+
+		// format report
+		formatter::markdown(reporttree, message);
+	}
 
 	// send mail
-	std::vector<std::string> mailArgs{"-s", config.value("subject")};
+	std::vector<std::string> mailArgs{
+		"-a", "Content-Type: text/plain; charset=UTF-8",
+		"-s", config.value("subject")
+	};
 	mailArgs.insert(mailArgs.end(), receivers.begin(), receivers.end());
 
 	process::TextProcessResult mailResult = process::executeTextProcess(
 		config.value("mail.binary"), mailArgs,
 		config.value("receivers.repository"),
-		message);
+		message.str());
 
 	result.message = task_utils::createTaskMessage(mailResult);
 
