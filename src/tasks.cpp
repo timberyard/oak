@@ -489,12 +489,15 @@ TaskResult task_analysis_cppcheck( config::ConfigNode config )
 			if(error.first == "<xmlattr>")
 				continue;
 
+			auto attr_file = error.second.get_optional<std::string>("location.<xmlattr>.file");
+			auto attr_line = error.second.get_optional<std::string>("location.<xmlattr>.line");
+
 			js::Object row;
 			row.emplace_back("type", error.second.get<std::string>("<xmlattr>.id"));
 			row.emplace_back("severity", error.second.get<std::string>("<xmlattr>.severity"));
 			row.emplace_back("message", error.second.get<std::string>("<xmlattr>.msg"));
-			row.emplace_back("file", error.second.get<std::string>("location.<xmlattr>.file"));
-			row.emplace_back("line", error.second.get<std::string>("location.<xmlattr>.line"));
+			row.emplace_back("file", attr_file ? *attr_file : std::string(""));
+			row.emplace_back("line", attr_line ? *attr_line : std::string(""));
 
 			errors.push_back(row);
 		}
