@@ -1,6 +1,7 @@
 
 #include <boost/algorithm/string/join.hpp>
 #include <json_spirit/json_spirit.h>
+#include <boost/algorithm/string/trim.hpp>
 
 #include "task_utils.hpp"
 
@@ -41,7 +42,7 @@ json_spirit::Object createTaskOutput(const std::string& binary, const std::vecto
 
 std::string createTaskMessage(const process::TextProcessResult& processResult)
 {
-	return processResult.output.size() > 0 ? processResult.output.back().second : "-";
+	return boost::trim_copy(processResult.output.size() > 0 ? processResult.output.back().second : "-");
 }
 
 } // namespace: task_utils

@@ -99,10 +99,22 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 
 	output << "# Meta" << std::endl << std::endl;
 
+	output << "* Project: " << input.get<std::string>("meta.project.name") << std::endl;
+	output << "* Repository: " << input.get<std::string>("meta.repository") << std::endl;
+	output << "* Branch: " << input.get<std::string>("meta.branch") << std::endl;
+	output << "* Commit: " << input.get<std::string>("meta.commit.id.long") << std::endl;
+	output << "* Timestamp: " << input.get<std::string>("meta.commit.timestamp.default") << std::endl;
+	output << "* Architecture" << std::endl;
+	output << "    * Build: " << input.get<std::string>("meta.arch.build.descriptor") << std::endl;
+	output << "    * Host: " << input.get<std::string>("meta.arch.host.descriptor") << std::endl;
+	output << std::endl;
+	output << std::endl;
+
 	for(auto section : input.get_child("tasks"))
 	{
 		output << "# Tasks: " << section.first << std::endl << std::endl;
 
+		if(section.second.size() > 0)
 		{
 			std::vector<std::size_t> tabset { 15, 20, 25, 10, 10, 15 };
 
@@ -132,44 +144,61 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 
 			auto taskType = task.second.get<std::string>("type");
 
+			output << "* Type: " << taskType << std::endl;
+			output << "* Message: " << task.second.get<std::string>("message") << std::endl;
+			output << "* Warnings: " << task.second.get<std::string>("warnings") << std::endl;
+			output << "* Errors: " << task.second.get<std::string>("errors") << std::endl;
+			output << "* Status: " << task.second.get<std::string>("status") << std::endl;
+			output << std::endl;
+
 			if(taskType == "analysis:cppcheck")
 			{
-				std::vector<std::size_t> tabset { 25, 15, 55 };
+				auto errors = task.second.get_child("details.errors");
 
-				table::row(tabset, std::vector<std::string>{ "Type", "Severity", "Message" }, output);
-				table::line(tabset, output);
-
-				for(auto error : task.second.get_child("details.errors"))
+				if(errors.size() > 0)
 				{
-					table::row(tabset, std::vector<std::string>{
-						error.second.get<std::string>("type"),
-						error.second.get<std::string>("severity"),
-						error.second.get<std::string>("message") },
-						output);
-				}
+					std::vector<std::size_t> tabset { 25, 15, 55 };
 
-				output << std::endl;
+					table::row(tabset, std::vector<std::string>{ "Type", "Severity", "Message" }, output);
+					table::line(tabset, output);
+
+					for(auto error : errors)
+					{
+						table::row(tabset, std::vector<std::string>{
+							error.second.get<std::string>("type"),
+							error.second.get<std::string>("severity"),
+							error.second.get<std::string>("message") },
+							output);
+					}
+
+					output << std::endl;
+				}
 			}
 			else
 			if(taskType == "build:cmake")
 			{
-				std::vector<std::size_t> tabset { 12, 40, 29, 7, 7 };
+				auto results = task.second.get_child("details.results");
 
-				table::row(tabset, std::vector<std::string>{ "Type", "Message", "File", "Row", "Column" }, output);
-				table::line(tabset, output);
-
-				for(auto result : task.second.get_child("details.results"))
+				if(results.size() > 0)
 				{
-					table::row(tabset, std::vector<std::string>{
-						result.second.get<std::string>("type"),
-						result.second.get<std::string>("message"),
-						result.second.get<std::string>("filename"),
-						result.second.get<std::string>("row"),
-						result.second.get<std::string>("column") },
-						output);
-				}
+					std::vector<std::size_t> tabset { 12, 40, 29, 7, 7 };
 
-				output << std::endl;
+					table::row(tabset, std::vector<std::string>{ "Type", "Message", "File", "Row", "Column" }, output);
+					table::line(tabset, output);
+
+					for(auto result : results)
+					{
+						table::row(tabset, std::vector<std::string>{
+							result.second.get<std::string>("type"),
+							result.second.get<std::string>("message"),
+							result.second.get<std::string>("filename"),
+							result.second.get<std::string>("row"),
+							result.second.get<std::string>("column") },
+							output);
+					}
+
+					output << std::endl;
+				}
 			}
 			else
 			if(taskType == "test:googletest")
@@ -190,7 +219,7 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 						task.second.get<std::string>("details.testsuites.all.result") },
 						output);
 
-					for(auto testsuite : task.second.get_child(std::string("details.testsuites.details")))
+					for(auto testsuite : task.second.get_child("details.testsuites.details"))
 					{
 						table::row(tabset, std::vector<std::string>{
 							testsuite.second.get<std::string>("name"),
@@ -206,13 +235,16 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 					output << std::endl;
 				}
 
+				auto tests = task.second.get_child("details.tests");
+
+				if(tests.size() > 0)
 				{
 					std::vector<std::size_t> tabset { 35, 10, 30, 10, 10 };
 
 					table::row(tabset, std::vector<std::string>{ "Name", "Status", "Message", "Time", "Result" }, output);
 					table::line(tabset, output);
 
-					for(auto test : task.second.get_child(std::string("details.tests")))
+					for(auto test : tests)
 					{
 						table::row(tabset, std::vector<std::string>{
 							test.second.get<std::string>("name"),

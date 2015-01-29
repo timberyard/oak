@@ -213,10 +213,10 @@
 				},
 				"receivers": {
 					"repository": "${meta.input}",
-					"authors": "2 days",
-					"committers": "2 days"
+					"authors": "60 days",
+					"committers": "60 days"
 				},
-				"subject": "Project: ${meta.project.name} | Branch: ${meta.branch} | Commit: ${meta.commit.id.short} | Date: ${meta.commit.timestamp.default}",
+				"subject": "Project: ${meta.project.name} | Branch: ${meta.branch} | Commit: ${meta.commit.id.short} | Timestamp: ${meta.commit.timestamp.default}",
 				"git": { "binary": "git" },
 				"mail": { "binary": "mail" }
 			}
