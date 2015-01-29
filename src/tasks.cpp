@@ -493,6 +493,8 @@ TaskResult task_analysis_cppcheck( config::ConfigNode config )
 			row.emplace_back("type", error.second.get<std::string>("<xmlattr>.id"));
 			row.emplace_back("severity", error.second.get<std::string>("<xmlattr>.severity"));
 			row.emplace_back("message", error.second.get<std::string>("<xmlattr>.msg"));
+			row.emplace_back("file", error.second.get<std::string>("location.<xmlattr>.file"));
+			row.emplace_back("line", error.second.get<std::string>("location.<xmlattr>.line"));
 
 			errors.push_back(row);
 		}

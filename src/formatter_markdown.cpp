@@ -116,7 +116,7 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 
 		if(section.second.size() > 0)
 		{
-			std::vector<std::size_t> tabset { 15, 20, 25, 10, 10, 15 };
+			std::vector<std::size_t> tabset { 20, 30, 55, 10, 10, 15 };
 
 			table::row(tabset, std::vector<std::string>{ "Name", "Type", "Message", "Warnings", "Errors", "Status" }, output);
 			table::line(tabset, output);
@@ -157,9 +157,9 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 
 				if(errors.size() > 0)
 				{
-					std::vector<std::size_t> tabset { 25, 15, 55 };
+					std::vector<std::size_t> tabset { 20, 20, 45, 45, 10 };
 
-					table::row(tabset, std::vector<std::string>{ "Type", "Severity", "Message" }, output);
+					table::row(tabset, std::vector<std::string>{ "Type", "Severity", "Message", "File", "Line" }, output);
 					table::line(tabset, output);
 
 					for(auto error : errors)
@@ -167,7 +167,9 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 						table::row(tabset, std::vector<std::string>{
 							error.second.get<std::string>("type"),
 							error.second.get<std::string>("severity"),
-							error.second.get<std::string>("message") },
+							error.second.get<std::string>("message"),
+							error.second.get<std::string>("file"),
+							error.second.get<std::string>("line") },
 							output);
 					}
 
@@ -181,7 +183,7 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 
 				if(results.size() > 0)
 				{
-					std::vector<std::size_t> tabset { 12, 40, 29, 7, 7 };
+					std::vector<std::size_t> tabset { 15, 40, 65, 10, 10 };
 
 					table::row(tabset, std::vector<std::string>{ "Type", "Message", "File", "Row", "Column" }, output);
 					table::line(tabset, output);
@@ -204,7 +206,7 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 			if(taskType == "test:googletest")
 			{
 				{
-					std::vector<std::size_t> tabset { 35, 10, 10, 10, 10, 10, 10 };
+					std::vector<std::size_t> tabset { 45, 15, 15, 15, 15, 15, 20 };
 
 					table::row(tabset, std::vector<std::string>{ "Name", "Tests", "Failures", "Errors", "Disabled", "Time", "Result" }, output);
 					table::line(tabset, output);
@@ -239,7 +241,7 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 
 				if(tests.size() > 0)
 				{
-					std::vector<std::size_t> tabset { 35, 10, 30, 10, 10 };
+					std::vector<std::size_t> tabset { 45, 15, 45, 15, 20 };
 
 					table::row(tabset, std::vector<std::string>{ "Name", "Status", "Message", "Time", "Result" }, output);
 					table::line(tabset, output);
