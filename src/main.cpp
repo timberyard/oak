@@ -114,6 +114,7 @@ int main( int argc, const char* const* argv )
 {
 	config::Config conf;
 	boost::filesystem::path input, output;
+	po::variables_map vm;
 
 	try
 	{
@@ -134,13 +135,13 @@ int main( int argc, const char* const* argv )
 
 			optdescr.add_options()
 				("mode,m", po::value<std::string>(&argMode), "mode: standard [default], jenkins")
-				("input,in", po::value<std::string>(&argInput), "input directory")
-				("output,out", po::value<std::string>(&argOutput), "output directory")
-				("options,opt", po::value<std::vector<std::string>>(&argOptions)->multitoken(), "options: key=value ...")
+				("input,i", po::value<std::string>(&argInput), "input directory")
+				("output,o", po::value<std::string>(&argOutput), "output directory")
+				("options,O", po::value<std::vector<std::string>>(&argOptions)->multitoken(), "options: key=value ...")
+				("printconf,p", "print configuration and exit")
 				("help,h", "show this text")
 				;
 
-			po::variables_map vm;
 			po::store( po::command_line_parser(argc, argv).options(optdescr).run(), vm);
 			po::notify(vm);
 
@@ -556,6 +557,11 @@ int main( int argc, const char* const* argv )
 	// print configuration
 	std::cout << "Printing configuration..." << std::endl;
 	conf.print(std::cout);
+
+	if(vm.count("printconf") > 0)
+	{
+		return 0;
+	}
 
 	// clean output
 	std::cout << "Prepare output directory..." << std::endl;
