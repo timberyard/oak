@@ -213,8 +213,8 @@
 				},
 				"receivers": {
 					"repository": "${meta.input}",
-					"authors": "60 days",
-					"committers": "60 days"
+					"authors": "3 days",
+					"committers": "3 days"
 				},
 				"subject": "Project: ${meta.project.name} | Branch: ${meta.branch} | Commit: ${meta.commit.id.short} | Timestamp: ${meta.commit.timestamp.default}",
 				"git": { "binary": "git" },

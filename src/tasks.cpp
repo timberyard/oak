@@ -714,20 +714,28 @@ TaskResult task_publish_email( config::ConfigNode config )
 		}
 	}
 
+	if(receivers.size() == 0)
+	{
+		result.status = TaskResult::STATUS_OK;
+		return result;
+	}
+
 	// generate message
 	std::stringstream message;
 
 	for(auto report : config.node("reports").children())
 	{
+		std::cout << "reading " << report.second.value() << "..." << std::endl;
+
 		// load report
 		std::ifstream reportstream;
 		reportstream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 		reportstream.open( report.second.value() );
 
-		boost::property_tree::ptree reporttree;
-		boost::property_tree::read_json( reportstream, reporttree );
+		uon::Value reporttree = uon::read_json( reportstream );
 
 		// format report
+		std::cout << "formatting markdown..." << std::endl;
 		formatter::markdown(reporttree, message);
 	}
 

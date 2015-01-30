@@ -93,43 +93,47 @@ namespace table {
 
 } // namespace: _markdown
 
-void markdown(boost::property_tree::ptree input, std::ostream& output)
+void markdown(uon::Value input, std::ostream& output)
 {
 	using namespace _markdown;
 
 	output << "# Meta" << std::endl << std::endl;
 
-	output << "* Project: " << input.get<std::string>("meta.project.name") << std::endl;
-	output << "* Repository: " << input.get<std::string>("meta.repository") << std::endl;
-	output << "* Branch: " << input.get<std::string>("meta.branch") << std::endl;
-	output << "* Commit: " << input.get<std::string>("meta.commit.id.long") << std::endl;
-	output << "* Timestamp: " << input.get<std::string>("meta.commit.timestamp.default") << std::endl;
+	auto meta = input.get("meta", uon::null);
+
+	output << "* Project: " << meta.get("project.name", uon::null).to_string() << std::endl;
+	output << "* Repository: " << meta.get("repository", uon::null).to_string() << std::endl;
+	output << "* Branch: " << meta.get("branch", uon::null).to_string() << std::endl;
+	output << "* Commit: " << meta.get("commit.id.long", uon::null).to_string() << std::endl;
+	output << "* Timestamp: " << meta.get("commit.timestamp.default", uon::null).to_string() << std::endl;
 	output << "* Architecture" << std::endl;
-	output << "    * Build: " << input.get<std::string>("meta.arch.build.descriptor") << std::endl;
-	output << "    * Host: " << input.get<std::string>("meta.arch.host.descriptor") << std::endl;
+	output << "    * Build: " << meta.get("arch.build.descriptor", uon::null).to_string() << std::endl;
+	output << "    * Host: " << meta.get("arch.host.descriptor", uon::null).to_string() << std::endl;
 	output << std::endl;
 	output << std::endl;
 
-	for(auto section : input.get_child("tasks"))
+	for(auto section : input.get("tasks", uon::null).to_object())
 	{
 		output << "# Tasks: " << section.first << std::endl << std::endl;
 
-		if(section.second.size() > 0)
+		auto tasks = section.second.to_object();
+
+		if(tasks.size() > 0)
 		{
 			std::vector<std::size_t> tabset { 20, 30, 55, 10, 10, 15 };
 
 			table::row(tabset, std::vector<std::string>{ "Name", "Type", "Message", "Warnings", "Errors", "Status" }, output);
 			table::line(tabset, output);
 
-			for(auto task : section.second)
+			for(auto task : tasks)
 			{
 				table::row(tabset, std::vector<std::string>{
-					task.second.get<std::string>("name"),
-					task.second.get<std::string>("type"),
-					task.second.get<std::string>("message"),
-					task.second.get<std::string>("warnings"),
-					task.second.get<std::string>("errors"),
-					task.second.get<std::string>("status") },
+					task.second.get("name", uon::null).to_string(),
+					task.second.get("type", uon::null).to_string(),
+					task.second.get("message", uon::null).to_string(),
+					task.second.get("warnings", uon::null).to_string(),
+					task.second.get("errors", uon::null).to_string(),
+					task.second.get("status", uon::null).to_string() },
 					output);
 			}
 
@@ -138,22 +142,22 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 
 		output << std::endl;
 
-		for(auto task : section.second)
+		for(auto task : tasks)
 		{
 			output << "## Task: " << task.first << std::endl << std::endl;
 
-			auto taskType = task.second.get<std::string>("type");
+			auto taskType = task.second.get("type", uon::null).to_string();
 
 			output << "* Type: " << taskType << std::endl;
-			output << "* Message: " << task.second.get<std::string>("message") << std::endl;
-			output << "* Warnings: " << task.second.get<std::string>("warnings") << std::endl;
-			output << "* Errors: " << task.second.get<std::string>("errors") << std::endl;
-			output << "* Status: " << task.second.get<std::string>("status") << std::endl;
+			output << "* Message: " << task.second.get("message", uon::null).to_string() << std::endl;
+			output << "* Warnings: " << task.second.get("warnings", uon::null).to_string() << std::endl;
+			output << "* Errors: " << task.second.get("errors", uon::null).to_string() << std::endl;
+			output << "* Status: " << task.second.get("status", uon::null).to_string() << std::endl;
 			output << std::endl;
 
 			if(taskType == "analysis:cppcheck")
 			{
-				auto errors = task.second.get_child("details.errors");
+				auto errors = task.second.get("details.errors", uon::null).to_array();
 
 				if(errors.size() > 0)
 				{
@@ -165,11 +169,11 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 					for(auto error : errors)
 					{
 						table::row(tabset, std::vector<std::string>{
-							error.second.get<std::string>("type"),
-							error.second.get<std::string>("severity"),
-							error.second.get<std::string>("message"),
-							error.second.get<std::string>("file"),
-							error.second.get<std::string>("line") },
+							error.get("type", uon::null).to_string(),
+							error.get("severity", uon::null).to_string(),
+							error.get("message", uon::null).to_string(),
+							error.get("file", uon::null).to_string(),
+							error.get("line", uon::null).to_string() },
 							output);
 					}
 
@@ -179,7 +183,7 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 			else
 			if(taskType == "build:cmake")
 			{
-				auto results = task.second.get_child("details.results");
+				auto results = task.second.get("details.results", uon::null).to_array();
 
 				if(results.size() > 0)
 				{
@@ -191,11 +195,11 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 					for(auto result : results)
 					{
 						table::row(tabset, std::vector<std::string>{
-							result.second.get<std::string>("type"),
-							result.second.get<std::string>("message"),
-							result.second.get<std::string>("filename"),
-							result.second.get<std::string>("row"),
-							result.second.get<std::string>("column") },
+							result.get("type", uon::null).to_string(),
+							result.get("message", uon::null).to_string(),
+							result.get("filename", uon::null).to_string(),
+							result.get("row", uon::null).to_string(),
+							result.get("column", uon::null).to_string() },
 							output);
 					}
 
@@ -205,39 +209,50 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 			else
 			if(taskType == "test:googletest")
 			{
+				auto all = task.second.get("details.testsuites.all", uon::null);
+				auto testsuites = task.second.get("details.testsuites.details", uon::null).to_array();
+
+				if(!all.is_null() || testsuites.size() > 0)
 				{
 					std::vector<std::size_t> tabset { 45, 15, 15, 15, 15, 15, 20 };
 
 					table::row(tabset, std::vector<std::string>{ "Name", "Tests", "Failures", "Errors", "Disabled", "Time", "Result" }, output);
 					table::line(tabset, output);
 
-					table::row(tabset, std::vector<std::string>{
-						task.second.get<std::string>("details.testsuites.all.name"),
-						task.second.get<std::string>("details.testsuites.all.tests"),
-						task.second.get<std::string>("details.testsuites.all.failures"),
-						task.second.get<std::string>("details.testsuites.all.errors"),
-						task.second.get<std::string>("details.testsuites.all.disabled"),
-						task.second.get<std::string>("details.testsuites.all.time"),
-						task.second.get<std::string>("details.testsuites.all.result") },
-						output);
-
-					for(auto testsuite : task.second.get_child("details.testsuites.details"))
+					if(!all.is_null())
 					{
 						table::row(tabset, std::vector<std::string>{
-							testsuite.second.get<std::string>("name"),
-							testsuite.second.get<std::string>("tests"),
-							testsuite.second.get<std::string>("failures"),
-							testsuite.second.get<std::string>("errors"),
-							testsuite.second.get<std::string>("disabled"),
-							testsuite.second.get<std::string>("time"),
-							testsuite.second.get<std::string>("result") },
+							all.get("name", uon::null).to_string(),
+							all.get("tests", uon::null).to_string(),
+							all.get("failures", uon::null).to_string(),
+							all.get("errors", uon::null).to_string(),
+							all.get("disabled", uon::null).to_string(),
+							all.get("time", uon::null).to_string(),
+							all.get("result", uon::null).to_string() },
 							output);
+					}
+
+
+					if(testsuites.size() > 0)
+					{
+						for(auto testsuite : testsuites)
+						{
+							table::row(tabset, std::vector<std::string>{
+								testsuite.get("name", uon::null).to_string(),
+								testsuite.get("tests", uon::null).to_string(),
+								testsuite.get("failures", uon::null).to_string(),
+								testsuite.get("errors", uon::null).to_string(),
+								testsuite.get("disabled", uon::null).to_string(),
+								testsuite.get("time", uon::null).to_string(),
+								testsuite.get("result", uon::null).to_string() },
+								output);
+						}
 					}
 
 					output << std::endl;
 				}
 
-				auto tests = task.second.get_child("details.tests");
+				auto tests = task.second.get("details.tests", uon::null).to_array();
 
 				if(tests.size() > 0)
 				{
@@ -249,11 +264,11 @@ void markdown(boost::property_tree::ptree input, std::ostream& output)
 					for(auto test : tests)
 					{
 						table::row(tabset, std::vector<std::string>{
-							test.second.get<std::string>("name"),
-							test.second.get<std::string>("status"),
-							test.second.get<std::string>("message"),
-							test.second.get<std::string>("time"),
-							test.second.get<std::string>("result") },
+							test.get("name", uon::null).to_string(),
+							test.get("status", uon::null).to_string(),
+							test.get("message", uon::null).to_string(),
+							test.get("time", uon::null).to_string(),
+							test.get("result", uon::null).to_string() },
 							output);
 					}
 

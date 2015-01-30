@@ -1,10 +1,10 @@
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
+#include <uon/uon.hpp>
 #include <iostream>
 
 namespace formatter {
 
-extern void markdown(boost::property_tree::ptree input, std::ostream& output);
+extern void markdown(uon::Value input, std::ostream& output);
 
 } // namespace: formatter

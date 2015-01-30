@@ -11,7 +11,7 @@ include(zlib)
 include(bzip2)
 include(boost)
 
-set(Boost_LIBRARIES boost_system boost_filesystem boost_iostreams boost_program_options)
+set(Boost_LIBRARIES boost_system boost_filesystem boost_iostreams boost_program_options boost_regex)
 
 # Json Spirit
 set( JsonSpiritArgs -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_TOOLCHAIN_FILE:STRING=${CMAKE_TOOLCHAIN_FILE} -DBOOST_ROOT:STRING=${BOOST_ROOT} )
@@ -34,6 +34,7 @@ set( JsonSpirit_LIBRARY "${BINARY_DIR}/json_spirit/libjson_spirit.a" )
 
 include_directories( ${BOOST_ROOT}/include )
 include_directories( ${PROJECT_SOURCE_DIR}/../libs/boost-process)
+include_directories( ${PROJECT_SOURCE_DIR}/../libs)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
 
 link_directories(${BOOST_ROOT}/lib)
@@ -80,6 +81,13 @@ add_executable(oak
 	config_checkout-nothing.cpp
 	config_integrate-c++.cpp config_integrate-nothing.cpp
 	config_publish-nothing.cpp config_publish-remote-rsync+mongo.cpp
+	${PROJECT_SOURCE_DIR}/../libs/uon/model.cpp
+	${PROJECT_SOURCE_DIR}/../libs/uon/operations.cpp
+	${PROJECT_SOURCE_DIR}/../libs/uon/reader_bson.cpp
+	${PROJECT_SOURCE_DIR}/../libs/uon/reader_json.cpp
+	${PROJECT_SOURCE_DIR}/../libs/uon/uon.cpp
+	${PROJECT_SOURCE_DIR}/../libs/uon/writer_bson.cpp
+	${PROJECT_SOURCE_DIR}/../libs/uon/writer_json.cpp
 )
 
 add_dependencies(oak boost)
