@@ -96,7 +96,7 @@ String Value::to_string() const
 {
 	if(_value.type() == typeid(Null))
 	{
-		return "null";
+		return "";
 	}
 
 	if(_value.type() == typeid(String))
