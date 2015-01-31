@@ -5,7 +5,7 @@
 			},
 			"result": {
 				"type": "publish:mongo+rsync+ssh",
-				"enabled": "no"
+				"enabled": false
 			}
 		}
 	}

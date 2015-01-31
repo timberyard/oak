@@ -9,7 +9,12 @@
 
 namespace uon
 {
-	class NotFound : public std::exception { };
+	class NotFound : public std::range_error
+	{
+	public:
+		NotFound(std::string path);
+		NotFound(std::vector<std::string> path);
+	};
 
 	enum class Type { null, string, number, boolean, object, array };
 
@@ -54,6 +59,7 @@ namespace uon
 		Array to_array() const;
 
 		Value& operator=(const Value& other);
+
 		Value& operator=(const Null& value);
 		Value& operator=(const String& value);
 		Value& operator=(const Number& value);
@@ -61,14 +67,23 @@ namespace uon
 		Value& operator=(const Object& value);
 		Value& operator=(const Array& value);
 
+		Value& operator=(const char* value);
+		Value& operator=(std::uint64_t value);
+		Value& operator=(std::int64_t value);
+
 		Value();
 		Value(const Value& other);
+
 		Value(const Null& value);
 		Value(const String& value);
 		Value(const Number& value);
 		Value(const Boolean& value);
 		Value(const Object& value);
 		Value(const Array& value);
+
+		Value(const char* value);
+		Value(std::uint64_t value);
+		Value(std::int64_t value);
 
 		Value copy() const;
 

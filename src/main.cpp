@@ -155,7 +155,7 @@ int main( int argc, const char* const* argv )
 				return 1;
 			}
 
-			conf.apply(config::Config::Priority::Environment, "meta.system.name", hostname);
+			conf.apply(config::Config::Priority::Environment, "meta.system.name", std::string(hostname));
 		}
 
 		if(argMode == "jenkins")
@@ -177,17 +177,17 @@ int main( int argc, const char* const* argv )
 		}
 
 #if defined(__x86_64__) or defined(_M_X64)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "x86");
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "64");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", std::string("x86"));
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", (uon::Number)64);
 #elif defined(_X86_) or defined(__i386__) or defined(_M_IX86)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "x86");
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "32");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", std::string("x86"));
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", (uon::Number)32);
 #elif defined(__aarch64__)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "arm");
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "64");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", std::string("arm"));
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", (uon::Number)64);
 #elif defined(__arm__) or defined(_M_ARM)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", "arm");
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "32");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.family", std::string("arm"));
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", (uon::Number)32);
 #endif
 
 #if defined(__linux__) or defined(__APPLE__)
@@ -197,7 +197,7 @@ int main( int argc, const char* const* argv )
 
 			if(getConfLongBit.exitCode == 0 && getConfLongBit.output.size() == 1 && getConfLongBit.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
-				conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", getConfLongBit.output[0].second);
+				conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", std::stold(getConfLongBit.output[0].second));
 			}
 			else
 			{
@@ -206,7 +206,7 @@ int main( int argc, const char* const* argv )
 			}
 		}
 #elif defined(_WIN64)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", "64");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", (uon::Number)64);
 #elif defined(__MINGW32__) or defined(_WIN32)
 		{
 		    BOOL f64 = FALSE;
@@ -216,16 +216,16 @@ int main( int argc, const char* const* argv )
 				return 1;
 		    }
 
-		    conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", f64 ? "64" : "32");
+		    conf.apply(config::Config::Priority::Environment, "meta.system.arch.bitness", f64 ? (uon::Number)64 : (uon::Number)32);
 		}
 #endif
 
 #if defined(__linux__)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", "linux");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", std::string("linux"));
 #elif defined(__MINGW32__) or defined(_WIN32)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", "windows");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", std::string("windows"));
 #elif defined(__APPLE__)
-		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", "macos");
+		conf.apply(config::Config::Priority::Environment, "meta.system.arch.os", std::string("macos"));
 #endif
 
 #if defined(__linux__)
@@ -294,7 +294,7 @@ int main( int argc, const char* const* argv )
 			struct passwd *pw = getpwuid(uid);
 			if (pw)
 			{
-				conf.apply(config::Config::Priority::Environment, "meta.system.user", pw->pw_name);
+				conf.apply(config::Config::Priority::Environment, "meta.system.user", std::string(pw->pw_name));
 			}
 		}
 #endif
@@ -312,6 +312,7 @@ int main( int argc, const char* const* argv )
 		conf.apply(config::Config::Priority::Arguments, argOptions);
 
 		// apply system configuration
+		uon::write_json(conf.resolved(), std::cout, false);
 		boost::filesystem::path sysconf = conf.get("meta.configs.system").to_string();
 
 		if(boost::filesystem::exists(sysconf))

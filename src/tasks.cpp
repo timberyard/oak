@@ -239,8 +239,8 @@ TaskResult task_build_cmake( uon::Value config )
 				details_row.set("type", type);
 				details_row.set("message", message);
 				details_row.set("filename", filename);
-				details_row.set("row", row);
-				details_row.set("column", column);
+				details_row.set("row", std::stold(row));
+				details_row.set("column", std::stold(column));
 
 				details.push_back(details_row);
 			}
@@ -345,12 +345,12 @@ TaskResult task_test_googletest( uon::Value config )
 	{
 		uon::Value row;
 		row.set("name", xmlTestResult.get<std::string>("testsuites.<xmlattr>.name"));
-		row.set("tests", xmlTestResult.get<std::string>("testsuites.<xmlattr>.tests"));
-		row.set("failures", xmlTestResult.get<std::string>("testsuites.<xmlattr>.failures"));
-		row.set("errors", xmlTestResult.get<std::string>("testsuites.<xmlattr>.errors"));
-		row.set("disabled", xmlTestResult.get<std::string>("testsuites.<xmlattr>.disabled"));
-		row.set("time", xmlTestResult.get<std::string>("testsuites.<xmlattr>.time"));
-		row.set("result", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+		row.set("tests", xmlTestResult.get<uon::Number>("testsuites.<xmlattr>.tests"));
+		row.set("failures", xmlTestResult.get<uon::Number>("testsuites.<xmlattr>.failures"));
+		row.set("errors", xmlTestResult.get<uon::Number>("testsuites.<xmlattr>.errors"));
+		row.set("disabled", xmlTestResult.get<uon::Number>("testsuites.<xmlattr>.disabled"));
+		row.set("time", xmlTestResult.get<uon::Number>("testsuites.<xmlattr>.time"));
+		row.set("result", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? std::string("Error") : std::string("Ok")));
 
 		table_outline.set("all", row);
 	}
@@ -363,12 +363,12 @@ TaskResult task_test_googletest( uon::Value config )
 
 		uon::Value row;
 		row.set("name", testsuite.second.get<std::string>("<xmlattr>.name"));
-		row.set("tests", testsuite.second.get<std::string>("<xmlattr>.tests"));
-		row.set("failures", testsuite.second.get<std::string>("<xmlattr>.failures"));
-		row.set("errors", testsuite.second.get<std::string>("<xmlattr>.errors"));
-		row.set("disabled", testsuite.second.get<std::string>("<xmlattr>.disabled"));
-		row.set("time", testsuite.second.get<std::string>("<xmlattr>.time"));
-		row.set("result", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+		row.set("tests", testsuite.second.get<uon::Number>("<xmlattr>.tests"));
+		row.set("failures", testsuite.second.get<uon::Number>("<xmlattr>.failures"));
+		row.set("errors", testsuite.second.get<uon::Number>("<xmlattr>.errors"));
+		row.set("disabled", testsuite.second.get<uon::Number>("<xmlattr>.disabled"));
+		row.set("time", testsuite.second.get<uon::Number>("<xmlattr>.time"));
+		row.set("result", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? std::string("Error") : std::string("Ok")));
 
 		testsuites.set( testsuite.second.get<std::string>("<xmlattr>.name"), row );
 	}
@@ -393,9 +393,9 @@ TaskResult task_test_googletest( uon::Value config )
 			uon::Value row;
 			row.set("name", name);
 			row.set("status", testcase.second.get<std::string>("<xmlattr>.status"));
-			row.set("message", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : ""));
-			row.set("time", testcase.second.get<std::string>("<xmlattr>.time"));
-			row.set("result", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
+			row.set("message", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : std::string("")));
+			row.set("time", testcase.second.get<uon::Number>("<xmlattr>.time"));
+			row.set("result", (testcase.second.count("failure") > 0 ? std::string("Error") : std::string("Ok")));
 
 			table_details.set(name, row);
 		}

@@ -6,7 +6,7 @@
 			"test": {
 				"type": "test:googletest",
 				"dependencies": {
-					"build": "on"
+					"build": true
 				}
 			},
 			"analysis": {

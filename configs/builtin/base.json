@@ -3,34 +3,34 @@
 			"version": "0.6"
 		},
 		"project": {
-			"name": "unknown",
-			"version": "unknown"
+			"name": null,
+			"version": null
 		},
 		"variants": {
 			"checkout": "nothing",
 			"integrate": "nothing",
 			"publish": "nothing"
 		},
-		"repository": "unknown",
-		"branch": "unknown",
+		"repository": null,
+		"branch": null,
 		"commit": {
 			"id": {
-				"long": "unknown",
-				"short": "unknown"
+				"long": null,
+				"short": null
 			},
 			"timestamp": {
-				"default": "unknown",
-				"compact": "unknown"
+				"default": null,
+				"compact": null
 			}
 		},
 		"system": {
-			"name": "unknown",
-			"user": "unknown",
+			"name": null,
+			"user": null,
 			"arch": {
-				"os": "unknown",
-				"distribution": "unknown",
-				"family": "unknown",
-				"bitness": "unknown",
+				"os": null,
+				"distribution": null,
+				"family": null,
+				"bitness": null,
 				"misc": "default",
 				"descriptor": "${meta.system.arch.os}_${meta.system.arch.distribution}_${meta.system.arch.family}-${meta.system.arch.bitness}_${meta.system.arch.misc}"
 			}
@@ -68,12 +68,12 @@
 	"tasks": {
 		"defaults": {
 			"checkout:git": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"binary": "git"
 			},
 			"build:cmake": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"cmake": {
 					"binary": "cmake",
@@ -115,28 +115,28 @@
 					"output": "${meta.output}/build_work"
 				},
 				"install": {
-					"enabled": "yes",
+					"enabled": true,
 					"base": "${meta.output}/build_work",
 					"output": "${meta.output}/build"
 				},
-				"verbose": "no"
+				"verbose": false
 			},
 			"test:googletest": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"binary": "${meta.output}/build/test",
 				"output": "${meta.output}/test/googletest.xml",
 				"filter": "*"
 			},
 			"analysis:cppcheck": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"binary": "cppcheck",
 				"source": "${meta.input}/src",
 				"output": "${meta.output}/analysis/cppcheck.xml"
 			},
 			"doc:doxygen": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"binary": "doxygen",
 				"source": "${meta.input}/src",
@@ -165,7 +165,7 @@
 				}
 			},
 			"publish:rsync+ssh": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"rsync": { "binary": "rsync" },
 				"ssh": { "binary": "ssh" },
@@ -183,7 +183,7 @@
 				}
 			},
 			"publish:mongo+rsync+ssh": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"rsync": { "binary": "rsync" },
 				"ssh": { "binary": "ssh" },
@@ -205,7 +205,7 @@
 				}
 			},
 			"publish:email": {
-				"enabled": "yes",
+				"enabled": true,
 				"dependencies": { },
 				"results": { },
 				"reports": {

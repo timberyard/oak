@@ -46,38 +46,38 @@ namespace builtin {
 Config::Config()
 { }
 
-void Config::apply( Priority priority, std::vector<std::string> config )
+void Config::apply( Priority priority, std::vector<std::string> variables )
 {
-	uon::Value conftree;
+	uon::Value snippet = uon::Object();
 
-	for(auto c : config)
+	for(auto var : variables)
 	{
-		auto i = c.find("=");
+		auto i = var.find("=");
 
 		if(i == std::string::npos)
 		{
-			throw std::runtime_error(std::string("could not apply config: ") + c);
+			throw std::runtime_error(std::string("could not apply variable: ") + var);
 		}
 
-		auto path = c.substr( 0, i );
-		uon::Value value = c.substr( i+1 );
+		auto path = var.substr( 0, i );
+		uon::Value value = var.substr( i+1 );
 
-		conftree.set(path, value);
+		snippet.merge(path, value);
 	}
 
-	apply( priority, conftree );
+	apply( priority, snippet );
 }
 
-void Config::apply( Priority priority, std::map<std::string, std::string> config )
+void Config::apply( Priority priority, std::map<std::string, uon::Value> variables )
 {
-	uon::Value conftree;
+	uon::Value snippet = uon::Object();
 
-	for(auto c : config)
+	for(auto var : variables)
 	{
-		conftree.set(c.first, uon::Value(c.second));
+		snippet.merge(var.first, var.second);
 	}
 
-	apply( priority, conftree );
+	apply( priority, snippet );
 }
 
 void Config::apply( Priority priority, std::string json )
@@ -88,29 +88,29 @@ void Config::apply( Priority priority, std::string json )
 	apply(priority, stream);
 }
 
-void Config::apply( Priority priority, boost::filesystem::path jsonfile )
+void Config::apply( Priority priority, boost::filesystem::path json )
 {
 	std::ifstream stream;
 	stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-	stream.open( jsonfile.string() );
+	stream.open( json.string() );
 
 	apply(priority, stream);
 }
 
-void Config::apply( Priority priority, std::istream& jsonfile )
+void Config::apply( Priority priority, std::istream& json )
 {
-	jsonfile.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+	json.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+	uon::Value snippet = uon::read_json( json );
 
-	uon::Value conftree = uon::read_json( jsonfile );
-	apply( priority, conftree );
+	apply( priority, snippet );
 }
 
 void Config::apply( Priority priority, std::string path, uon::Value value )
 {
-	uon::Value conftree;
-	conftree.set(path, value);
+	uon::Value snippet = uon::Object();
+	snippet.merge(path, value);
 
-	apply( priority, conftree );
+	apply( priority, snippet );
 }
 
 void Config::apply( Priority priority, uon::Value config )
@@ -122,9 +122,9 @@ void Config::apply( Priority priority, uon::Value config )
 void Config::merge()
 {
 	// combine snippets
-	_unresolved = uon::Value();
+	_unresolved = uon::Object();
 
-	for( auto p : std::vector<Priority> {
+	for( auto priority : std::vector<Priority> {
 			Priority::Base,
 			Priority::Variant,
 			Priority::Project,
@@ -134,7 +134,7 @@ void Config::merge()
 			Priority::Computed
 		} )
 	{
-		for( auto snippet : _snippets[p] )
+		for( auto snippet : _snippets[priority] )
 		{
 			_unresolved.merge(snippet);
 		}
@@ -143,18 +143,30 @@ void Config::merge()
 	// resolve variables
 	_resolved = _unresolved;
 
-	std::function<std::string(std::string)> resolve = [&resolve, this](std::string value) -> std::string
+	std::function<uon::Value(std::string)> resolve = [&resolve, this](std::string value) -> uon::Value
 	{
 		auto i = value.find("${");
 
 		if(i == std::string::npos)
 		{
-			return value;
+			return uon::Value(value);
 		}
 
 		auto j = value.find("}", i);
 
-		return resolve( value.substr(0, i) + _resolved.get( value.substr( i+2, j-i-2 ), uon::null ).to_string() + value.substr(j+1) );
+		if( i == 0 && j == (value.length() - 1) )
+		{
+			auto result = _resolved.get( value.substr(2, value.length()-3), uon::null );
+
+			if(result.is_string())
+			{
+				result = resolve(result.as_string());
+			}
+
+			return result;
+		}
+
+		return resolve( value.substr(0, i) + _resolved.get( value.substr(i+2, j-i-2), uon::null ).to_string() + value.substr(j+1) );
 	};
 
 	_resolved.traverse([&resolve] (uon::Value& value, std::vector<std::string>)

@@ -30,7 +30,7 @@ Value Value::get(std::vector<std::string> path, const Value& defaultValue) const
 	{
 		return getref(path);
 	}
-	catch(NotFound)
+	catch(const NotFound&)
 	{
 		return defaultValue;
 	}
@@ -69,7 +69,14 @@ const Value& Value::getref(std::vector<std::string> path) const
 
 		if(i != object.end())
 		{
-			return i->second.getref(std::vector<std::string>(path.begin()+1, path.end()));
+			try
+			{
+				return i->second.getref(std::vector<std::string>(path.begin()+1, path.end()));
+			}
+			catch(const NotFound&)
+			{
+				throw NotFound(boost::algorithm::join(path, "."));
+			}
 		}
 	}
 	else
@@ -80,11 +87,18 @@ const Value& Value::getref(std::vector<std::string> path) const
 
 		if(i < array.size())
 		{
-			return array[i].getref(std::vector<std::string>(path.begin()+1, path.end()));
+			try
+			{
+				return array[i].getref(std::vector<std::string>(path.begin()+1, path.end()));
+			}
+			catch(const NotFound&)
+			{
+				throw NotFound(boost::algorithm::join(path, "."));
+			}
 		}
 	}
 
-	throw NotFound();
+	throw NotFound(boost::algorithm::join(path, "."));
 }
 
 void Value::set(std::vector<std::string> path, const Value& value)

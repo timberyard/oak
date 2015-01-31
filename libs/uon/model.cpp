@@ -7,6 +7,16 @@
 namespace uon
 {
 
+NotFound::NotFound(std::string path)
+	: std::range_error(path + " not found")
+{
+}
+
+NotFound::NotFound(std::vector<std::string> path)
+	: NotFound(boost::algorithm::join(path, "."))
+{
+}
+
 bool Null::operator<(const Null& other) const
 {
 	return false;
@@ -107,12 +117,18 @@ String Value::to_string() const
 	if(_value.type() == typeid(Number))
 	{
 		auto number = boost::get<Number>(_value);
+
 		std::ostringstream string;
+		string.setf ( std::ios::floatfield, std::ios::fixed );
 
 		long double tmp;
 		if(std::modf(number, &tmp) == 0.0)
 		{
 			string << std::setprecision(0);
+		}
+		else
+		{
+			string << std::setprecision(6);
 		}
 
 		string << number;
@@ -337,6 +353,24 @@ Value& Value::operator=(const Array& value)
 	return *this;
 }
 
+Value& Value::operator=(const char* value)
+{
+	_value = std::string(value);
+	return *this;
+}
+
+Value& Value::operator=(std::uint64_t value)
+{
+	_value = (Number)value;
+	return *this;
+}
+
+Value& Value::operator=(std::int64_t value)
+{
+	_value = (Number)value;
+	return *this;
+}
+
 Value::Value()
 	: _value(null)
 {
@@ -377,9 +411,19 @@ Value::Value(const Array& value)
 {
 }
 
-Value Value::copy() const
+Value::Value(const char* value)
+	: _value(std::string(value))
 {
-	return *this;
+}
+
+Value::Value(std::uint64_t value)
+	: _value((Number)value)
+{
+}
+
+Value::Value(std::int64_t value)
+	: _value((Number)value)
+{
 }
 
 bool Value::operator<(const Value& other) const

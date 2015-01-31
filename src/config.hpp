@@ -37,12 +37,12 @@ namespace config {
 			Computed
 		};
 
-		void apply( Priority priority, std::vector<std::string> config );
-		void apply( Priority priority, std::map<std::string, std::string> config );
+		void apply( Priority priority, std::vector<std::string> variables );
+		void apply( Priority priority, std::map<std::string, uon::Value> variables );
 
 		void apply( Priority priority, std::string json );
-		void apply( Priority priority, boost::filesystem::path jsonfile );
-		void apply( Priority priority, std::istream& jsonfile );
+		void apply( Priority priority, boost::filesystem::path json );
+		void apply( Priority priority, std::istream& json );
 
 		void apply( Priority priority, std::string path, uon::Value value );
 		void apply( Priority priority, uon::Value config );

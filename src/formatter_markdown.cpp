@@ -252,7 +252,7 @@ void markdown(uon::Value input, std::ostream& output)
 					output << std::endl;
 				}
 
-				auto tests = task.second.get("details.tests", uon::null).to_array();
+				auto tests = task.second.get("details.tests", uon::null).to_object();
 
 				if(tests.size() > 0)
 				{
@@ -261,15 +261,18 @@ void markdown(uon::Value input, std::ostream& output)
 					table::row(tabset, std::vector<std::string>{ "Name", "Status", "Message", "Time", "Result" }, output);
 					table::line(tabset, output);
 
-					for(auto test : tests)
+					for(auto testsuite : tests)
 					{
-						table::row(tabset, std::vector<std::string>{
-							test.get("name", uon::null).to_string(),
-							test.get("status", uon::null).to_string(),
-							test.get("message", uon::null).to_string(),
-							test.get("time", uon::null).to_string(),
-							test.get("result", uon::null).to_string() },
-							output);
+						for(auto test : testsuite.second.to_object())
+						{
+							table::row(tabset, std::vector<std::string>{
+								test.second.get("name", uon::null).to_string(),
+								test.second.get("status", uon::null).to_string(),
+								test.second.get("message", uon::null).to_string(),
+								test.second.get("time", uon::null).to_string(),
+								test.second.get("result", uon::null).to_string() },
+								output);
+						}
 					}
 
 					output << std::endl;

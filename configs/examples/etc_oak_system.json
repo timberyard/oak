@@ -24,7 +24,7 @@
 					"bitness": "64",
 					"os": "linux"
 				},
-				"verbose": "true"
+				"verbose": true
 			},
 			"analysis:cppcheck": {
 				"binary": "/usr/bin/cppcheck"
