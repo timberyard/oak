@@ -25,7 +25,7 @@ namespace bio = boost::iostreams;
 boost::process::pipe create_async_pipe()
 {
 #if defined(BOOST_WINDOWS_API)
-	std::string name = "\\\\.\\pipe\\ci_run_" + std::to_string(GetCurrentProcessId()) + "_" + std::to_string(std::rand());
+	std::string name = "\\\\.\\pipe\\oak_" + std::to_string(GetCurrentProcessId()) + "_" + std::to_string(std::rand());
 	HANDLE handle1 = ::CreateNamedPipeA(name.c_str(), PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED, 0, 1, 8192, 8192, 0, NULL);
 	HANDLE handle2 = ::CreateFileA(name.c_str(), GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	return bp::make_pipe(handle1, handle2);

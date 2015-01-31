@@ -22,6 +22,11 @@ bool Null::operator<(const Null& other) const
 	return false;
 }
 
+bool Null::operator==(const Null& other) const
+{
+	return true;
+}
+
 const Null null = Null();
 
 Type Value::type() const
@@ -429,6 +434,11 @@ Value::Value(std::int64_t value)
 bool Value::operator<(const Value& other) const
 {
 	return _value < other._value;
+}
+
+bool Value::operator==(const Value& other) const
+{
+	return _value == other._value;
 }
 
 }

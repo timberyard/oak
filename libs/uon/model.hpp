@@ -21,6 +21,7 @@ namespace uon
 	struct Null
 	{
 		bool operator<(const Null& other) const;
+		bool operator==(const Null& other) const;
 	};
 
 	extern const Null null;
@@ -88,6 +89,7 @@ namespace uon
 		Value copy() const;
 
 		bool operator<(const Value& other) const;
+		bool operator==(const Value& other) const;
 
 	public:
 		Value get(std::string path) const;
@@ -109,8 +111,6 @@ namespace uon
 		void merge(std::string path, const Value& overlay);
 		void merge(std::vector<std::string> path, const Value& overlay);
 
-		void distinct();
-
 		void traverse(std::function<void(Value&,std::vector<std::string>)> functor, std::vector<std::string> basepath = std::vector<std::string>{});
 
 	private:
@@ -123,4 +123,6 @@ namespace uon
 			boost::recursive_wrapper<Array>
 		>::type _value;
 	};
-};
+
+	extern void unique(Array& array);
+}

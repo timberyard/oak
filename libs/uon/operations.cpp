@@ -177,29 +177,6 @@ void Value::merge(std::vector<std::string> path, const Value& overlay)
 	}
 }
 
-void Value::distinct()
-{
-	if(_value.type() == typeid(Array))
-	{
-		auto& array = boost::get<Array>(_value);
-
-		std::set<Value> exists;
-
-		for(auto i = array.begin(); i != array.end(); )
-		{
-			if(exists.find(*i) != exists.end())
-			{
-				i = array.erase(i);
-			}
-			else
-			{
-				exists.insert(*i);
-				++i;
-			}
-		}
-	}
-}
-
 void Value::traverse(std::function<void(uon::Value&,std::vector<std::string>)> functor, std::vector<std::string> basepath)
 {
 	functor(*this, basepath);
@@ -225,6 +202,24 @@ void Value::traverse(std::function<void(uon::Value&,std::vector<std::string>)> f
 			path.push_back(std::to_string(j++));
 
 			i.traverse(functor, path);
+		}
+	}
+}
+
+void unique(Array& array)
+{
+	std::set<Value> exists;
+
+	for(auto i = array.begin(); i != array.end(); )
+	{
+		if(exists.find(*i) != exists.end())
+		{
+			i = array.erase(i);
+		}
+		else
+		{
+			exists.insert(*i);
+			++i;
 		}
 	}
 }

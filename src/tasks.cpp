@@ -246,6 +246,7 @@ TaskResult task_build_cmake( uon::Value config )
 			}
 		}
 
+		uon::unique(details);
 		result.output.set("results", details);
 
 		result.output.set("make", task_utils::createTaskOutput(
@@ -257,15 +258,15 @@ TaskResult task_build_cmake( uon::Value config )
 		result.message = task_utils::createTaskMessage(makeResult);
 
 		result.warnings = accumulate(
-			makeResult.output.begin(), makeResult.output.end(), 0,
-			[] (unsigned int count, const std::pair<process::TextProcessResult::LineType, std::string>& el) -> unsigned int {
-				return count + (el.second.find(": warning:") != std::string::npos ? 1 : 0);
+			details.begin(), details.end(), 0,
+			[] (unsigned int count, const uon::Value& el) -> unsigned int {
+				return count + (el.get("type") == "warning" ? 1 : 0);
 			});
 
 		result.errors = accumulate(
-			makeResult.output.begin(), makeResult.output.end(), 0,
-			[] (unsigned int count, const std::pair<process::TextProcessResult::LineType, std::string>& el) -> unsigned int {
-				return count + (el.second.find(": error:") != std::string::npos ? 1 : 0);
+			details.begin(), details.end(), 0,
+			[] (unsigned int count, const uon::Value& el) -> unsigned int {
+				return count + (el.get("type") == "error" ? 1 : 0);
 			});
 
 		result.status =
