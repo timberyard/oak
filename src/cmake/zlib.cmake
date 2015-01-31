@@ -1,7 +1,7 @@
 # An external project for zlib
 
 set( TARGET_NAME "zlib" )
-set( ZLIB_ROOT "${CMAKE_CURRENT_BINARY_DIR}/dependencies" )
+set( ZLIB_ROOT "${CMAKE_CURRENT_BINARY_DIR}/external_projects" )
 
 set( ZLIB_VERSION "1.2.8")
 set( ZLIB_URL "http://zlib.net/zlib-${ZLIB_VERSION}.tar.gz" )
@@ -14,7 +14,6 @@ if(WIN32)
 #
 #    ExternalProject_Add( "zlib"
 #	DOWNLOAD_DIR ${DOWNLOAD_DIR}
-#	PREFIX ${ZLIB_ROOT}
 #	URL ${ZLIB_URL}
 #	URL_MD5 ${ZLIB_MD5}
 #        PATCH_COMMAND ${CMAKE_COMMAND} -E remove <SOURCE_DIR>/zconf.h
@@ -41,7 +40,6 @@ if(WIN32)
 
     ExternalProject_Add( ${TARGET_NAME}
 		DOWNLOAD_DIR ${DOWNLOAD_DIR}
-		PREFIX ${ZLIB_ROOT}
 		URL ${ZLIB_URL}
 		URL_MD5 ${ZLIB_MD5}
 	    BUILD_IN_SOURCE 1
@@ -52,7 +50,6 @@ if(WIN32)
 else()
     ExternalProject_Add( ${TARGET_NAME}
 		DOWNLOAD_DIR ${DOWNLOAD_DIR}
-		PREFIX ${ZLIB_ROOT}
 		URL ${ZLIB_URL}
 		URL_MD5 ${ZLIB_MD5}
 	    BUILD_IN_SOURCE 1

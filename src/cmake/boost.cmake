@@ -19,7 +19,7 @@ else()
 endif()
 
 # define toolsets for b2 to use (this provides the paths defined in CMAKE_CXX_COMPILER)
-configure_file(${CMAKE_SOURCE_DIR}/cmake/boost_user-config.jam.in ${CMAKE_CURRENT_BINARY_DIR}/dependencies/boost_user-config.jam)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/boost_user-config.jam.in ${CMAKE_CURRENT_BINARY_DIR}/external_projects/boost_user-config.jam)
 
 # select one of the toolsets we just defined
 if( CMAKE_CXX_COMPILER MATCHES "clang" )
@@ -59,10 +59,10 @@ set( B2_ARGS
 	--without-mpi
 	--without-coroutine
 	--without-context
-	-s BZIP2_INCLUDE=${CMAKE_CURRENT_BINARY_DIR}/dependencies/include
-	-s BZIP2_LIBPATH=${CMAKE_CURRENT_BINARY_DIR}/dependencies/lib/
-	-s ZLIB_INCLUDE=${CMAKE_CURRENT_BINARY_DIR}/dependencies/include
-	-s ZLIB_LIBPATH=${CMAKE_CURRENT_BINARY_DIR}/dependencies/lib/
+	-s BZIP2_INCLUDE=${CMAKE_CURRENT_BINARY_DIR}/external_projects/include
+	-s BZIP2_LIBPATH=${CMAKE_CURRENT_BINARY_DIR}/external_projects/lib/
+	-s ZLIB_INCLUDE=${CMAKE_CURRENT_BINARY_DIR}/external_projects/include
+	-s ZLIB_LIBPATH=${CMAKE_CURRENT_BINARY_DIR}/external_projects/lib/
 )
 
 # set external project commands
@@ -94,13 +94,13 @@ ExternalProject_Add( ${TARGET_NAME}
     DOWNLOAD_DIR ${DOWNLOAD_DIR}
     URL ${BOOST_URL}
     URL_MD5 ${BOOST_MD5}
-    PREFIX "${CMAKE_CURRENT_BINARY_DIR}/dependencies"
     ${BOOST_CMDS}
+    UPDATE_COMMAND ""
     BUILD_IN_SOURCE 1 # build in source so that ./bootstrap and ./b2 works
 )
 
 ExternalProject_Add_Step( ${TARGET_NAME} "prebuild"
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/dependencies/boost_user-config.jam <BINARY_DIR>/tools/build/src/user-config.jam
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/external_projects/boost_user-config.jam <BINARY_DIR>/tools/build/src/user-config.jam
     COMMENT "Putting user-config.jam in place"
     DEPENDEES configure
     DEPENDERS build

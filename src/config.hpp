@@ -5,9 +5,8 @@
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
-#include <boost/property_tree/json_parser.hpp>
 
-#include <json_spirit/json_spirit.h>
+#include <uon/uon.hpp>
 
 namespace config {
 
@@ -25,37 +24,7 @@ namespace config {
 
 	}  // namespace: builtin
 
-	class Config;
-
-	class ConfigNode
-	{
-		friend class Config;
-
-	public:
-		std::string value(std::string path);
-		std::string value();
-		ConfigNode node(std::string path);
-		std::map<std::string, ConfigNode> children();
-
-		ConfigNode();
-		ConfigNode(const ConfigNode& other);
-
-		ConfigNode& operator=(const ConfigNode& other);
-
-		void print(std::ostream& stream, bool resolved = true);
-		json_spirit::Object toSpirit(bool resolved = true);
-
-	protected:
-		ConfigNode(boost::property_tree::ptree base, boost::property_tree::ptree config);
-
-		std::string resolve(std::string value);
-
-	protected:
-		boost::property_tree::ptree _base;
-		boost::property_tree::ptree _config;
-	};
-
-	class Config : public ConfigNode
+	class Config
 	{
 	public:
 		enum class Priority {
@@ -68,14 +37,24 @@ namespace config {
 			Computed
 		};
 
-		void apply( Priority priority, std::string path, std::string value );
 		void apply( Priority priority, std::vector<std::string> config );
 		void apply( Priority priority, std::map<std::string, std::string> config );
+
 		void apply( Priority priority, std::string json );
 		void apply( Priority priority, boost::filesystem::path jsonfile );
 		void apply( Priority priority, std::istream& jsonfile );
-		void apply( Priority priority, std::string prefixPath, ConfigNode subtree );
-		void apply( Priority priority, boost::property_tree::ptree config );
+
+		void apply( Priority priority, std::string path, uon::Value value );
+		void apply( Priority priority, uon::Value config );
+
+		uon::Value get(std::string path) const;
+		uon::Value get(std::vector<std::string> path) const;
+
+		uon::Value get(std::string path, const uon::Value& defaultValue) const;
+		uon::Value get(std::vector<std::string> path, const uon::Value& defaultValue) const;
+
+		uon::Value unresolved();
+		uon::Value resolved();
 
 		Config();
 		Config(const Config& other);
@@ -86,7 +65,9 @@ namespace config {
 		void merge();
 
 	protected:
-		std::map< Priority, std::vector<boost::property_tree::ptree> > _configs;
+		std::map< Priority, std::vector<uon::Value> > _snippets;
+		uon::Value _unresolved;
+		uon::Value _resolved;
 	};
 
 } // namespace: config

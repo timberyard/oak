@@ -1,7 +1,7 @@
 # An external project for bzip2
 
 set( TARGET_NAME "bzip2" )
-set( BZIP2_ROOT "${CMAKE_CURRENT_BINARY_DIR}/dependencies" )
+set( BZIP2_ROOT "${CMAKE_CURRENT_BINARY_DIR}/external_projects" )
 
 set( BZIP2_VERSION "1.0.6-no_test" )
 set( BZIP2_URL "https://github.com/everbase/bzip2.git" )
@@ -10,7 +10,6 @@ set( BZIP2_URL "https://github.com/everbase/bzip2.git" )
 if(WIN32)
 #    ExternalProject_Add( ${TARGET_NAME}
 #        DOWNLOAD_DIR ${DOWNLOAD_DIR}
-#        PREFIX ${BZIP2_ROOT}
 #        GIT_REPOSITORY ${BZIP2_URL}
 #        GIT_TAG ${BZIP2_VERSION}
 #        CONFIGURE_COMMAND ""
@@ -19,7 +18,6 @@ if(WIN32)
 #    )
     ExternalProject_Add( ${TARGET_NAME}
         DOWNLOAD_DIR ${DOWNLOAD_DIR}
-        PREFIX ${BZIP2_ROOT}
         GIT_REPOSITORY ${BZIP2_URL}
         GIT_TAG ${BZIP2_VERSION}
         BUILD_IN_SOURCE 1
@@ -31,7 +29,6 @@ if(WIN32)
 else()
     ExternalProject_Add( ${TARGET_NAME}
         DOWNLOAD_DIR ${DOWNLOAD_DIR}
-        PREFIX ${BZIP2_ROOT}
         GIT_REPOSITORY ${BZIP2_URL}
         GIT_TAG ${BZIP2_VERSION}
         BUILD_IN_SOURCE 1

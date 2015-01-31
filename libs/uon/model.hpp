@@ -78,8 +78,8 @@ namespace uon
 		Value get(std::string path) const;
 		Value get(std::vector<std::string> path) const;
 
-		Value get(std::string path, Value defaultValue) const;
-		Value get(std::vector<std::string> path, Value defaultValue) const;
+		Value get(std::string path, const Value& defaultValue) const;
+		Value get(std::vector<std::string> path, const Value& defaultValue) const;
 
 		Value& getref(std::string path);
 		Value& getref(std::vector<std::string> path);
@@ -87,12 +87,16 @@ namespace uon
 		const Value& getref(std::string path) const;
 		const Value& getref(std::vector<std::string> path) const;
 
-		void set(std::vector<std::string> path, Value subject);
-		void set(std::string path, Value subject);
+		void set(std::string path, const Value& subject);
+		void set(std::vector<std::string> path, const Value& subject);
 
-		void merge(Value overlay);
+		void merge(const Value& overlay);
+		void merge(std::string path, const Value& overlay);
+		void merge(std::vector<std::string> path, const Value& overlay);
 
 		void distinct();
+
+		void traverse(std::function<void(Value&,std::vector<std::string>)> functor, std::vector<std::string> basepath = std::vector<std::string>{});
 
 	private:
 		boost::make_recursive_variant<

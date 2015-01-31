@@ -1,4 +1,3 @@
-
 #include <numeric>
 #include <fstream>
 #include <set>
@@ -8,8 +7,8 @@
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 
 #include <boost/algorithm/string/replace.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string/trim.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 
 #include "tasks.hpp"
 #include "process.hpp"
@@ -18,18 +17,15 @@
 
 namespace tasks {
 
-namespace pt = boost::property_tree;
-namespace js = json_spirit;
+TaskResult task_build_cmake             ( uon::Value config );
+TaskResult task_test_googletest         ( uon::Value config );
+TaskResult task_analysis_cppcheck       ( uon::Value config );
+TaskResult task_doc_doxygen             ( uon::Value config );
+TaskResult task_publish_rsync_ssh       ( uon::Value config );
+TaskResult task_publish_mongo_rsync_ssh ( uon::Value config );
+TaskResult task_publish_email           ( uon::Value config );
 
-TaskResult task_build_cmake             ( config::ConfigNode config );
-TaskResult task_test_googletest         ( config::ConfigNode config );
-TaskResult task_analysis_cppcheck       ( config::ConfigNode config );
-TaskResult task_doc_doxygen             ( config::ConfigNode config );
-TaskResult task_publish_rsync_ssh       ( config::ConfigNode config );
-TaskResult task_publish_mongo_rsync_ssh ( config::ConfigNode config );
-TaskResult task_publish_email           ( config::ConfigNode config );
-
-std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes =
+std::map<std::string, std::function<TaskResult(uon::Value)>> taskTypes =
 {
 	{ "build:cmake",             task_build_cmake },
 	{ "test:googletest",         task_test_googletest },
@@ -119,65 +115,65 @@ bool copyDir(
     return true;
 }
 
-TaskResult task_build_cmake( config::ConfigNode config )
+TaskResult task_build_cmake( uon::Value config )
 {
 	// create directories
-	boost::filesystem::create_directories(config.value("build.output"));
-	boost::filesystem::create_directories(config.value("install.output"));
+	boost::filesystem::create_directories(config.get("build.output").to_string());
+	boost::filesystem::create_directories(config.get("install.output").to_string());
 
 	// run cmake
 	TaskResult result;
 
 	std::vector<std::string> cmakeParams {
-		std::string("-DCMAKE_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c.binary"), "\\", "/"),
-		std::string("-DCMAKE_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c++.binary"), "\\", "/"),
-		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + boost::algorithm::replace_all_copy(config.value("install.output"), "\\", "/"),
+		std::string("-DCMAKE_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c.binary").to_string(), "\\", "/"),
+		std::string("-DCMAKE_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c++.binary").to_string(), "\\", "/"),
+		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + boost::algorithm::replace_all_copy(config.get("install.output").to_string(), "\\", "/"),
 
-		std::string("-DARCH_HOST_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c.binary"), "\\", "/"),
-		std::string("-DARCH_HOST_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.host.c++.binary"), "\\", "/"),
-		std::string("-DARCH_HOST_OS:STRING=") + config.value("arch.host.os"),
-		std::string("-DARCH_HOST_DISTRIBUTION:STRING=") + config.value("arch.host.distribution"),
-		std::string("-DARCH_HOST_FAMILY:STRING=") + config.value("arch.host.family"),
-		std::string("-DARCH_HOST_BITNESS:STRING=") + config.value("arch.host.bitness"),
-		std::string("-DARCH_HOST_MISC:STRING=") + config.value("arch.host.misc"),
-		std::string("-DARCH_HOST_DESCRIPTOR:STRING=") + config.value("arch.host.descriptor"),
+		std::string("-DARCH_HOST_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_HOST_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c++.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_HOST_OS:STRING=") + config.get("arch.host.os").to_string(),
+		std::string("-DARCH_HOST_DISTRIBUTION:STRING=") + config.get("arch.host.distribution").to_string(),
+		std::string("-DARCH_HOST_FAMILY:STRING=") + config.get("arch.host.family").to_string(),
+		std::string("-DARCH_HOST_BITNESS:STRING=") + config.get("arch.host.bitness").to_string(),
+		std::string("-DARCH_HOST_MISC:STRING=") + config.get("arch.host.misc").to_string(),
+		std::string("-DARCH_HOST_DESCRIPTOR:STRING=") + config.get("arch.host.descriptor").to_string(),
 
-		std::string("-DARCH_BUILD_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.build.c.binary"), "\\", "/"),
-		std::string("-DARCH_BUILD_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.value("arch.build.c++.binary"), "\\", "/"),
-		std::string("-DARCH_BUILD_OS:STRING=") + config.value("arch.build.os"),
-		std::string("-DARCH_BUILD_DISTRIBUTION:STRING=") + config.value("arch.build.distribution"),
-		std::string("-DARCH_BUILD_FAMILY:STRING=") + config.value("arch.build.family"),
-		std::string("-DARCH_BUILD_BITNESS:STRING=") + config.value("arch.build.bitness"),
-		std::string("-DARCH_BUILD_MISC:STRING=") + config.value("arch.build.misc"),
-		std::string("-DARCH_BUILD_DESCRIPTOR:STRING=") + config.value("arch.build.descriptor")
+		std::string("-DARCH_BUILD_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.build.c.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_BUILD_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.build.c++.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_BUILD_OS:STRING=") + config.get("arch.build.os").to_string(),
+		std::string("-DARCH_BUILD_DISTRIBUTION:STRING=") + config.get("arch.build.distribution").to_string(),
+		std::string("-DARCH_BUILD_FAMILY:STRING=") + config.get("arch.build.family").to_string(),
+		std::string("-DARCH_BUILD_BITNESS:STRING=") + config.get("arch.build.bitness").to_string(),
+		std::string("-DARCH_BUILD_MISC:STRING=") + config.get("arch.build.misc").to_string(),
+		std::string("-DARCH_BUILD_DESCRIPTOR:STRING=") + config.get("arch.build.descriptor").to_string()
 	};
 
-	if(config.value("verbose") == "yes")
+	if(config.get("verbose").to_boolean())
 		{ cmakeParams.push_back(std::string("-DCMAKE_VERBOSE_MAKEFILE:BOOLEAN=ON")); }
 
-	for(auto variable : config.node("cmake.variables").children())
+	for(auto variable : config.get("cmake.variables").as_object())
 	{
 		cmakeParams.push_back( std::string("-D") + variable.first + std::string(":")
-			+ variable.second.value("type") + std::string("=")
-			+ variable.second.value("value") );
+			+ variable.second.get("type").to_string() + std::string("=")
+			+ variable.second.get("value").to_string() );
 	}
 
-	cmakeParams.push_back(boost::algorithm::replace_all_copy(config.value("source.input"), "\\", "/"));
+	cmakeParams.push_back(boost::algorithm::replace_all_copy(config.get("source.input").to_string(), "\\", "/"));
 
 #ifdef _WIN32
 	cmakeParams.push_back("-G");
-	cmakeParams.push_back(config.value("cmake.generator"));
+	cmakeParams.push_back(config.get("cmake.generator").to_string());
 #endif
 
 	process::TextProcessResult cmakeResult = process::executeTextProcess(
-		config.value("cmake.binary"),
+		config.get("cmake.binary").to_string(),
 		cmakeParams,
-		config.value("build.output"));
+		config.get("build.output").to_string());
 
-	result.output.emplace_back("cmake", task_utils::createTaskOutput(
-		config.value("cmake.binary"),
+	result.output.set("cmake", task_utils::createTaskOutput(
+		config.get("cmake.binary").to_string(),
 		cmakeParams,
-		config.value("build.output"),
+		config.get("build.output").to_string(),
 		cmakeResult));
 
 	result.message = task_utils::createTaskMessage(cmakeResult);
@@ -190,19 +186,19 @@ TaskResult task_build_cmake( config::ConfigNode config )
 	{
 		std::vector<std::string> makeParams;
 
-		for(auto variable : config.node("make.variables").children())
+		for(auto variable : config.get("make.variables").as_object())
 		{
-			makeParams.push_back( variable.first + std::string("=") + variable.second.value() );
+			makeParams.push_back( variable.first + std::string("=") + variable.second.to_string() );
 		}
 
 		process::TextProcessResult makeResult = process::executeTextProcess(
-			config.value("make.binary"),
+			config.get("make.binary").to_string(),
 			makeParams,
-			config.value("build.output"));
+			config.get("build.output").to_string());
 
-		json_spirit::Array details;
+		uon::Array details;
 
-		auto basePath = boost::algorithm::replace_all_copy(config.value("source.base"), "\\", "/");
+		auto basePath = boost::algorithm::replace_all_copy(config.get("source.base").to_string(), "\\", "/");
 
 		for(auto line : makeResult.output)
 		{
@@ -239,23 +235,23 @@ TaskResult task_build_cmake( config::ConfigNode config )
 
 				boost::trim_left_if(filename, boost::is_any_of("/"));
 
-				js::Object details_row;
-				details_row.emplace_back("type", type);
-				details_row.emplace_back("message", message);
-				details_row.emplace_back("filename", filename);
-				details_row.emplace_back("row", row);
-				details_row.emplace_back("column", column);
+				uon::Value details_row;
+				details_row.set("type", type);
+				details_row.set("message", message);
+				details_row.set("filename", filename);
+				details_row.set("row", row);
+				details_row.set("column", column);
 
 				details.push_back(details_row);
 			}
 		}
 
-		result.output.emplace(result.output.begin(), "results", details);
+		result.output.set("results", details);
 
-		result.output.emplace_back("make", task_utils::createTaskOutput(
-			config.value("make.binary"),
+		result.output.set("make", task_utils::createTaskOutput(
+			config.get("make.binary").to_string(),
 			makeParams,
-			config.value("build.output"),
+			config.get("build.output").to_string(),
 			makeResult));
 
 		result.message = task_utils::createTaskMessage(makeResult);
@@ -280,24 +276,24 @@ TaskResult task_build_cmake( config::ConfigNode config )
 					: TaskResult::STATUS_OK));
 
 		// run install
-		if(makeResult.exitCode == 0 && config.value("install.enabled") == "yes")
+		if(makeResult.exitCode == 0 && config.get("install.enabled").to_boolean())
 		{
 			std::vector<std::string> installParams{ "install" };
 
-			for(auto variable : config.node("make.variables").children())
+			for(auto variable : config.get("make.variables").as_object())
 			{
-				installParams.push_back( variable.first + std::string("=") + variable.second.value() );
+				installParams.push_back( variable.first + std::string("=") + variable.second.to_string() );
 			}
 
 			process::TextProcessResult installResult = process::executeTextProcess(
-				config.value("make.binary"),
+				config.get("make.binary").to_string(),
 				installParams,
-				config.value("install.base"));
+				config.get("install.base").to_string());
 
-			result.output.emplace_back("install", task_utils::createTaskOutput(
-				config.value("make.binary"),
+			result.output.set("install", task_utils::createTaskOutput(
+				config.get("make.binary").to_string(),
 				installParams,
-				config.value("install.base"),
+				config.get("install.base").to_string(),
 				installResult));
 
 			result.message = task_utils::createTaskMessage(installResult);
@@ -316,72 +312,72 @@ TaskResult task_build_cmake( config::ConfigNode config )
 }
 
 
-TaskResult task_test_googletest( config::ConfigNode config )
+TaskResult task_test_googletest( uon::Value config )
 {
 	TaskResult result;
 
 	// prepare parameter and dirs
-	boost::filesystem::path xmlFilePath = config.value("output");
+	boost::filesystem::path xmlFilePath = config.get("output").to_string();
 	boost::filesystem::path parentPath = xmlFilePath.branch_path();
 
 	boost::filesystem::create_directories(parentPath);
 
 	std::vector<std::string> arguments = {
 		"--gtest_output=xml:" + xmlFilePath.string(),
-		"--gtest_filter=" + config.value("filter")
+		"--gtest_filter=" + config.get("filter").to_string()
 	};
 
 	// run test
-	process::TextProcessResult testResult = process::executeTextProcess(config.value("binary"), arguments, parentPath.string());
+	process::TextProcessResult testResult = process::executeTextProcess(config.get("binary").to_string(), arguments, parentPath.string());
 
 	// read XML result file
-	pt::ptree xmlTestResult;
+	boost::property_tree::ptree xmlTestResult;
 
 	std::ifstream xmlTestResultStream;
 	xmlTestResultStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 	xmlTestResultStream.open( xmlFilePath.string() );
 
-	pt::read_xml( xmlTestResultStream, xmlTestResult, pt::xml_parser::trim_whitespace );
+	boost::property_tree::read_xml( xmlTestResultStream, xmlTestResult, boost::property_tree::xml_parser::trim_whitespace );
 
 	// generate outline table
-	js::Object table_outline;
+	uon::Value table_outline;
 
 	{
-		js::Object row;
-		row.emplace_back("name", xmlTestResult.get<std::string>("testsuites.<xmlattr>.name"));
-		row.emplace_back("tests", xmlTestResult.get<std::string>("testsuites.<xmlattr>.tests"));
-		row.emplace_back("failures", xmlTestResult.get<std::string>("testsuites.<xmlattr>.failures"));
-		row.emplace_back("errors", xmlTestResult.get<std::string>("testsuites.<xmlattr>.errors"));
-		row.emplace_back("disabled", xmlTestResult.get<std::string>("testsuites.<xmlattr>.disabled"));
-		row.emplace_back("time", xmlTestResult.get<std::string>("testsuites.<xmlattr>.time"));
-		row.emplace_back("result", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+		uon::Value row;
+		row.set("name", xmlTestResult.get<std::string>("testsuites.<xmlattr>.name"));
+		row.set("tests", xmlTestResult.get<std::string>("testsuites.<xmlattr>.tests"));
+		row.set("failures", xmlTestResult.get<std::string>("testsuites.<xmlattr>.failures"));
+		row.set("errors", xmlTestResult.get<std::string>("testsuites.<xmlattr>.errors"));
+		row.set("disabled", xmlTestResult.get<std::string>("testsuites.<xmlattr>.disabled"));
+		row.set("time", xmlTestResult.get<std::string>("testsuites.<xmlattr>.time"));
+		row.set("result", ((xmlTestResult.get<int>("testsuites.<xmlattr>.failures") > 0 || xmlTestResult.get<int>("testsuites.<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-		table_outline.emplace_back("all", row);
+		table_outline.set("all", row);
 	}
 
-	js::Object testsuites;
+	uon::Value testsuites;
 	for ( auto testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == "<xmlattr>")
 			continue;
 
-		js::Object row;
-		row.emplace_back("name", testsuite.second.get<std::string>("<xmlattr>.name"));
-		row.emplace_back("tests", testsuite.second.get<std::string>("<xmlattr>.tests"));
-		row.emplace_back("failures", testsuite.second.get<std::string>("<xmlattr>.failures"));
-		row.emplace_back("errors", testsuite.second.get<std::string>("<xmlattr>.errors"));
-		row.emplace_back("disabled", testsuite.second.get<std::string>("<xmlattr>.disabled"));
-		row.emplace_back("time", testsuite.second.get<std::string>("<xmlattr>.time"));
-		row.emplace_back("result", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
+		uon::Value row;
+		row.set("name", testsuite.second.get<std::string>("<xmlattr>.name"));
+		row.set("tests", testsuite.second.get<std::string>("<xmlattr>.tests"));
+		row.set("failures", testsuite.second.get<std::string>("<xmlattr>.failures"));
+		row.set("errors", testsuite.second.get<std::string>("<xmlattr>.errors"));
+		row.set("disabled", testsuite.second.get<std::string>("<xmlattr>.disabled"));
+		row.set("time", testsuite.second.get<std::string>("<xmlattr>.time"));
+		row.set("result", ((testsuite.second.get<int>("<xmlattr>.failures") > 0 || testsuite.second.get<int>("<xmlattr>.errors") > 0) ? "Error" : "Ok"));
 
-		// testsuites.push_back(row); // if we want the task list as array
-		testsuites.emplace_back( testsuite.second.get<std::string>("<xmlattr>.name"), row ); // if we want the task list as object with the task name as key
+		testsuites.set( testsuite.second.get<std::string>("<xmlattr>.name"), row );
 	}
-	table_outline.emplace_back("details", testsuites);
-	result.output.emplace_back("testsuites", table_outline);
+
+	table_outline.set("details", testsuites);
+	result.output.set("testsuites", table_outline);
 
 	// generate details table
-	js::Object table_details;
+	uon::Value table_details;
 	for ( auto testsuite : xmlTestResult.get_child("testsuites") )
 	{
 		if(testsuite.first == "<xmlattr>")
@@ -394,18 +390,18 @@ TaskResult task_test_googletest( config::ConfigNode config )
 
 			std::string name = testcase.second.get<std::string>("<xmlattr>.classname") + "." + testcase.second.get<std::string>("<xmlattr>.name");
 
-			js::Object row;
-			row.emplace_back("name", name);
-			row.emplace_back("status", testcase.second.get<std::string>("<xmlattr>.status"));
-			row.emplace_back("message", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : ""));
-			row.emplace_back("time", testcase.second.get<std::string>("<xmlattr>.time"));
-			row.emplace_back("result", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
+			uon::Value row;
+			row.set("name", name);
+			row.set("status", testcase.second.get<std::string>("<xmlattr>.status"));
+			row.set("message", (testcase.second.count("failure") > 0 ? testcase.second.get<std::string>("failure.<xmlattr>.message") : ""));
+			row.set("time", testcase.second.get<std::string>("<xmlattr>.time"));
+			row.set("result", (testcase.second.count("failure") > 0 ? "Error" : "Ok"));
 
-			table_details.emplace_back(name, row);
+			table_details.set(name, row);
 		}
 	}
 
-	result.output.emplace_back("tests", table_details);
+	result.output.set("tests", table_details);
 
 	// generate console output
 	for(auto line : testResult.output)
@@ -421,7 +417,7 @@ TaskResult task_test_googletest( config::ConfigNode config )
 		}
 	}
 
-	result.output.emplace_back("googletest", task_utils::createTaskOutput(config.value("binary"), arguments, parentPath.string(), testResult));
+	result.output.set("googletest", task_utils::createTaskOutput(config.get("binary").to_string(), arguments, parentPath.string(), testResult));
 
 	// generate meta data
 	result.message = task_utils::createTaskMessage(testResult);
@@ -433,9 +429,9 @@ TaskResult task_test_googletest( config::ConfigNode config )
 }
 
 
-TaskResult task_analysis_cppcheck( config::ConfigNode config )
+TaskResult task_analysis_cppcheck( uon::Value config )
 {
-	boost::filesystem::path xmlFilePath = config.value("output");
+	boost::filesystem::path xmlFilePath = config.get("output").to_string();
 	boost::filesystem::path parentPath = xmlFilePath.branch_path();
 
 	boost::filesystem::create_directories(parentPath);
@@ -445,9 +441,9 @@ TaskResult task_analysis_cppcheck( config::ConfigNode config )
 	std::vector<std::string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", "." };
 
 	process::TextProcessResult checkResult = process::executeTextProcess(
-		config.value("binary"),
+		config.get("binary").to_string(),
 		arguments,
-		config.value("source"));
+		config.get("source").to_string());
 
 	if(checkResult.exitCode == 0)
 	{
@@ -469,21 +465,21 @@ TaskResult task_analysis_cppcheck( config::ConfigNode config )
 		// write xml data
 		std::ofstream xmlCheckPersistStream;
 		xmlCheckPersistStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-		xmlCheckPersistStream.open( config.value("output") );
+		xmlCheckPersistStream.open( config.get("output").to_string() );
 
 		xmlCheckPersistStream << xmlCheckData;
 		xmlCheckPersistStream.close();
 
 		// read XML result data
-		pt::ptree xmlCheckResult;
+		boost::property_tree::ptree xmlCheckResult;
 
 		std::istringstream xmlCheckResultStream(xmlCheckData);
 		xmlCheckResultStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 
-		pt::read_xml( xmlCheckResultStream, xmlCheckResult, pt::xml_parser::trim_whitespace );
+		boost::property_tree::read_xml( xmlCheckResultStream, xmlCheckResult, boost::property_tree::xml_parser::trim_whitespace );
 
 		// interpret xml data
-		js::Array errors;
+		uon::Array errors;
 		for ( auto error : xmlCheckResult.get_child("results.errors") )
 		{
 			if(error.first == "<xmlattr>")
@@ -492,16 +488,16 @@ TaskResult task_analysis_cppcheck( config::ConfigNode config )
 			auto attr_file = error.second.get_optional<std::string>("location.<xmlattr>.file");
 			auto attr_line = error.second.get_optional<std::string>("location.<xmlattr>.line");
 
-			js::Object row;
-			row.emplace_back("type", error.second.get<std::string>("<xmlattr>.id"));
-			row.emplace_back("severity", error.second.get<std::string>("<xmlattr>.severity"));
-			row.emplace_back("message", error.second.get<std::string>("<xmlattr>.msg"));
-			row.emplace_back("file", attr_file ? *attr_file : std::string(""));
-			row.emplace_back("line", attr_line ? *attr_line : std::string(""));
+			uon::Value row;
+			row.set("type", error.second.get<std::string>("<xmlattr>.id"));
+			row.set("severity", error.second.get<std::string>("<xmlattr>.severity"));
+			row.set("message", error.second.get<std::string>("<xmlattr>.msg"));
+			row.set("file", attr_file ? *attr_file : std::string(""));
+			row.set("line", attr_line ? *attr_line : std::string(""));
 
 			errors.push_back(row);
 		}
-		result.output.emplace_back("errors", errors);
+		result.output.set("errors", errors);
 
 		result.warnings = errors.size();
 		result.errors = 0;
@@ -512,10 +508,10 @@ TaskResult task_analysis_cppcheck( config::ConfigNode config )
 		result.errors = 1;
 	}
 
-	result.output.emplace_back("cppcheck", task_utils::createTaskOutput(
-		config.value("binary"),
+	result.output.set("cppcheck", task_utils::createTaskOutput(
+		config.get("binary").to_string(),
 		arguments,
-		config.value("source"),
+		config.get("source").to_string(),
 		checkResult));
 
 	result.message = task_utils::createTaskMessage(checkResult);
@@ -525,14 +521,14 @@ TaskResult task_analysis_cppcheck( config::ConfigNode config )
 }
 
 
-TaskResult task_doc_doxygen( config::ConfigNode config )
+TaskResult task_doc_doxygen( uon::Value config )
 {
 	TaskResult result;
 
 	// prepare arguments and dirs
 
-	const std::string sourcePath = config.value("source");
-	const std::string outputPath = config.value("output");
+	const std::string sourcePath = config.get("source").to_string();
+	const std::string outputPath = config.get("output").to_string();
 	const std::string doxyfilePath = (boost::filesystem::path(outputPath) / boost::filesystem::path("doxyfile")).string();
 
 	boost::filesystem::create_directories(outputPath);
@@ -543,9 +539,9 @@ TaskResult task_doc_doxygen( config::ConfigNode config )
 	doxyfileStream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
 	doxyfileStream.open( doxyfilePath );
 
-	for( auto data : config.node("doxyfile").children() )
+	for( auto data : config.get("doxyfile").as_object() )
 	{
-		doxyfileStream << data.first << " = " << data.second.value() << '\n';
+		doxyfileStream << data.first << " = " << data.second.to_string() << '\n';
 	}
 
 	doxyfileStream << "INPUT" << " = " << sourcePath << '\n';
@@ -554,9 +550,9 @@ TaskResult task_doc_doxygen( config::ConfigNode config )
 	doxyfileStream.close();
 
 	// run doxygen
-	process::TextProcessResult doxygenResult = process::executeTextProcess(config.value("binary"), std::vector<std::string>{doxyfilePath}, outputPath);
+	process::TextProcessResult doxygenResult = process::executeTextProcess(config.get("binary").to_string(), std::vector<std::string>{doxyfilePath}, outputPath);
 
-	result.output.emplace_back("doxygen", task_utils::createTaskOutput(config.value("binary"), std::vector<std::string>{doxyfilePath}, outputPath, doxygenResult));
+	result.output.set("doxygen", task_utils::createTaskOutput(config.get("binary").to_string(), std::vector<std::string>{doxyfilePath}, outputPath, doxygenResult));
 
 	result.message = task_utils::createTaskMessage(doxygenResult);
 	result.warnings = 0;
@@ -566,22 +562,22 @@ TaskResult task_doc_doxygen( config::ConfigNode config )
 	return result;
 }
 
-TaskResult task_publish_rsync_ssh( config::ConfigNode config )
+TaskResult task_publish_rsync_ssh( uon::Value config )
 {
 	TaskResult result;
 
-	for( auto source : config.node("sources").children() )
+	for( auto source : config.get("sources").as_object() )
 	{
-		std::string srcdir = source.second.value();
-		std::string remote = config.value("destination.user") + std::string("@") + config.value("destination.host");
-		std::string destdir = config.value("destination.base") + std::string("/") + config.value("destination.directory") + std::string("/") + source.first;
+		std::string srcdir = source.second.to_string();
+		std::string remote = config.get("destination.user").to_string() + std::string("@") + config.get("destination.host").to_string();
+		std::string destdir = config.get("destination.base").to_string() + std::string("/") + config.get("destination.directory").to_string() + std::string("/") + source.first;
 
 		// run ssh:mkdir
-		std::vector<std::string> sshArgs { "-o", "BatchMode=yes", "-p", config.value("destination.port"), remote, config.value("destination.mkdir.binary"), "-p", destdir };
+		std::vector<std::string> sshArgs { "-o", "BatchMode=yes", "-p", config.get("destination.port").to_string(), remote, config.get("destination.mkdir.binary").to_string(), "-p", destdir };
 
-		process::TextProcessResult sshResult = process::executeTextProcess(config.value("ssh.binary"), sshArgs, srcdir);
+		process::TextProcessResult sshResult = process::executeTextProcess(config.get("ssh.binary").to_string(), sshArgs, srcdir);
 
-		result.output.emplace_back("ssh:mkdir", task_utils::createTaskOutput(config.value("ssh.binary"), sshArgs, srcdir, sshResult));
+		result.output.set("ssh:mkdir", task_utils::createTaskOutput(config.get("ssh.binary").to_string(), sshArgs, srcdir, sshResult));
 		result.message = task_utils::createTaskMessage(sshResult);
 
 		if(sshResult.exitCode != 0)
@@ -593,13 +589,13 @@ TaskResult task_publish_rsync_ssh( config::ConfigNode config )
 
 		// run rsync
 		std::vector<std::string> rsyncArgs {
-			std::string("--rsh=") + config.value("ssh.binary") + (" -o BatchMode=yes -p ") + config.value("destination.port"), "--archive", "--delete", "--verbose", std::string("./"),
+			std::string("--rsh=") + config.get("ssh.binary").to_string() + (" -o BatchMode=yes -p ") + config.get("destination.port").to_string(), "--archive", "--delete", "--verbose", std::string("./"),
 			remote + std::string(":") + destdir + std::string("/")
 		};
 
-		process::TextProcessResult rsyncResult = process::executeTextProcess(config.value("rsync.binary"), rsyncArgs, srcdir);
+		process::TextProcessResult rsyncResult = process::executeTextProcess(config.get("rsync.binary").to_string(), rsyncArgs, srcdir);
 
-		result.output.emplace_back("rsync", task_utils::createTaskOutput(config.value("rsync.binary"), rsyncArgs, srcdir, rsyncResult));
+		result.output.set("rsync", task_utils::createTaskOutput(config.get("rsync.binary").to_string(), rsyncArgs, srcdir, rsyncResult));
 		result.message = task_utils::createTaskMessage(rsyncResult);
 
 		if(rsyncResult.exitCode != 0)
@@ -617,7 +613,7 @@ TaskResult task_publish_rsync_ssh( config::ConfigNode config )
 	return result;
 }
 
-TaskResult task_publish_mongo_rsync_ssh( config::ConfigNode config )
+TaskResult task_publish_mongo_rsync_ssh( uon::Value config )
 {
 	// rsync stuff
 	TaskResult result = task_publish_rsync_ssh(config);
@@ -628,22 +624,22 @@ TaskResult task_publish_mongo_rsync_ssh( config::ConfigNode config )
 	}
 
 	// import to mongo database
-	for( auto source : config.node("sources").children() )
+	for( auto source : config.get("sources").as_object() )
 	{
-		std::string srcdir = source.second.value();
-		std::string remote = config.value("destination.user") + std::string("@") + config.value("destination.host");
-		std::string destfile = config.value("destination.base") + std::string("/") + config.value("destination.directory") + std::string("/") + source.first;
+		std::string srcdir = source.second.to_string();
+		std::string remote = config.get("destination.user").to_string() + std::string("@") + config.get("destination.host").to_string();
+		std::string destfile = config.get("destination.base").to_string() + std::string("/") + config.get("destination.directory").to_string() + std::string("/") + source.first;
 
 		// run ssh:mongoimport
-		std::vector<std::string> mongoArgs { "-o", "BatchMode=yes", "-p", config.value("destination.port"), remote,
-			config.value("destination.mongoimport.binary"),
-			"--db", config.value("destination.mongoimport.database"),
-			"--collection", config.value("destination.mongoimport.collection"),
+		std::vector<std::string> mongoArgs { "-o", "BatchMode=yes", "-p", config.get("destination.port").to_string(), remote,
+			config.get("destination.mongoimport.binary").to_string(),
+			"--db", config.get("destination.mongoimport.database").to_string(),
+			"--collection", config.get("destination.mongoimport.collection").to_string(),
 			destfile };
 
-		process::TextProcessResult mongoResult = process::executeTextProcess(config.value("ssh.binary"), mongoArgs, srcdir);
+		process::TextProcessResult mongoResult = process::executeTextProcess(config.get("ssh.binary").to_string(), mongoArgs, srcdir);
 
-		result.output.emplace_back("ssh:mongoimport", task_utils::createTaskOutput(config.value("ssh.binary"), mongoArgs, srcdir, mongoResult));
+		result.output.set("ssh:mongoimport", task_utils::createTaskOutput(config.get("ssh.binary").to_string(), mongoArgs, srcdir, mongoResult));
 		result.message = task_utils::createTaskMessage(mongoResult);
 
 		if(mongoResult.exitCode != 0)
@@ -657,7 +653,7 @@ TaskResult task_publish_mongo_rsync_ssh( config::ConfigNode config )
 	return result;
 }
 
-TaskResult task_publish_email( config::ConfigNode config )
+TaskResult task_publish_email( uon::Value config )
 {
 	TaskResult result;
 	result.warnings = 0;
@@ -665,8 +661,8 @@ TaskResult task_publish_email( config::ConfigNode config )
 
 	// detect authors
 	process::TextProcessResult gitAuthors = process::executeTextProcess(
-		config.value("git.binary"), {"log", "--pretty=%ae", std::string("--since=")+config.value("receivers.authors")},
-		config.value("receivers.repository"));
+		config.get("git.binary").to_string(), {"log", "--pretty=%ae", std::string("--since=")+config.get("receivers.authors").to_string()},
+		config.get("receivers.repository").to_string());
 
 	result.message = task_utils::createTaskMessage(gitAuthors);
 
@@ -679,8 +675,8 @@ TaskResult task_publish_email( config::ConfigNode config )
 
 	// detect committers
 	process::TextProcessResult gitCommitters = process::executeTextProcess(
-		config.value("git.binary"), {"log", "--pretty=%ae", std::string("--since=")+config.value("receivers.committers")},
-		config.value("receivers.repository"));
+		config.get("git.binary").to_string(), {"log", "--pretty=%ae", std::string("--since=")+config.get("receivers.committers").to_string()},
+		config.get("receivers.repository").to_string());
 
 	result.message = task_utils::createTaskMessage(gitCommitters);
 
@@ -723,14 +719,14 @@ TaskResult task_publish_email( config::ConfigNode config )
 	// generate message
 	std::stringstream message;
 
-	for(auto report : config.node("reports").children())
+	for(auto report : config.get("reports").as_object())
 	{
-		std::cout << "reading " << report.second.value() << "..." << std::endl;
+		std::cout << "reading " << report.second.to_string() << "..." << std::endl;
 
 		// load report
 		std::ifstream reportstream;
 		reportstream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-		reportstream.open( report.second.value() );
+		reportstream.open( report.second.to_string() );
 
 		uon::Value reporttree = uon::read_json( reportstream );
 
@@ -742,13 +738,13 @@ TaskResult task_publish_email( config::ConfigNode config )
 	// send mail
 	std::vector<std::string> mailArgs{
 		"-a", "Content-Type: text/plain; charset=UTF-8",
-		"-s", config.value("subject")
+		"-s", config.get("subject").to_string()
 	};
 	mailArgs.insert(mailArgs.end(), receivers.begin(), receivers.end());
 
 	process::TextProcessResult mailResult = process::executeTextProcess(
-		config.value("mail.binary"), mailArgs,
-		config.value("receivers.repository"),
+		config.get("mail.binary").to_string(), mailArgs,
+		config.get("receivers.repository").to_string(),
 		message.str());
 
 	result.message = task_utils::createTaskMessage(mailResult);

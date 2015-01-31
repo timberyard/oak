@@ -23,7 +23,7 @@ ExternalProject_Add(JsonSpirit
     UPDATE_COMMAND ""
     )
 
-add_dependencies(JsonSpirit boost)
+#add_dependencies(JsonSpirit boost)
 
 ExternalProject_Get_Property( JsonSpirit SOURCE_DIR )
 set( JsonSpirit_INCLUDE_DIR ${SOURCE_DIR} )
@@ -90,7 +90,7 @@ add_executable(oak
 	${PROJECT_SOURCE_DIR}/../libs/uon/writer_json.cpp
 )
 
-add_dependencies(oak boost)
+#add_dependencies(oak boost)
 
 if(NOT WIN32)
 	target_link_libraries( oak ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} )

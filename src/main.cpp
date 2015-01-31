@@ -19,14 +19,8 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
-#include <json_spirit/json_spirit.h>
-
 #include "tasks.hpp"
 #include "process.hpp"
-
-namespace pt = boost::property_tree;
-namespace po = boost::program_options;
-namespace js = json_spirit;
 
 namespace environment
 {
@@ -114,7 +108,7 @@ int main( int argc, const char* const* argv )
 {
 	config::Config conf;
 	boost::filesystem::path input, output;
-	po::variables_map vm;
+	boost::program_options::variables_map vm;
 
 	try
 	{
@@ -131,19 +125,19 @@ int main( int argc, const char* const* argv )
 		std::vector<std::string> argOptions;
 
 		{
-			po::options_description optdescr;
+			boost::program_options::options_description optdescr;
 
 			optdescr.add_options()
-				("mode,m", po::value<std::string>(&argMode), "mode: standard [default], jenkins")
-				("input,i", po::value<std::string>(&argInput), "input directory")
-				("output,o", po::value<std::string>(&argOutput), "output directory")
-				("options,O", po::value<std::vector<std::string>>(&argOptions)->multitoken(), "options: key=value ...")
+				("mode,m", boost::program_options::value<std::string>(&argMode), "mode: standard [default], jenkins")
+				("input,i", boost::program_options::value<std::string>(&argInput), "input directory")
+				("output,o", boost::program_options::value<std::string>(&argOutput), "output directory")
+				("options,O", boost::program_options::value<std::vector<std::string>>(&argOptions)->multitoken(), "options: key=value ...")
 				("printconf,p", "print configuration and exit")
 				("help,h", "show this text")
 				;
 
-			po::store( po::command_line_parser(argc, argv).options(optdescr).run(), vm);
-			po::notify(vm);
+			boost::program_options::store( boost::program_options::command_line_parser(argc, argv).options(optdescr).run(), vm);
+			boost::program_options::notify(vm);
 
 			if(vm.count("help") > 0)
 			{
@@ -318,7 +312,7 @@ int main( int argc, const char* const* argv )
 		conf.apply(config::Config::Priority::Arguments, argOptions);
 
 		// apply system configuration
-		boost::filesystem::path sysconf = conf.value("meta.configs.system");
+		boost::filesystem::path sysconf = conf.get("meta.configs.system").to_string();
 
 		if(boost::filesystem::exists(sysconf))
 		{
@@ -327,7 +321,7 @@ int main( int argc, const char* const* argv )
 		}
 
 		// apply project configuration
-		boost::filesystem::path projectconf = conf.value("meta.configs.project");
+		boost::filesystem::path projectconf = conf.get("meta.configs.project").to_string();
 
 		if(boost::filesystem::exists(projectconf))
 		{
@@ -337,15 +331,15 @@ int main( int argc, const char* const* argv )
 
 		// apply checkout variant configuration
 		std::cout << "Load checkout variant configuration..." << std::endl;
-		conf.apply(config::Config::Priority::Variant, config::builtin::variants::checkout.at(conf.value("meta.variants.checkout")));
+		conf.apply(config::Config::Priority::Variant, config::builtin::variants::checkout.at(conf.get("meta.variants.checkout").to_string()));
 
 		// apply integrate variant configuration
 		std::cout << "Load integrate variant configuration..." << std::endl;
-		conf.apply(config::Config::Priority::Variant, config::builtin::variants::integrate.at(conf.value("meta.variants.integrate")));
+		conf.apply(config::Config::Priority::Variant, config::builtin::variants::integrate.at(conf.get("meta.variants.integrate").to_string()));
 
 		// apply publish variant configuration
 		std::cout << "Load publish variant configuration..." << std::endl;
-		conf.apply(config::Config::Priority::Variant, config::builtin::variants::publish.at(conf.value("meta.variants.publish")));
+		conf.apply(config::Config::Priority::Variant, config::builtin::variants::publish.at(conf.get("meta.variants.publish").to_string()));
 
 		// detect meta data
 		std::cout << "Detecting meta data..." << std::endl;
@@ -412,12 +406,12 @@ int main( int argc, const char* const* argv )
 			}
 		}
 
-		input = fs_utils::normalize(conf.value("meta.input"));
+		input = fs_utils::normalize(conf.get("meta.input").to_string());
 
 		if( boost::filesystem::exists(input / ".git") )
 		{
 			// meta.repository
-			process::TextProcessResult gitRepository = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"config", "--get", "remote.origin.url"}, input);
+			process::TextProcessResult gitRepository = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"config", "--get", "remote.origin.url"}, input);
 
 			if(gitRepository.exitCode == 0 && gitRepository.output.size() == 1 && gitRepository.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -432,7 +426,7 @@ int main( int argc, const char* const* argv )
 			// meta.branch
 			if(argMode != "jenkins")
 			{
-				process::TextProcessResult gitBranch = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
+				process::TextProcessResult gitBranch = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
 
 				if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -446,7 +440,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.id.long
-			process::TextProcessResult gitCommit = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"rev-parse", "--verify", "-q", "HEAD"}, input);
+			process::TextProcessResult gitCommit = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"rev-parse", "--verify", "-q", "HEAD"}, input);
 
 			if(gitCommit.exitCode == 0 && gitCommit.output.size() == 1 && gitCommit.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -459,7 +453,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.timestamp.default
-			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.value("tasks.defaults.checkout:git.binary"), {"show", "-s", "--format=%ci", conf.value("meta.commit.id.long")}, input);
+			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ci", conf.get("meta.commit.id.long").to_string()}, input);
 
 			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -477,7 +471,7 @@ int main( int argc, const char* const* argv )
 		std::cout << "Computing additional configuration parameter..." << std::endl;
 
 		// ids
-		conf.apply(config::Config::Priority::Environment, "meta.commit.id.short", conf.value("meta.commit.id.long").substr(0, 7));
+		conf.apply(config::Config::Priority::Environment, "meta.commit.id.short", conf.get("meta.commit.id.long").to_string().substr(0, 7));
 
 		// timestamps
 		if(!commitTimestampParsed)
@@ -487,7 +481,7 @@ int main( int argc, const char* const* argv )
 			// parse timestamp
 			boost::posix_time::ptime timestamp;
 
-			std::stringstream ps(conf.value("meta.commit.timestamp.default"));
+			std::stringstream ps(conf.get("meta.commit.timestamp.default").to_string());
 			auto input_facet = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%S");
 			ps.imbue(std::locale(ps.getloc(), input_facet));
 			ps >> timestamp;
@@ -518,27 +512,27 @@ int main( int argc, const char* const* argv )
 		}
 
 		// paths
-		input = fs_utils::normalize(conf.value("meta.input"));
-		output = fs_utils::normalize(conf.value("meta.output"));
+		input = fs_utils::normalize(conf.get("meta.input").to_string());
+		output = fs_utils::normalize(conf.get("meta.output").to_string());
 
 		conf.apply(config::Config::Priority::Computed, "meta.input",  input.string());
 		conf.apply(config::Config::Priority::Computed, "meta.output", output.string());
 
-		conf.apply(config::Config::Priority::Computed, "meta.configs.system",  fs_utils::normalize(conf.value("meta.configs.system") ).string());
-		conf.apply(config::Config::Priority::Computed, "meta.configs.project", fs_utils::normalize(conf.value("meta.configs.project")).string());
+		conf.apply(config::Config::Priority::Computed, "meta.configs.system",  fs_utils::normalize(conf.get("meta.configs.system").to_string() ).string());
+		conf.apply(config::Config::Priority::Computed, "meta.configs.project", fs_utils::normalize(conf.get("meta.configs.project").to_string()).string());
 
-		conf.apply(config::Config::Priority::Computed, "meta.results.checkout",  fs_utils::normalize(conf.value("meta.results.checkout") ).string());
-		conf.apply(config::Config::Priority::Computed, "meta.results.integrate", fs_utils::normalize(conf.value("meta.results.integrate")).string());
-		conf.apply(config::Config::Priority::Computed, "meta.results.publish",   fs_utils::normalize(conf.value("meta.results.publish")  ).string());
+		conf.apply(config::Config::Priority::Computed, "meta.results.checkout",  fs_utils::normalize(conf.get("meta.results.checkout").to_string() ).string());
+		conf.apply(config::Config::Priority::Computed, "meta.results.integrate", fs_utils::normalize(conf.get("meta.results.integrate").to_string()).string());
+		conf.apply(config::Config::Priority::Computed, "meta.results.publish",   fs_utils::normalize(conf.get("meta.results.publish").to_string()  ).string());
 
 		// task defaults
 		for(auto section : std::vector<std::string>{"checkout", "integrate", "publish"})
 		{
-			for( auto task : conf.node(std::string("tasks.") + section).children() )
+			for( auto task : conf.get(std::string("tasks.") + section).as_object() )
 			{
 				conf.apply(config::Config::Priority::Base,
 					std::string("tasks.") + section + std::string(".") + task.first,
-					conf.node( std::string("tasks.defaults.") + task.second.value("type") )
+					conf.get( std::string("tasks.defaults.") + task.second.get("type").to_string() )
 				);
 			}
 		}
@@ -556,7 +550,7 @@ int main( int argc, const char* const* argv )
 
 	// print configuration
 	std::cout << "Printing configuration..." << std::endl;
-	conf.print(std::cout);
+	uon::write_json(conf.resolved(), std::cout);
 
 	if(vm.count("printconf") > 0)
 	{
@@ -594,8 +588,8 @@ int main( int argc, const char* const* argv )
 		std::cout << "Section: " << section << std::endl;
 		std::cout << "#########################################################################" << std::endl;
 
-		boost::filesystem::path resultPath( conf.value(std::string("meta.results.") + section) );
-		js::Object taskResults;
+		boost::filesystem::path resultPath( conf.get(std::string("meta.results.") + section).to_string() );
+		uon::Value taskResults;
 
 		try
 		{
@@ -609,11 +603,11 @@ int main( int argc, const char* const* argv )
 				if(taskResolved.find(task) != taskResolved.end())
 					return;
 
-				auto deps = conf.node(std::string("tasks.")+section+std::string(".")+task+std::string(".dependencies")).children();
+				auto deps = conf.get(std::string("tasks.")+section+std::string(".")+task+std::string(".dependencies")).as_object();
 
 				for(auto dep : deps)
 				{
-					if(dep.second.value() == "on")
+					if(dep.second.to_boolean())
 					{
 						resolve(dep.first);
 					}
@@ -624,7 +618,7 @@ int main( int argc, const char* const* argv )
 				std::cout << task << " ";
 			};
 
-			for ( auto task : conf.node(std::string("tasks.")+section).children() )
+			for ( auto task : conf.get(std::string("tasks.")+section).as_object() )
 			{
 				resolve(task.first);
 			}
@@ -633,19 +627,19 @@ int main( int argc, const char* const* argv )
 
 			for ( auto task : taskOrder )
 			{
-				auto taskConfig = conf.node(std::string("tasks.")+section+std::string(".")+task);
-				auto taskType = taskConfig.value( "type" );
+				auto taskConfig = conf.get(std::string("tasks.")+section+std::string(".")+task);
+				auto taskType = taskConfig.get( "type" ).to_string();
 
 				std::cout << "*************************************************************************" << std::endl;
 
 				// check if it is enabled/disabled
-				if(taskConfig.value("enabled") != "yes")
+				if(!taskConfig.get("enabled").to_boolean())
 				{
 					std::cout << "Task disabled: " << task << std::endl;
 					std::cout << "type: " << taskType << std::endl;
 
 					std::cout << "config: " << std::endl;
-					taskConfig.print(std::cout);
+					uon::write_json(taskConfig, std::cout);
 					std::cout << std::endl;
 
 					std::cout << "*************************************************************************" << std::endl;
@@ -658,7 +652,7 @@ int main( int argc, const char* const* argv )
 				std::cout << "type: " << taskType << std::endl;
 
 				std::cout << "config: " << std::endl;
-				taskConfig.print(std::cout);
+				uon::write_json(taskConfig, std::cout);
 				std::cout << std::endl;
 
 				std::cout << "*************************************************************************" << std::endl;
@@ -678,8 +672,8 @@ int main( int argc, const char* const* argv )
 						result.status = tasks::TaskResult::STATUS_ERROR;
 						result.warnings = 0;
 						result.errors = 1;
-						result.message = "exception occured";
-						result.output.push_back( js::Pair("exception", e.what()));
+						result.message = std::string("exception occured: ") + e.what();
+						result.output.set("exception", e.what());
 
 						std::cout << "An exception occured: " << e.what() << std::endl;
 					}
@@ -688,8 +682,8 @@ int main( int argc, const char* const* argv )
 						result.status = tasks::TaskResult::STATUS_ERROR;
 						result.warnings = 0;
 						result.errors = 1;
-						result.message = "exception occured";
-						result.output.push_back( js::Pair("exception", "unknown exception"));
+						result.message = "unknown exception occured";
+						result.output.set("exception", "unknown exception");
 
 						std::cout << "An exception occured: unknown" << std::endl;
 					}
@@ -699,18 +693,18 @@ int main( int argc, const char* const* argv )
 						task_with_error = true;
 					}
 
-					js::Object taskResult;
+					uon::Value taskResult;
 
-					taskResult.push_back( js::Pair("type", taskType ));
-					taskResult.push_back( js::Pair("name", task ));
-					taskResult.push_back( js::Pair("message", result.message ));
-					taskResult.push_back( js::Pair("warnings", uint64_t(result.warnings)));
-					taskResult.push_back( js::Pair("errors",   uint64_t(result.errors)));
-					taskResult.push_back( js::Pair("status", toString(result.status)));
-					taskResult.push_back( js::Pair("details", result.output ));
-					taskResult.push_back( js::Pair("config",  taskConfig.toSpirit()));
+					taskResult.set("type", taskType );
+					taskResult.set("name", task );
+					taskResult.set("message", result.message );
+					taskResult.set("warnings", uon::Number(result.warnings));
+					taskResult.set("errors",   uon::Number(result.errors));
+					taskResult.set("status", toString(result.status));
+					taskResult.set("details", result.output );
+					taskResult.set("config",  taskConfig);
 
-					taskResults.emplace_back(task, taskResult);
+					taskResults.set(task, taskResult);
 				}
 				else
 					throw std::runtime_error(std::string("invalid task type: ") + taskType);
@@ -730,24 +724,21 @@ int main( int argc, const char* const* argv )
 		}
 
 		// dump output
-		js::Object output;
+		uon::Value output;
 
 		try
 		{
 			// assemble result
-			output.push_back(js::Pair("meta", conf.node("meta").toSpirit()));
-			output.push_back(js::Pair("tasks", js::Object { js::Pair(section, taskResults) }));
+			output.set("meta", conf.get("meta"));
+			output.set({"tasks", section}, taskResults);
 
 			// ensure parent directory is created
 			boost::filesystem::create_directories(resultPath.branch_path());
 
 			// write file
-			const js::Output_options options = js::Output_options( js::raw_utf8 | js::pretty_print | js::single_line_arrays );
-
 			std::ofstream stream(resultPath.string());
 			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-
-			js::write(output, stream, options);
+			uon::write_json(output, stream, false);
 		}
 		catch ( const std::exception& e )
 		{

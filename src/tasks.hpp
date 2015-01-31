@@ -3,8 +3,7 @@
 #include <string>
 #include <map>
 #include <functional>
-
-#include <json_spirit/json_spirit.h>
+#include <uon/uon.hpp>
 
 #include "config.hpp"
 
@@ -24,7 +23,7 @@ struct TaskResult
 	unsigned int errors;
 
 	std::string message;
-	json_spirit::Object output;
+	uon::Value output;
 
 	TaskResult()
 	: status(STATUS_ERROR)
@@ -35,6 +34,6 @@ struct TaskResult
 
 std::string toString(TaskResult::Status status);
 
-extern std::map<std::string, std::function<TaskResult(config::ConfigNode)>> taskTypes;
+extern std::map<std::string, std::function<TaskResult(uon::Value)>> taskTypes;
 
 } // namespace: tasks
