@@ -1,6 +1,7 @@
 #include "uon.hpp"
 
 #include <fstream>
+#include <mongo/client/dbclient.h>
 
 namespace uon {
 
@@ -17,6 +18,11 @@ void write_bson(const Value& value, boost::filesystem::path input)
 	stream.open( input.string() );
 
 	return write_bson(value, stream);
+}
+
+mongo::BSONObj to_mongo_bson(const Value& value)
+{
+	return mongo::fromjson(write_json(value));
 }
 
 }

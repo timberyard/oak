@@ -164,31 +164,15 @@
 					"SHOW_USED_FILES": "NO"
 				}
 			},
-			"publish:rsync+ssh": {
+			"publish:birch": {
 				"enabled": true,
 				"dependencies": { },
 				"rsync": { "binary": "rsync" },
 				"ssh": { "binary": "ssh" },
 				"sources": {
 					"build": "${meta.output}/build",
-					"doc": "${meta.output}/doc"
-				},
-				"destination": {
-					"user": "${meta.system.user}",
-					"host": "localhost",
-					"port": "22",
-					"base": "/home/${meta.system.user}/repository",
-					"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.descriptor}",
-					"mkdir": { "binary": "mkdir" }
-				}
-			},
-			"publish:mongo+rsync+ssh": {
-				"enabled": true,
-				"dependencies": { },
-				"rsync": { "binary": "rsync" },
-				"ssh": { "binary": "ssh" },
-				"sources": {
-					"integrate.json": "${meta.output}/results/integrate.json"
+					"doc": "${meta.output}/doc",
+					"results": "${meta.output}/results"
 				},
 				"destination": {
 					"user": "${meta.system.user}",
@@ -197,28 +181,8 @@
 					"base": "/home/${meta.system.user}/repository",
 					"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.descriptor}",
 					"mkdir": { "binary": "mkdir" },
-					"mongoimport": {
-						"binary": "mongoimport",
-						"database": "taskresults",
-						"collection": "integration"
-					}
+					"birch": { "binary": "birch" }
 				}
-			},
-			"publish:email": {
-				"enabled": true,
-				"dependencies": { },
-				"results": { },
-				"reports": {
-					"integrate": "${meta.output}/results/integrate.json"
-				},
-				"receivers": {
-					"repository": "${meta.input}",
-					"authors": "3 days",
-					"committers": "3 days"
-				},
-				"subject": "Project: ${meta.project.name} | Branch: ${meta.branch} | Commit: ${meta.commit.id.short} | Timestamp: ${meta.commit.timestamp.default}",
-				"git": { "binary": "git" },
-				"mail": { "binary": "mail" }
 			}
 		},
 		"checkout": {

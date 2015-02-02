@@ -12,7 +12,7 @@ BUILTIN_CONFIG(checkout_nothing)
 BUILTIN_CONFIG(integrate_nothing)
 BUILTIN_CONFIG(integrate_c__)
 BUILTIN_CONFIG(publish_nothing)
-BUILTIN_CONFIG(publish_remote_rsync_mongo)
+BUILTIN_CONFIG(publish_birch)
 
 namespace config {
 
@@ -36,7 +36,7 @@ namespace builtin {
 		const std::map<std::string, std::string> publish =
 			{
 				std::pair<std::string, std::string> { "nothing", std::string(configs_builtin_publish_nothing_json, configs_builtin_publish_nothing_json + configs_builtin_publish_nothing_json_len) },
-				std::pair<std::string, std::string> { "remote-rsync+mongo", std::string(configs_builtin_publish_remote_rsync_mongo_json, configs_builtin_publish_remote_rsync_mongo_json + configs_builtin_publish_remote_rsync_mongo_json_len) }
+				std::pair<std::string, std::string> { "birch", std::string(configs_builtin_publish_birch_json, configs_builtin_publish_birch_json + configs_builtin_publish_birch_json_len) }
 			};
 
 	} // namespace: variants

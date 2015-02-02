@@ -19,4 +19,9 @@ Value read_bson(boost::filesystem::path input)
 	return read_bson(stream);
 }
 
+Value from_mongo_bson(const mongo::BSONObj& mval)
+{
+	return read_json(mval.jsonString());
+}
+
 }

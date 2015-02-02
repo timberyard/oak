@@ -21,8 +21,7 @@ TaskResult task_build_cmake             ( uon::Value config );
 TaskResult task_test_googletest         ( uon::Value config );
 TaskResult task_analysis_cppcheck       ( uon::Value config );
 TaskResult task_doc_doxygen             ( uon::Value config );
-TaskResult task_publish_rsync_ssh       ( uon::Value config );
-TaskResult task_publish_mongo_rsync_ssh ( uon::Value config );
+TaskResult task_publish_birch           ( uon::Value config );
 TaskResult task_publish_email           ( uon::Value config );
 
 std::map<std::string, std::function<TaskResult(uon::Value)>> taskTypes =
@@ -31,8 +30,7 @@ std::map<std::string, std::function<TaskResult(uon::Value)>> taskTypes =
 	{ "test:googletest",         task_test_googletest },
 	{ "analysis:cppcheck",       task_analysis_cppcheck },
 	{ "doc:doxygen",             task_doc_doxygen },
-	{ "publish:rsync+ssh",       task_publish_rsync_ssh },
-	{ "publish:mongo+rsync+ssh", task_publish_mongo_rsync_ssh },
+	{ "publish:birch",           task_publish_birch },
 	{ "publish:email",           task_publish_email }
 };
 
@@ -563,7 +561,7 @@ TaskResult task_doc_doxygen( uon::Value config )
 	return result;
 }
 
-TaskResult task_publish_rsync_ssh( uon::Value config )
+TaskResult task_publish_birch( uon::Value config )
 {
 	TaskResult result;
 
@@ -610,46 +608,6 @@ TaskResult task_publish_rsync_ssh( uon::Value config )
 	result.warnings = 0;
 	result.errors = 0;
 	result.status = TaskResult::STATUS_OK;
-
-	return result;
-}
-
-TaskResult task_publish_mongo_rsync_ssh( uon::Value config )
-{
-	// rsync stuff
-	TaskResult result = task_publish_rsync_ssh(config);
-
-	if(result.status == TaskResult::STATUS_ERROR)
-	{
-		return result;
-	}
-
-	// import to mongo database
-	for( auto source : config.get("sources").as_object() )
-	{
-		std::string srcdir = source.second.to_string();
-		std::string remote = config.get("destination.user").to_string() + std::string("@") + config.get("destination.host").to_string();
-		std::string destfile = config.get("destination.base").to_string() + std::string("/") + config.get("destination.directory").to_string() + std::string("/") + source.first;
-
-		// run ssh:mongoimport
-		std::vector<std::string> mongoArgs { "-o", "BatchMode=yes", "-p", config.get("destination.port").to_string(), remote,
-			config.get("destination.mongoimport.binary").to_string(),
-			"--db", config.get("destination.mongoimport.database").to_string(),
-			"--collection", config.get("destination.mongoimport.collection").to_string(),
-			destfile };
-
-		process::TextProcessResult mongoResult = process::executeTextProcess(config.get("ssh.binary").to_string(), mongoArgs, srcdir);
-
-		result.output.set("ssh:mongoimport", task_utils::createTaskOutput(config.get("ssh.binary").to_string(), mongoArgs, srcdir, mongoResult));
-		result.message = task_utils::createTaskMessage(mongoResult);
-
-		if(mongoResult.exitCode != 0)
-		{
-			result.errors = 1;
-			result.status = TaskResult::STATUS_ERROR;
-			return result;
-		}
-	}
 
 	return result;
 }

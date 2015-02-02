@@ -36,6 +36,7 @@ include_directories( ${BOOST_ROOT}/include )
 include_directories( ${PROJECT_SOURCE_DIR}/../libs/boost-process)
 include_directories( ${PROJECT_SOURCE_DIR}/../libs)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
+include_directories( "/home/niklas/libs/mongo-cxx-client/include" )
 
 link_directories(${BOOST_ROOT}/lib)
 
@@ -70,9 +71,9 @@ add_custom_command(OUTPUT config_publish-nothing.cpp
 	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-nothing.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
-add_custom_command(OUTPUT config_publish-remote-rsync+mongo.cpp
-	COMMAND xxd -i configs/builtin/publish-remote-rsync+mongo.json ${PROJECT_BINARY_DIR}/config_publish-remote-rsync+mongo.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-remote-rsync+mongo.json
+add_custom_command(OUTPUT config_publish-birch.cpp
+	COMMAND xxd -i configs/builtin/publish-birch.json ${PROJECT_BINARY_DIR}/config_publish-birch.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-birch.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
 add_executable(oak
@@ -80,7 +81,7 @@ add_executable(oak
 	config_base.cpp
 	config_checkout-nothing.cpp
 	config_integrate-c++.cpp config_integrate-nothing.cpp
-	config_publish-nothing.cpp config_publish-remote-rsync+mongo.cpp
+	config_publish-nothing.cpp config_publish-birch.cpp
 	${PROJECT_SOURCE_DIR}/../libs/uon/model.cpp
 	${PROJECT_SOURCE_DIR}/../libs/uon/operations.cpp
 	${PROJECT_SOURCE_DIR}/../libs/uon/reader_bson.cpp
@@ -93,9 +94,9 @@ add_executable(oak
 #add_dependencies(oak boost)
 
 if(NOT WIN32)
-	target_link_libraries( oak ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} )
+	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} )
 else()
-	target_link_libraries( oak ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ws2_32 mswsock )
+	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ws2_32 mswsock )
 endif()
 
 install(TARGETS oak DESTINATION bin )

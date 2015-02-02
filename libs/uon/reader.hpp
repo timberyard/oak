@@ -2,6 +2,7 @@
 
 #include <istream>
 #include <boost/filesystem.hpp>
+#include <mongo/bson/bson.h>
 
 namespace uon {
 
@@ -11,4 +12,6 @@ namespace uon {
 
 	extern Value read_bson(std::istream& input);
 	extern Value read_bson(boost::filesystem::path input);
+
+	extern Value from_mongo_bson(const mongo::BSONObj& mval);
 }

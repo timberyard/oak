@@ -1,0 +1,8 @@
+{	"tasks": {
+		"publish": {
+			"repo": {
+				"type": "publish:birch"
+			}
+		}
+	}
+}
