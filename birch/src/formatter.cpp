@@ -163,7 +163,24 @@ void html(uon::Value input, std::ostream& output)
 		output << "</td></tr>" << std::endl;
 		output << "<tr><th>Warnings:</th><td>" << _html::escape(task.second.get("warnings", uon::null).to_string()) << "</td></tr>" << std::endl;
 		output << "<tr><th>Errors:</th><td>" << _html::escape(task.second.get("errors", uon::null).to_string()) << "</td></tr>" << std::endl;
-		output << "<tr><th>Status:</th><td>" << _html::escape(task.second.get("status.consolidated", uon::null).to_string()) << "</td></tr>" << std::endl;
+
+		auto status = task.second.get("status.consolidated", uon::null).to_string();
+
+		if(status == "ok")
+		{
+			output << "<tr class=\"success\">";
+		}
+		else
+		if(status == "warning")
+		{
+			output << "<tr class=\"warning\">";
+		}
+		else
+		{
+			output << "<tr class=\"danger\">";
+		}
+
+		output << "<th>Status:</th><td>" << _html::escape(status) << "</td></tr>" << std::endl;
 		output << "</table>" << std::endl;
 		output << std::endl;
 
