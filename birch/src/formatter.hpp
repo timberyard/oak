@@ -5,6 +5,6 @@
 
 namespace formatter {
 
-extern void markdown(uon::Value input, std::ostream& output);
+extern void html(uon::Value input, std::ostream& output);
 
 } // namespace: formatter

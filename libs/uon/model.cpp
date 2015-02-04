@@ -27,6 +27,11 @@ bool Null::operator==(const Null& other) const
 	return true;
 }
 
+bool Null::operator!=(const Null& other) const
+{
+	return false;
+}
+
 const Null null = Null();
 
 Type Value::type() const
@@ -316,6 +321,18 @@ Array Value::to_array() const
 	throw std::runtime_error("invalid type");
 }
 
+std::deque<std::string> Value::to_string_array() const
+{
+	std::deque<std::string> result;
+
+	for(auto i : to_array())
+	{
+		result.push_back(i.to_string());
+	}
+
+	return result;
+}
+
 Value& Value::operator=(const Value& other)
 {
 	_value = other._value;
@@ -439,6 +456,11 @@ bool Value::operator<(const Value& other) const
 bool Value::operator==(const Value& other) const
 {
 	return _value == other._value;
+}
+
+bool Value::operator!=(const Value& other) const
+{
+	return !(_value == other._value);
 }
 
 }

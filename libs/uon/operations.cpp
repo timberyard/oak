@@ -83,7 +83,20 @@ const Value& Value::getref(std::vector<std::string> path) const
 	if(_value.type() == typeid(Array))
 	{
 		auto& array = boost::get<Array>(_value);
-		std::size_t i = std::stoul(path[0]);
+		std::size_t i = 0;
+
+		try
+		{
+			i = std::stoul(path[0]);
+		}
+		catch(const std::invalid_argument&)
+		{
+			throw NotFound(boost::algorithm::join(path, "."));
+		}
+		catch(const std::out_of_range&)
+		{
+			throw NotFound(boost::algorithm::join(path, "."));
+		}
 
 		if(i < array.size())
 		{
@@ -202,6 +215,94 @@ void Value::traverse(std::function<void(uon::Value&,std::vector<std::string>)> f
 			path.push_back(std::to_string(j++));
 
 			i.traverse(functor, path);
+		}
+	}
+}
+
+void Value::escape_mongo()
+{
+	if(_value.type() == typeid(Object))
+	{
+		auto& object = boost::get<Object>(_value);
+		Object tmp;
+
+		for(auto j = object.begin(); j != object.end();)
+		{
+			std::string ek = j->first;
+			boost::replace_all(ek, "$", "＄");	// replace $ by U+FF04 (unicode full width equivalent)
+			boost::replace_all(ek, ".", "．");	// replace . by U+FF0E (unicode full width equivalent)
+
+			if(ek != j->first)
+			{
+				tmp[ek] = j->second;
+				j = object.erase(j);
+			}
+			else
+			{
+				++j;
+			}
+		}
+
+		for(auto& j : tmp)
+		{
+			object[j.first] = j.second;
+		}
+
+		for(auto& j : object)
+		{
+			j.second.escape_mongo();
+		}
+	}
+	else
+	if(_value.type() == typeid(Array))
+	{
+		for(auto& j : boost::get<Array>(_value))
+		{
+			j.escape_mongo();
+		}
+	}
+}
+
+void Value::unescape_mongo()
+{
+	if(_value.type() == typeid(Object))
+	{
+		auto& object = boost::get<Object>(_value);
+		Object tmp;
+
+		for(auto j = object.begin(); j != object.end();)
+		{
+			std::string ek = j->first;
+			boost::replace_all(ek, "＄", "$");	// replace U+FF04 (unicode full width equivalent) by $
+			boost::replace_all(ek, "．", ".");	// replace U+FF0E (unicode full width equivalent) by .
+
+			if(ek != j->first)
+			{
+				tmp[ek] = j->second;
+				j = object.erase(j);
+			}
+			else
+			{
+				++j;
+			}
+		}
+
+		for(auto& j : tmp)
+		{
+			object[j.first] = j.second;
+		}
+
+		for(auto& j : object)
+		{
+			j.second.unescape_mongo();
+		}
+	}
+	else
+	if(_value.type() == typeid(Array))
+	{
+		for(auto& j : boost::get<Array>(_value))
+		{
+			j.unescape_mongo();
 		}
 	}
 }

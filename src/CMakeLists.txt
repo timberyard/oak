@@ -11,7 +11,7 @@ include(zlib)
 include(bzip2)
 include(boost)
 
-set(Boost_LIBRARIES boost_system boost_filesystem boost_iostreams boost_program_options boost_regex)
+set(Boost_LIBRARIES boost_system boost_filesystem boost_iostreams boost_program_options boost_thread boost_regex)
 
 # Json Spirit
 set( JsonSpiritArgs -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_TOOLCHAIN_FILE:STRING=${CMAKE_TOOLCHAIN_FILE} -DBOOST_ROOT:STRING=${BOOST_ROOT} )
@@ -46,6 +46,8 @@ if(APPLE)
 	SET( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework CoreServices" )
 endif()
 
+find_package (Threads)
+
 add_custom_command(OUTPUT config_base.cpp
 	COMMAND xxd -i configs/builtin/base.json ${PROJECT_BINARY_DIR}/config_base.cpp
 	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/base.json
@@ -77,7 +79,7 @@ add_custom_command(OUTPUT config_publish-birch.cpp
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
 add_executable(oak
-	main.cpp process.cpp tasks.cpp task_utils.cpp config.cpp formatter_markdown.cpp
+	main.cpp process.cpp tasks.cpp task_utils.cpp config.cpp
 	config_base.cpp
 	config_checkout-nothing.cpp
 	config_integrate-c++.cpp config_integrate-nothing.cpp
@@ -94,9 +96,9 @@ add_executable(oak
 #add_dependencies(oak boost)
 
 if(NOT WIN32)
-	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} )
+	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
 else()
-	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ws2_32 mswsock )
+	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ws2_32 mswsock )
 endif()
 
 install(TARGETS oak DESTINATION bin )

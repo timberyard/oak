@@ -23,6 +23,7 @@ namespace uon
 	{
 		bool operator<(const Null& other) const;
 		bool operator==(const Null& other) const;
+		bool operator!=(const Null& other) const;
 	};
 
 	extern const Null null;
@@ -59,6 +60,7 @@ namespace uon
 		Boolean to_boolean() const;
 		Object to_object() const;
 		Array to_array() const;
+		std::deque<std::string> to_string_array() const;
 
 		Value& operator=(const Value& other);
 
@@ -91,6 +93,7 @@ namespace uon
 
 		bool operator<(const Value& other) const;
 		bool operator==(const Value& other) const;
+		bool operator!=(const Value& other) const;
 
 	public:
 		Value get(std::string path) const;
@@ -113,6 +116,9 @@ namespace uon
 		void merge(std::vector<std::string> path, const Value& overlay);
 
 		void traverse(std::function<void(Value&,std::vector<std::string>)> functor, std::vector<std::string> basepath = std::vector<std::string>{});
+
+		void escape_mongo();
+		void unescape_mongo();
 
 	private:
 		boost::make_recursive_variant<

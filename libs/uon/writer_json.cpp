@@ -83,7 +83,7 @@ void write_json(const Value& value, std::ostream& output, bool compact)
 
 	auto spval = convert(value);
 
-	json_spirit::write(spval, output, compact ? json_spirit::none : (json_spirit::pretty_print | json_spirit::single_line_arrays));
+	json_spirit::write(spval, output, json_spirit::raw_utf8 | (compact ? json_spirit::none : (json_spirit::pretty_print | json_spirit::single_line_arrays)));
 }
 
 void write_json(const Value& value, boost::filesystem::path output, bool compact)

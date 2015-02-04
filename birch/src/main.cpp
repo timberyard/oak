@@ -2,7 +2,7 @@
 #include <uon/uon.hpp>
 #include <mongo/client/dbclient.h>
 
-extern uon::Value consolidate(uon::Value report);
+extern uon::Value consolidate(std::map<std::string, uon::Value> reports);
 extern void notify(uon::Value report);
 
 static std::string collection = std::string("timberyard.reports");
@@ -10,10 +10,11 @@ static std::string collection = std::string("timberyard.reports");
 int main(int argc, char** argv)
 {
 	mongo::client::initialize();
-	mongo::DBClientConnection db;
+	mongo::DBClientConnection db(true);
 
 	try
 	{
+		std::cerr << "Connecting to database..." << std::endl;
 		db.connect("localhost");
 	}
 	catch ( const std::exception& e )
@@ -29,6 +30,8 @@ int main(int argc, char** argv)
 
 	try
 	{
+		std::cerr << "Check command line..." << std::endl;
+
 		// read parameter
 		boost::program_options::variables_map vm;
 		std::string argNode, argInput;
@@ -56,10 +59,17 @@ int main(int argc, char** argv)
 		// check if we are in letterbox mode
 		if(vm.count("letterbox") > 0)
 		{
+			std::cerr << "Handling letterbox mode..." << std::endl;
+
+			if(argInput.empty())
+			{
+				argInput = ".";
+			}
+
 			boost::filesystem::path input = boost::filesystem::absolute(argInput);
 
 			// read report
-			uon::Value report = uon::read_json(input / "results" / "integrate.json");
+			uon::Value report = uon::read_json(input / "report.json" );
 
 			// verify result
 			if(!argNode.empty())
@@ -73,6 +83,7 @@ int main(int argc, char** argv)
 			}
 
 			// add files to report
+			/*
 			for(boost::filesystem::recursive_directory_iterator file(input), end; file != end; ++file)
 			{
 				if(boost::filesystem::is_regular_file(file->path()))
@@ -93,17 +104,18 @@ int main(int argc, char** argv)
 					report.set( { "files", path }, file->path().string() );
 				}
 			}
+			*/
 
 			// insert report
 			uon::Value query;
-			query.set("repository", report.get("meta.repository"));
-			query.set("branch", report.get("meta.branch"));
-			query.set("commit", report.get("meta.commit.id.long"));
+			query.set("repository", report.get("meta.repository").to_string());
+			query.set("branch", report.get("meta.branch").to_string());
+			query.set("commit", report.get("meta.commit.id.long").to_string());
 
 			uon::Value op;
 			op.set( std::vector<std::string>{"$set", "hosts."+report.get("meta.arch.host.descriptor").to_string()}, report );
-			op.set( std::vector<std::string>{"$addToSet", "tasks.consolidation"}, report.get("meta.id") );
-			op.set( std::vector<std::string>{"$addToSet", "tasks.notification"}, report.get("meta.id") );
+			op.set( std::vector<std::string>{"$addToSet", "tasks.consolidation"}, report.get("meta.id").to_string() );
+			op.set( std::vector<std::string>{"$addToSet", "tasks.notification"}, report.get("meta.id").to_string() );
 
 			db.update(collection, uon::to_mongo_bson(query), uon::to_mongo_bson(op), true, false);
 		}
@@ -122,15 +134,20 @@ int main(int argc, char** argv)
     // run consolidation process
 	try
 	{
+		std::cerr << "Running consolidation process..." << std::endl;
+
 		uon::Value query;
-		query.set({"tasks.consolidation", "$size", "$gt"}, (std::uint64_t)0);
+		query.set( std::vector<std::string>{"tasks.consolidation.0", "$exists"}, true );
 
 		auto reports = db.query(collection, uon::to_mongo_bson(query));
 
 		while(reports->more())
 		{
-			auto report = uon::from_mongo_bson(reports->next());
-			auto consolidated = consolidate(report);
+			auto report = uon::from_mongo_bson(reports->nextSafe());
+
+			std::cerr << "Handling report " << report.get("_id").to_string() << std::endl;
+
+			auto consolidated = consolidate(report.get("hosts").to_object());
 
 			query = uon::null;
 			query.set("_id", report.get("_id"));
@@ -156,16 +173,21 @@ int main(int argc, char** argv)
     // run notification process
 	try
 	{
+		std::cerr << "Running notification process..." << std::endl;
+
 		uon::Value query;
-		query.set( std::vector<std::string>{"tasks.notification", "$size", "$gt"}, (std::uint64_t)0 );
-		query.set( std::vector<std::string>{"tasks.consolidation", "$size"}, (std::uint64_t)0 );
+		query.set( std::vector<std::string>{"tasks.notification.0", "$exists"}, true );
+		query.set( std::vector<std::string>{"tasks.consolidation.0", "$exists"}, false );
 
 		auto reports = db.query(collection, uon::to_mongo_bson(query));
 
 		while(reports->more())
 		{
-			auto report = uon::from_mongo_bson(reports->next());
-			notify(report);
+			auto report = uon::from_mongo_bson(reports->nextSafe());
+
+			std::cerr << "Handling report " << report.get("_id").to_string() << std::endl;
+
+			notify(report.get("consolidated"));
 
 			query = uon::null;
 			query.set("_id", report.get("_id"));

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(birch)
 
-set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../src/cmake" )
+set( CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../src/cmake" )
 
 include( ExternalProject )
 
@@ -33,9 +33,10 @@ ExternalProject_Get_Property( JsonSpirit BINARY_DIR )
 set( JsonSpirit_LIBRARY "${BINARY_DIR}/json_spirit/libjson_spirit.a" )
 # end of Json Spirit
 
+include_directories( ${PROJECT_SOURCE_DIR}/../../src )
 #include_directories( ${BOOST_ROOT}/include )
-include_directories( ${PROJECT_SOURCE_DIR}/../libs/boost-process)
-include_directories( ${PROJECT_SOURCE_DIR}/../libs)
+include_directories( ${PROJECT_SOURCE_DIR}/../../libs/boost-process)
+include_directories( ${PROJECT_SOURCE_DIR}/../../libs)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
 include_directories( "/home/niklas/libs/mongo-cxx-client/include" )
 
@@ -51,14 +52,15 @@ endif()
 find_package (Threads)
 
 add_executable(birch
-	main.cpp notify.cpp consolidate.cpp
-	${PROJECT_SOURCE_DIR}/../libs/uon/model.cpp
-	${PROJECT_SOURCE_DIR}/../libs/uon/operations.cpp
-	${PROJECT_SOURCE_DIR}/../libs/uon/reader_bson.cpp
-	${PROJECT_SOURCE_DIR}/../libs/uon/reader_json.cpp
-	${PROJECT_SOURCE_DIR}/../libs/uon/uon.cpp
-	${PROJECT_SOURCE_DIR}/../libs/uon/writer_bson.cpp
-	${PROJECT_SOURCE_DIR}/../libs/uon/writer_json.cpp
+	main.cpp notify.cpp consolidate.cpp formatter.cpp
+	${PROJECT_SOURCE_DIR}/../../src/process.cpp
+	${PROJECT_SOURCE_DIR}/../../libs/uon/model.cpp
+	${PROJECT_SOURCE_DIR}/../../libs/uon/operations.cpp
+	${PROJECT_SOURCE_DIR}/../../libs/uon/reader_bson.cpp
+	${PROJECT_SOURCE_DIR}/../../libs/uon/reader_json.cpp
+	${PROJECT_SOURCE_DIR}/../../libs/uon/uon.cpp
+	${PROJECT_SOURCE_DIR}/../../libs/uon/writer_bson.cpp
+	${PROJECT_SOURCE_DIR}/../../libs/uon/writer_json.cpp
 )
 
 #add_dependencies(birch boost)
