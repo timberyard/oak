@@ -1,4 +1,5 @@
 {	"meta": {
+		"id": null,
 		"oak": {
 			"version": "0.6"
 		},
@@ -133,6 +134,7 @@
 				"dependencies": { },
 				"binary": "cppcheck",
 				"source": "${meta.input}/src",
+				"base": "${meta.input}",
 				"output": "${meta.output}/analysis/cppcheck.xml"
 			},
 			"doc:doxygen": {

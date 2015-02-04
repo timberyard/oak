@@ -7,6 +7,10 @@
 #include <boost/system/system_error.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/date_time.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #ifdef _WIN32
 #include <Winsock2.h>
@@ -117,6 +121,9 @@ int main( int argc, const char* const* argv )
 		// read base configuration
 		std::cout << "Load builtin base configuration..." << std::endl;
 		conf.apply(config::Config::Priority::Base, config::builtin::base);
+
+		// generate report id
+		conf.apply(config::Config::Priority::Computed, "meta.id", boost::lexical_cast<std::string>(boost::uuids::random_generator()()));
 
 		// read arguments
 		std::cout << "Reading arguments..." << std::endl;

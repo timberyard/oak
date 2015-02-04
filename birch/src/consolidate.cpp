@@ -111,7 +111,7 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 				// consolidate results
 				auto results_cs = task_cs.get("details", uon::Array()).to_array();
 
-				for(auto result : task.second.get("details.results").to_array())
+				for(auto result : task.second.get("details.results", uon::Array()).to_array())
 				{
 					auto entry_cs = results_cs.end();
 
@@ -172,7 +172,7 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 				// consolidate results
 				auto results_cs = task_cs.get("details", uon::Array()).to_array();
 
-				for(auto result : task.second.get("details.errors").to_array())
+				for(auto result : task.second.get("details.errors", uon::Array()).to_array())
 				{
 					auto entry_cs = results_cs.end();
 
@@ -214,7 +214,7 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 			else
 			if(type == "test:googletest")
 			{
-				for(auto testsuite : task.second.get("details.tests").to_object())
+				for(auto testsuite : task.second.get("details.tests", uon::Object()).to_object())
 				{
 					for(auto test : testsuite.second.to_object())
 					{
@@ -248,7 +248,7 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 
 				std::size_t errors = 0;
 
-				for(auto testsuite : task_cs.get("details").to_object())
+				for(auto testsuite : task_cs.get("details", uon::Object()).to_object())
 				{
 					for(auto test : testsuite.second.to_object())
 					{

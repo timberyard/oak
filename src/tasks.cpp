@@ -433,7 +433,7 @@ TaskResult task_analysis_cppcheck( uon::Value config )
 
 	TaskResult result;
 
-	std::vector<std::string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", "." };
+	std::vector<std::string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", config.get("source").to_string() };
 
 	process::TextProcessResult checkResult = process::executeTextProcess(
 		config.get("binary").to_string(),
@@ -474,6 +474,9 @@ TaskResult task_analysis_cppcheck( uon::Value config )
 		boost::property_tree::read_xml( xmlCheckResultStream, xmlCheckResult, boost::property_tree::xml_parser::trim_whitespace );
 
 		// interpret xml data
+
+		auto basePath = boost::algorithm::replace_all_copy(config.get("base").to_string(), "\\", "/");
+
 		uon::Array errors;
 		for ( auto error : xmlCheckResult.get_child("results.errors") )
 		{
@@ -483,11 +486,21 @@ TaskResult task_analysis_cppcheck( uon::Value config )
 			auto attr_file = error.second.get_optional<std::string>("location.<xmlattr>.file");
 			auto attr_line = error.second.get_optional<std::string>("location.<xmlattr>.line");
 
+			auto file_rel = attr_file ? *attr_file : std::string("");
+			boost::algorithm::replace_all(file_rel, "\\", "/");
+
+			if(file_rel.find(basePath) == 0)
+			{
+				file_rel = file_rel.substr(basePath.length());
+			}
+
+			boost::trim_left_if(file_rel, boost::is_any_of("/"));
+
 			uon::Value row;
 			row.set("type", error.second.get<std::string>("<xmlattr>.id"));
 			row.set("severity", error.second.get<std::string>("<xmlattr>.severity"));
 			row.set("message", error.second.get<std::string>("<xmlattr>.msg"));
-			row.set("file", attr_file ? *attr_file : std::string(""));
+			row.set("file", file_rel);
 			row.set("line", attr_line ? *attr_line : std::string(""));
 
 			errors.push_back(row);
