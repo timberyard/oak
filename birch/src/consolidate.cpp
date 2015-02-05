@@ -17,6 +17,7 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 	cs.set("meta.branch", reports.begin()->second.get("meta.branch"));
 	cs.set("meta.commit", reports.begin()->second.get("meta.commit"));
 
+	// meta: archs
 	uon::Object meta_archs;
 
 	for(auto report : reports)
@@ -27,6 +28,20 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 	}
 
 	cs.set("meta.archs", meta_archs);
+
+	// meta: buildgap
+	uon::Array meta_buildgap;
+
+	for(auto report : reports)
+	{
+		auto buildgap = report.second.get("meta.buildgap").to_array();
+
+		meta_buildgap.insert(meta_buildgap.end(), buildgap.begin(), buildgap.end());
+	}
+
+	uon::unique(meta_buildgap);
+
+	cs.set("meta.buildgap", meta_buildgap);
 
 	// tasks
 
