@@ -1,7 +1,10 @@
 #include "uon.hpp"
 
 #include <fstream>
+
+#if !defined(_WIN32)
 #include <mongo/client/dbclient.h>
+#endif
 
 namespace uon {
 
