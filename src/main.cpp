@@ -1019,7 +1019,7 @@ void publish( const config::Config& conf )
 
 		// run rsync
 		std::vector<std::string> rsyncArgs {
-			std::string("--rsh=") + conf.get("tools.ssh.binary").to_string() + (" -o BatchMode=yes -p ") + conf.get("tools.destination.port").to_string(), "--archive", "--delete", "--verbose", std::string("./"),
+			std::string("--rsh=") + conf.get("tools.ssh.binary").to_string() + (" -o BatchMode=yes -p ") + conf.get("publish.destination.port").to_string(), "--archive", "--delete", "--verbose", std::string("./"),
 			remote + std::string(":") + destpath + std::string("/")
 		};
 
