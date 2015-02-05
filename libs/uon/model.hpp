@@ -132,4 +132,6 @@ namespace uon
 	};
 
 	extern void unique(Array& array);
+
+	extern std::string escape_mongo_key(std::string key);
 }

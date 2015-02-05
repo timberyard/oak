@@ -219,6 +219,14 @@ void Value::traverse(std::function<void(uon::Value&,std::vector<std::string>)> f
 	}
 }
 
+std::string escape_mongo_key(std::string key)
+{
+	boost::replace_all(key, "$", "＄");	// replace $ by U+FF04 (unicode full width equivalent)
+	boost::replace_all(key, ".", "．");	// replace . by U+FF0E (unicode full width equivalent)
+
+	return key;
+}
+
 void Value::escape_mongo()
 {
 	if(_value.type() == typeid(Object))

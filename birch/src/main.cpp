@@ -113,7 +113,8 @@ int main(int argc, char** argv)
 			query.set("commit", report.get("meta.commit.id.long").to_string());
 
 			uon::Value op;
-			op.set( std::vector<std::string>{"$set", "hosts."+report.get("meta.arch.host.descriptor").to_string()}, report );
+			report.escape_mongo();
+			op.set( std::vector<std::string>{"$set", "hosts."+uon::escape_mongo_key(report.get("meta.arch.host.descriptor").to_string())}, report );
 			op.set( std::vector<std::string>{"$addToSet", "tasks.consolidation"}, report.get("meta.id").to_string() );
 			op.set( std::vector<std::string>{"$addToSet", "tasks.notification"}, report.get("meta.id").to_string() );
 			op.set( std::vector<std::string>{"$set", "tasks.notification_timeout"}, (std::uint64_t)(std::time(nullptr) + (60 * 5)) );	// 5 minute timeout
@@ -145,17 +146,19 @@ int main(int argc, char** argv)
 		while(reports->more())
 		{
 			auto report = uon::from_mongo_bson(reports->nextSafe());
+			report.unescape_mongo();
 
 			std::cerr << "Handling report " << report.get("_id").to_string() << std::endl;
 
 			auto consolidated = consolidate(report.get("hosts").to_object());
 
 			query = uon::null;
-			query.set("_id", report.get("_id"));
+			query.set("_id", report.get("_id").to_string());
 
 			uon::Value obj;
+			consolidated.escape_mongo();
 			obj.set( std::vector<std::string>{"$set", "consolidated"}, consolidated );
-			obj.set( std::vector<std::string>{"$pull", "tasks.consolidation", "$in"}, report.get("tasks.consolidation") );
+			obj.set( std::vector<std::string>{"$pull", "tasks.consolidation", "$in"}, report.get("tasks.consolidation").to_array() );
 
 			db.update(collection, uon::to_mongo_bson(query), uon::to_mongo_bson(obj));
 		}
@@ -186,16 +189,17 @@ int main(int argc, char** argv)
 		while(reports->more())
 		{
 			auto report = uon::from_mongo_bson(reports->nextSafe());
+			report.unescape_mongo();
 
 			std::cerr << "Handling report " << report.get("_id").to_string() << std::endl;
 
 			notify(report.get("consolidated"));
 
 			query = uon::null;
-			query.set("_id", report.get("_id"));
+			query.set("_id", report.get("_id").to_string());
 
 			uon::Value obj;
-			obj.set({"$pull", "tasks.notification", "$in"}, report.get("tasks.notification"));
+			obj.set({"$pull", "tasks.notification", "$in"}, report.get("tasks.notification").to_array());
 
 			db.update(collection, uon::to_mongo_bson(query), uon::to_mongo_bson(obj));
 		}
