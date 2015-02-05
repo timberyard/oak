@@ -376,6 +376,8 @@ int main( int argc, const char* const* argv )
 				// parse timestamp
 				boost::posix_time::ptime timestamp;
 
+				std::cout << "Trying to parse timestamp " << *timestampstr << std::endl;
+
 				std::stringstream ps(*timestampstr);
 				auto input_facet = new boost::posix_time::time_input_facet("%Y-%m-%d_%H-%M-%S");
 				ps.imbue(std::locale(ps.getloc(), input_facet));
@@ -390,7 +392,7 @@ int main( int argc, const char* const* argv )
 				// default format
 				std::stringstream fs1;
 
-				auto output_facet = new boost::posix_time::time_facet("%Y-%m-%d_%H-%M-%S");
+				auto output_facet = new boost::posix_time::time_facet("%Y-%m-%d %H:%M:%S");
 				fs1.imbue(std::locale(fs1.getloc(), output_facet));
 				fs1 << timestamp;
 
@@ -597,6 +599,8 @@ int main( int argc, const char* const* argv )
 					// parse timestamp
 					boost::posix_time::ptime timestamp;
 
+					std::cout << "Trying to parse timestamp " << gitTimestamp.output[0].second << std::endl;
+
 					std::stringstream ps(gitTimestamp.output[0].second);
 					auto input_facet = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%S");
 					ps.imbue(std::locale(ps.getloc(), input_facet));
@@ -703,6 +707,8 @@ int main( int argc, const char* const* argv )
 
 			// parse timestamp
 			boost::posix_time::ptime timestamp;
+
+			std::cout << "Trying to parse timestamp " << conf.get("meta.commit.timestamp.default").to_string() << std::endl;
 
 			std::stringstream ps(conf.get("meta.commit.timestamp.default").to_string());
 			auto input_facet = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%S");
