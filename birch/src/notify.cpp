@@ -1,4 +1,5 @@
 #include <uon/uon.hpp>
+#include <boost/algorithm/string/join.hpp>
 
 #include "formatter.hpp"
 #include "process.hpp"
@@ -6,12 +7,24 @@
 void notify(uon::Value report)
 {
 	// generate set of receivers
-	std::set<std::string> receivers = { "niklas.hofmann@everbase.net" };
+	std::set<std::string> receivers = { };
+
+	receivers.insert(report.get("meta.commit.author.email").to_string());
+	receivers.insert(report.get("meta.commit.committer.email").to_string());
+
+	for(auto buildgap : report.get("meta.buildgap").to_array())
+	{
+		receivers.insert(buildgap.get("author.email").to_string());
+		receivers.insert(buildgap.get("committer.email").to_string());
+	}
 
 	if(receivers.size() == 0)
 	{
+		std::cout << "no receivers found..." << std::endl;
 		return;
 	}
+
+	std::cout << "receivers: " << boost::join(receivers, ", ") << std::endl;
 
 	// generate message
 	std::stringstream message;
