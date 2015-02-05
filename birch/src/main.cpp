@@ -153,7 +153,7 @@ int main(int argc, char** argv)
 			auto consolidated = consolidate(report.get("hosts").to_object());
 
 			query = uon::null;
-			query.set("_id", report.get("_id").to_string());
+			query.set("_id", report.get("_id"));
 
 			uon::Value obj;
 			consolidated.escape_mongo();
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
 			notify(report.get("consolidated"));
 
 			query = uon::null;
-			query.set("_id", report.get("_id").to_string());
+			query.set("_id", report.get("_id"));
 
 			uon::Value obj;
 			obj.set({"$pull", "tasks.notification", "$in"}, report.get("tasks.notification").to_array());
