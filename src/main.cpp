@@ -369,6 +369,7 @@ int main( int argc, const char* const* argv )
 				conf.apply(config::Config::Priority::Environment, "meta.commit.id.long", *commit);
 			}
 
+			/*
 			if(auto timestampstr = environment::variable("BUILD_ID"))
 			{
 				commitTimestampParsed = true;
@@ -407,6 +408,7 @@ int main( int argc, const char* const* argv )
 
 				conf.apply(config::Config::Priority::Environment, "meta.commit.timestamp.compact", fs2.str());
 			}
+			*/
 		}
 
 		inputPath = fs_utils::normalize(conf.get("meta.input").to_string());
