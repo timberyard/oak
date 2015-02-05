@@ -10,6 +10,7 @@ set_directory_properties(properties EP_PREFIX "${PROJECT_BINARY_DIR}/external_pr
 include(zlib)
 include(bzip2)
 include(boost)
+include(mongocpp)
 
 set(Boost_LIBRARIES boost_system boost_filesystem boost_iostreams boost_program_options boost_thread boost_regex)
 
@@ -23,7 +24,7 @@ ExternalProject_Add(JsonSpirit
     UPDATE_COMMAND ""
     )
 
-#add_dependencies(JsonSpirit boost)
+add_dependencies(JsonSpirit boost)
 
 ExternalProject_Get_Property( JsonSpirit SOURCE_DIR )
 set( JsonSpirit_INCLUDE_DIR ${SOURCE_DIR} )
@@ -36,7 +37,7 @@ include_directories( ${BOOST_ROOT}/include )
 include_directories( ${PROJECT_SOURCE_DIR}/../libs/boost-process)
 include_directories( ${PROJECT_SOURCE_DIR}/../libs)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
-include_directories( "/home/niklas/libs/mongo-cxx-client/include" )
+include_directories( ${MONGODB_CXX_DRIVER_INCLUDE} )
 
 link_directories(${BOOST_ROOT}/lib)
 
@@ -93,12 +94,12 @@ add_executable(oak
 	${PROJECT_SOURCE_DIR}/../libs/uon/writer_json.cpp
 )
 
-#add_dependencies(oak boost)
+add_dependencies(oak boost JsonSpirit mongodb_cxx_driver)
 
 if(NOT WIN32)
-	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
+	target_link_libraries( oak ${MONGODB_CXX_DRIVER_LIBRARIES} ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
 else()
-	target_link_libraries( oak /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ws2_32 mswsock )
+	target_link_libraries( oak ${MONGODB_CXX_DRIVER_LIBRARIES} ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ws2_32 mswsock )
 endif()
 
 install(TARGETS oak DESTINATION bin )

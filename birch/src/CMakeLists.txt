@@ -7,9 +7,10 @@ include( ExternalProject )
 
 set_directory_properties(properties EP_PREFIX "${PROJECT_BINARY_DIR}/external_projects")
 
-#include(zlib)
-#include(bzip2)
-#include(boost)
+include(zlib)
+include(bzip2)
+include(boost)
+include(mongocpp)
 
 set(Boost_LIBRARIES libboost_system.a libboost_filesystem.a libboost_iostreams.a libboost_program_options.a libboost_thread.a libboost_regex.a)
 
@@ -24,7 +25,7 @@ ExternalProject_Add(JsonSpirit
     UPDATE_COMMAND ""
     )
 
-#add_dependencies(JsonSpirit boost)
+add_dependencies(JsonSpirit boost)
 
 ExternalProject_Get_Property( JsonSpirit SOURCE_DIR )
 set( JsonSpirit_INCLUDE_DIR ${SOURCE_DIR} )
@@ -34,14 +35,13 @@ set( JsonSpirit_LIBRARY "${BINARY_DIR}/json_spirit/libjson_spirit.a" )
 # end of Json Spirit
 
 include_directories( ${PROJECT_SOURCE_DIR}/../../src )
-#include_directories( ${BOOST_ROOT}/include )
+include_directories( ${BOOST_ROOT}/include )
 include_directories( ${PROJECT_SOURCE_DIR}/../../libs/boost-process)
 include_directories( ${PROJECT_SOURCE_DIR}/../../libs)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
-include_directories( "/home/niklas/libs/mongo-cxx-client/include" )
+include_directories( ${MONGODB_CXX_DRIVER_INCLUDE} )
 
-#link_directories( ${BOOST_ROOT}/lib )
-#link_directories( "/home/niklas/libs/mongo-cxx-client/lib" )
+link_directories( ${BOOST_ROOT}/lib )
 
 add_definitions(-std=c++11)
 
@@ -63,12 +63,12 @@ add_executable(birch
 	${PROJECT_SOURCE_DIR}/../../libs/uon/writer_json.cpp
 )
 
-#add_dependencies(birch boost)
+add_dependencies(birch boost JsonSpirit mongodb_cxx_driver)
 
 if(NOT WIN32)
-	target_link_libraries( birch /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
+	target_link_libraries( birch ${MONGODB_CXX_DRIVER_LIBRARIES} ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )
 else()
-	target_link_libraries( birch /home/niklas/libs/mongo-cxx-client/lib/libmongoclient.a ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ws2_32 mswsock )
+	target_link_libraries( birch ${MONGODB_CXX_DRIVER_LIBRARIES} ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} ws2_32 mswsock )
 endif()
 
 install(TARGETS birch DESTINATION bin )

@@ -1,0 +1,3 @@
+using gcc : selected : @CMAKE_CXX_COMPILER@ ;
+using clang : selected : @CMAKE_CXX_COMPILER@ ;
+using msvc : selected : @CMAKE_CXX_COMPILER@ ;
