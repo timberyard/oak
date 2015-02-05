@@ -13,14 +13,7 @@ namespace config {
 	namespace builtin {
 
 		extern const std::string base;
-
-		namespace variants {
-
-			extern const std::map<std::string, std::string> checkout;
-			extern const std::map<std::string, std::string> integrate;
-			extern const std::map<std::string, std::string> publish;
-
-		} // namespace: variants
+		extern const std::map<std::string, std::string> variants;
 
 	}  // namespace: builtin
 

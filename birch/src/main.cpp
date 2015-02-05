@@ -69,7 +69,7 @@ int main(int argc, char** argv)
 			boost::filesystem::path input = boost::filesystem::absolute(argInput);
 
 			// read report
-			uon::Value report = uon::read_json(input / "report.json" );
+			uon::Value report = uon::read_json(input / "reports" / "oak.json" );
 
 			// verify result
 			if(!argNode.empty())

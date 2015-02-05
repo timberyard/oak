@@ -336,17 +336,9 @@ int main( int argc, const char* const* argv )
 			conf.apply(config::Config::Priority::Project, projectconf);
 		}
 
-		// apply checkout variant configuration
-		std::cout << "Load checkout variant configuration..." << std::endl;
-		conf.apply(config::Config::Priority::Variant, config::builtin::variants::checkout.at(conf.get("meta.variants.checkout").to_string()));
-
-		// apply integrate variant configuration
-		std::cout << "Load integrate variant configuration..." << std::endl;
-		conf.apply(config::Config::Priority::Variant, config::builtin::variants::integrate.at(conf.get("meta.variants.integrate").to_string()));
-
-		// apply publish variant configuration
-		std::cout << "Load publish variant configuration..." << std::endl;
-		conf.apply(config::Config::Priority::Variant, config::builtin::variants::publish.at(conf.get("meta.variants.publish").to_string()));
+		// apply variant configuration
+		std::cout << "Load variant configuration..." << std::endl;
+		conf.apply(config::Config::Priority::Variant, config::builtin::variants.at(conf.get("meta.variant").to_string()));
 
 		// detect meta data
 		std::cout << "Detecting meta data..." << std::endl;
@@ -418,7 +410,7 @@ int main( int argc, const char* const* argv )
 		if( boost::filesystem::exists(input / ".git") )
 		{
 			// meta.repository
-			process::TextProcessResult gitRepository = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"config", "--get", "remote.origin.url"}, input);
+			process::TextProcessResult gitRepository = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"config", "--get", "remote.origin.url"}, input);
 
 			if(gitRepository.exitCode == 0 && gitRepository.output.size() == 1 && gitRepository.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -433,7 +425,7 @@ int main( int argc, const char* const* argv )
 			// meta.branch
 			if(argMode != "jenkins")
 			{
-				process::TextProcessResult gitBranch = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
+				process::TextProcessResult gitBranch = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
 
 				if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -447,7 +439,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.id.long
-			process::TextProcessResult gitCommit = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"rev-parse", "--verify", "-q", "HEAD"}, input);
+			process::TextProcessResult gitCommit = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"rev-parse", "--verify", "-q", "HEAD"}, input);
 
 			if(gitCommit.exitCode == 0 && gitCommit.output.size() == 1 && gitCommit.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -460,7 +452,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.timestamp.default
-			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ci", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ci", conf.get("meta.commit.id.long").to_string()}, input);
 
 			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -474,7 +466,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.committer.name
-			process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%cn", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%cn", conf.get("meta.commit.id.long").to_string()}, input);
 
 			if(gitCommitterName.exitCode == 0 && gitCommitterName.output.size() >= 1 && gitCommitterName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -487,7 +479,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.committer.email
-			process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ce", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ce", conf.get("meta.commit.id.long").to_string()}, input);
 
 			if(gitCommitterEmail.exitCode == 0 && gitCommitterEmail.output.size() >= 1 && gitCommitterEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -500,7 +492,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.author.name
-			process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%an", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%an", conf.get("meta.commit.id.long").to_string()}, input);
 
 			if(gitAuthorName.exitCode == 0 && gitAuthorName.output.size() >= 1 && gitAuthorName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -513,7 +505,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.author.email
-			process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ae", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ae", conf.get("meta.commit.id.long").to_string()}, input);
 
 			if(gitAuthorEmail.exitCode == 0 && gitAuthorEmail.output.size() >= 1 && gitAuthorEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -527,7 +519,7 @@ int main( int argc, const char* const* argv )
 
 			// detect build gap begin
 			boost::optional<std::string> buildGapBeginId;
-			process::TextProcessResult gitBuildGapBegin = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"log", "--walk-reflogs", "--format=%H",  (argMode == "jenkins" ? "origin/" : "") + conf.get("meta.branch").to_string()}, input);
+			process::TextProcessResult gitBuildGapBegin = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"log", "--walk-reflogs", "--format=%H",  (argMode == "jenkins" ? "origin/" : "") + conf.get("meta.branch").to_string()}, input);
 
 			if(gitBuildGapBegin.exitCode == 0)
 			{
@@ -560,7 +552,7 @@ int main( int argc, const char* const* argv )
 
 			if(buildGapBeginId)
 			{
-				process::TextProcessResult gitBuildGap = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"log", "--format=%H", (*buildGapBeginId)+".."+conf.get("meta.commit.id.long").to_string()}, input);
+				process::TextProcessResult gitBuildGap = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"log", "--format=%H", (*buildGapBeginId)+".."+conf.get("meta.commit.id.long").to_string()}, input);
 
 				if(gitBuildGapBegin.exitCode != 0)
 				{
@@ -596,7 +588,7 @@ int main( int argc, const char* const* argv )
 				buildGapEntry.set("id.short", buildGapId.substr(0, 7));
 
 				// timestamp.default
-				process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ci", buildGapId}, input);
+				process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ci", buildGapId}, input);
 
 				if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -639,7 +631,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// committer.name
-				process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%cn", buildGapId}, input);
+				process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%cn", buildGapId}, input);
 
 				if(gitCommitterName.exitCode == 0 && gitCommitterName.output.size() >= 1 && gitCommitterName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -652,7 +644,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// committer.email
-				process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ce", buildGapId}, input);
+				process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ce", buildGapId}, input);
 
 				if(gitCommitterEmail.exitCode == 0 && gitCommitterEmail.output.size() >= 1 && gitCommitterEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -665,7 +657,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// author.name
-				process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%an", buildGapId}, input);
+				process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%an", buildGapId}, input);
 
 				if(gitAuthorName.exitCode == 0 && gitAuthorName.output.size() >= 1 && gitAuthorName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -678,7 +670,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// author.email
-				process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ae", buildGapId}, input);
+				process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ae", buildGapId}, input);
 
 				if(gitAuthorEmail.exitCode == 0 && gitAuthorEmail.output.size() >= 1 && gitAuthorEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -750,20 +742,15 @@ int main( int argc, const char* const* argv )
 		conf.apply(config::Config::Priority::Computed, "meta.configs.system",  fs_utils::normalize(conf.get("meta.configs.system").to_string() ).string());
 		conf.apply(config::Config::Priority::Computed, "meta.configs.project", fs_utils::normalize(conf.get("meta.configs.project").to_string()).string());
 
-		conf.apply(config::Config::Priority::Computed, "meta.results.checkout",  fs_utils::normalize(conf.get("meta.results.checkout").to_string() ).string());
-		conf.apply(config::Config::Priority::Computed, "meta.results.integrate", fs_utils::normalize(conf.get("meta.results.integrate").to_string()).string());
-		conf.apply(config::Config::Priority::Computed, "meta.results.publish",   fs_utils::normalize(conf.get("meta.results.publish").to_string()  ).string());
+		conf.apply(config::Config::Priority::Computed, "meta.report",  fs_utils::normalize(conf.get("meta.report").to_string() ).string());
 
 		// task defaults
-		for(auto section : std::vector<std::string>{"checkout", "integrate", "publish"})
+		for( auto task : conf.get("tasks").as_object() )
 		{
-			for( auto task : conf.get(std::string("tasks.") + section).as_object() )
-			{
-				conf.apply(config::Config::Priority::Base,
-					std::string("tasks.") + section + std::string(".") + task.first,
-					conf.get( std::string("tasks.defaults.") + task.second.get("type").to_string() )
-				);
-			}
+			conf.apply(config::Config::Priority::Base,
+				std::string("tasks.") + task.first,
+				conf.get( std::string("taskdefs.") + task.second.get("type").to_string() )
+			);
 		}
 	}
 	catch ( const std::exception& e )
@@ -811,73 +798,54 @@ int main( int argc, const char* const* argv )
 	// run tasks
 	bool task_with_error = false;
 
-	for(auto section : std::vector<std::string>{"checkout", "integrate", "publish"})
+	boost::filesystem::path resultPath( conf.get("meta.report").to_string() );
+	uon::Value taskResults;
+
+	try
 	{
-		std::cout << "#########################################################################" << std::endl;
-		std::cout << "Section: " << section << std::endl;
-		std::cout << "#########################################################################" << std::endl;
+		std::cout << "Task order: ";
 
-		boost::filesystem::path resultPath( conf.get(std::string("meta.results.") + section).to_string() );
-		uon::Value taskResults;
+		std::vector<std::string> taskOrder;
+		std::set<std::string> taskResolved;
 
-		try
+		std::function<void(std::string)> resolve = [&resolve, &conf, &taskOrder, &taskResolved] (std::string task)
 		{
-			std::cout << "Task order: ";
+			if(taskResolved.find(task) != taskResolved.end())
+				return;
 
-			std::vector<std::string> taskOrder;
-			std::set<std::string> taskResolved;
+			auto deps = conf.get(std::string("tasks.")+task+std::string(".dependencies")).as_object();
 
-			std::function<void(std::string)> resolve = [&resolve, &conf, &taskOrder, &taskResolved, section] (std::string task)
+			for(auto dep : deps)
 			{
-				if(taskResolved.find(task) != taskResolved.end())
-					return;
-
-				auto deps = conf.get(std::string("tasks.")+section+std::string(".")+task+std::string(".dependencies")).as_object();
-
-				for(auto dep : deps)
+				if(dep.second.to_boolean())
 				{
-					if(dep.second.to_boolean())
-					{
-						resolve(dep.first);
-					}
+					resolve(dep.first);
 				}
-
-				taskOrder.push_back(task);
-				taskResolved.insert(task);
-				std::cout << task << " ";
-			};
-
-			for ( auto task : conf.get(std::string("tasks.")+section).as_object() )
-			{
-				resolve(task.first);
 			}
 
-			std::cout << std::endl;
+			taskOrder.push_back(task);
+			taskResolved.insert(task);
+			std::cout << task << " ";
+		};
 
-			for ( auto task : taskOrder )
+		for ( auto task : conf.get("tasks").as_object() )
+		{
+			resolve(task.first);
+		}
+
+		std::cout << std::endl;
+
+		for ( auto task : taskOrder )
+		{
+			auto taskConfig = conf.get(std::string("tasks.")+task);
+			auto taskType = taskConfig.get( "type" ).to_string();
+
+			std::cout << "*************************************************************************" << std::endl;
+
+			// check if it is enabled/disabled
+			if(!taskConfig.get("enabled").to_boolean())
 			{
-				auto taskConfig = conf.get(std::string("tasks.")+section+std::string(".")+task);
-				auto taskType = taskConfig.get( "type" ).to_string();
-
-				std::cout << "*************************************************************************" << std::endl;
-
-				// check if it is enabled/disabled
-				if(!taskConfig.get("enabled").to_boolean())
-				{
-					std::cout << "Task disabled: " << task << std::endl;
-					std::cout << "type: " << taskType << std::endl;
-
-					std::cout << "config: " << std::endl;
-					uon::write_json(taskConfig, std::cout);
-					std::cout << std::endl;
-
-					std::cout << "*************************************************************************" << std::endl;
-					continue;
-				}
-
-				// run task
-
-				std::cout << "Running task: " << task << std::endl;
+				std::cout << "Task disabled: " << task << std::endl;
 				std::cout << "type: " << taskType << std::endl;
 
 				std::cout << "config: " << std::endl;
@@ -885,100 +853,112 @@ int main( int argc, const char* const* argv )
 				std::cout << std::endl;
 
 				std::cout << "*************************************************************************" << std::endl;
-
-				auto taskFunc = tasks::taskTypes.find(taskType);
-
-				if(taskFunc != tasks::taskTypes.end())
-				{
-					tasks::TaskResult result;
-
-					try
-					{
-						result = taskFunc->second(taskConfig);
-					}
-					catch(const std::exception& e)
-					{
-						result.status = tasks::TaskResult::STATUS_ERROR;
-						result.warnings = 0;
-						result.errors = 1;
-						result.message = std::string("exception occured: ") + e.what();
-						result.output.set("exception", e.what());
-
-						std::cout << "An exception occured: " << e.what() << std::endl;
-					}
-					catch(...)
-					{
-						result.status = tasks::TaskResult::STATUS_ERROR;
-						result.warnings = 0;
-						result.errors = 1;
-						result.message = "unknown exception occured";
-						result.output.set("exception", "unknown exception");
-
-						std::cout << "An exception occured: unknown" << std::endl;
-					}
-
-					if(result.status == tasks::TaskResult::STATUS_ERROR)
-					{
-						task_with_error = true;
-					}
-
-					uon::Value taskResult;
-
-					taskResult.set("type", taskType );
-					taskResult.set("name", task );
-					taskResult.set("message", result.message );
-					taskResult.set("warnings", uon::Number(result.warnings));
-					taskResult.set("errors",   uon::Number(result.errors));
-					taskResult.set("status", toString(result.status));
-					taskResult.set("details", result.output );
-					taskResult.set("config",  taskConfig);
-
-					taskResults.set(task, taskResult);
-				}
-				else
-					throw std::runtime_error(std::string("invalid task type: ") + taskType);
-
-				std::cout << "*************************************************************************" << std::endl;
+				continue;
 			}
-		}
-		catch ( const std::exception& e )
-		{
-			std::cerr << "Error during task execution: " << e.what() << std::endl;
-			return 1;
-		}
-		catch ( ... )
-		{
-			std::cerr << "Error during task execution: unknown" << std::endl;
-			return 1;
-		}
 
-		// dump output
-		uon::Value output;
+			// run task
 
-		try
-		{
-			// assemble result
-			output.set("meta", conf.get("meta"));
-			output.set({"tasks", section}, taskResults);
+			std::cout << "Running task: " << task << std::endl;
+			std::cout << "type: " << taskType << std::endl;
 
-			// ensure parent directory is created
-			boost::filesystem::create_directories(resultPath.branch_path());
+			std::cout << "config: " << std::endl;
+			uon::write_json(taskConfig, std::cout);
+			std::cout << std::endl;
 
-			// write file
-			std::ofstream stream(resultPath.string());
-			stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-			uon::write_json(output, stream, false);
+			std::cout << "*************************************************************************" << std::endl;
+
+			auto taskFunc = tasks::taskTypes.find(taskType);
+
+			if(taskFunc != tasks::taskTypes.end())
+			{
+				tasks::TaskResult result;
+
+				try
+				{
+					result = taskFunc->second(taskConfig);
+				}
+				catch(const std::exception& e)
+				{
+					result.status = tasks::TaskResult::STATUS_ERROR;
+					result.warnings = 0;
+					result.errors = 1;
+					result.message = std::string("exception occured: ") + e.what();
+					result.output.set("exception", e.what());
+
+					std::cout << "An exception occured: " << e.what() << std::endl;
+				}
+				catch(...)
+				{
+					result.status = tasks::TaskResult::STATUS_ERROR;
+					result.warnings = 0;
+					result.errors = 1;
+					result.message = "unknown exception occured";
+					result.output.set("exception", "unknown exception");
+
+					std::cout << "An exception occured: unknown" << std::endl;
+				}
+
+				if(result.status == tasks::TaskResult::STATUS_ERROR)
+				{
+					task_with_error = true;
+				}
+
+				uon::Value taskResult;
+
+				taskResult.set("type", taskType );
+				taskResult.set("name", task );
+				taskResult.set("message", result.message );
+				taskResult.set("warnings", uon::Number(result.warnings));
+				taskResult.set("errors",   uon::Number(result.errors));
+				taskResult.set("status", toString(result.status));
+				taskResult.set("details", result.output );
+				taskResult.set("config",  taskConfig);
+
+				taskResults.set(task, taskResult);
+			}
+			else
+				throw std::runtime_error(std::string("invalid task type: ") + taskType);
+
+			std::cout << "*************************************************************************" << std::endl;
 		}
-		catch ( const std::exception& e )
-		{
-			std::cerr << "Error on output: " << e.what() << std::endl;
-			return 1;
-		}
-		catch ( ... )
-		{
-			std::cerr << "Error on output: unknown" << std::endl;
-			return 1;
-		}
+	}
+	catch ( const std::exception& e )
+	{
+		std::cerr << "Error during task execution: " << e.what() << std::endl;
+		return 1;
+	}
+	catch ( ... )
+	{
+		std::cerr << "Error during task execution: unknown" << std::endl;
+		return 1;
+	}
+
+	// dump output
+	uon::Value output;
+
+	try
+	{
+		// assemble result
+		output.set("meta", conf.get("meta"));
+		output.set("tasks", taskResults);
+
+		// ensure parent directory is created
+		boost::filesystem::create_directories(resultPath.branch_path());
+
+		// write file
+		std::ofstream stream(resultPath.string());
+		stream.exceptions( std::ifstream::failbit | std::ifstream::badbit );
+		uon::write_json(output, stream, false);
+	}
+	catch ( const std::exception& e )
+	{
+		std::cerr << "Error on output: " << e.what() << std::endl;
+		return 1;
+	}
+	catch ( ... )
+	{
+		std::cerr << "Error on output: unknown" << std::endl;
+		return 1;
 	}
 
 	return task_with_error ? 2 : 0;

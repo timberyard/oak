@@ -54,37 +54,20 @@ add_custom_command(OUTPUT config_base.cpp
 	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/base.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
-add_custom_command(OUTPUT config_checkout-nothing.cpp
-	COMMAND xxd -i configs/builtin/checkout-nothing.json ${PROJECT_BINARY_DIR}/config_checkout-nothing.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/checkout-nothing.json
+add_custom_command(OUTPUT config_variant-c++.cpp
+	COMMAND xxd -i configs/builtin/variant-c++.json ${PROJECT_BINARY_DIR}/config_variant-c++.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/variant-c++.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
-add_custom_command(OUTPUT config_integrate-c++.cpp
-	COMMAND xxd -i configs/builtin/integrate-c++.json ${PROJECT_BINARY_DIR}/config_integrate-c++.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/integrate-c++.json
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
-
-add_custom_command(OUTPUT config_integrate-nothing.cpp
-	COMMAND xxd -i configs/builtin/integrate-nothing.json ${PROJECT_BINARY_DIR}/config_integrate-nothing.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/integrate-nothing.json
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
-
-add_custom_command(OUTPUT config_publish-nothing.cpp
-	COMMAND xxd -i configs/builtin/publish-nothing.json ${PROJECT_BINARY_DIR}/config_publish-nothing.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-nothing.json
-	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
-
-add_custom_command(OUTPUT config_publish-birch.cpp
-	COMMAND xxd -i configs/builtin/publish-birch.json ${PROJECT_BINARY_DIR}/config_publish-birch.cpp
-	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/publish-birch.json
+add_custom_command(OUTPUT config_variant-greenfield.cpp
+	COMMAND xxd -i configs/builtin/variant-greenfield.json ${PROJECT_BINARY_DIR}/config_variant-greenfield.cpp
+	DEPENDS ${PROJECT_SOURCE_DIR}/../configs/builtin/variant-greenfield.json
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../)
 
 add_executable(oak
 	main.cpp process.cpp tasks.cpp task_utils.cpp config.cpp
 	config_base.cpp
-	config_checkout-nothing.cpp
-	config_integrate-c++.cpp config_integrate-nothing.cpp
-	config_publish-nothing.cpp config_publish-birch.cpp
+	config_variant-c++.cpp config_variant-greenfield.cpp
 	${PROJECT_SOURCE_DIR}/../libs/uon/model.cpp
 	${PROJECT_SOURCE_DIR}/../libs/uon/operations.cpp
 	${PROJECT_SOURCE_DIR}/../libs/uon/reader_bson.cpp

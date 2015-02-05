@@ -8,11 +8,8 @@
 	extern unsigned int configs_builtin_##name##_json_len;
 
 BUILTIN_CONFIG(base)
-BUILTIN_CONFIG(checkout_nothing)
-BUILTIN_CONFIG(integrate_nothing)
-BUILTIN_CONFIG(integrate_c__)
-BUILTIN_CONFIG(publish_nothing)
-BUILTIN_CONFIG(publish_birch)
+BUILTIN_CONFIG(variant_greenfield)
+BUILTIN_CONFIG(variant_c__)
 
 namespace config {
 
@@ -20,26 +17,11 @@ namespace builtin {
 
 	const std::string base { configs_builtin_base_json, configs_builtin_base_json + configs_builtin_base_json_len };
 
-	namespace variants {
-
-		const std::map<std::string, std::string> checkout =
-			{
-				std::pair<std::string, std::string> { "nothing", std::string(configs_builtin_checkout_nothing_json, configs_builtin_checkout_nothing_json + configs_builtin_checkout_nothing_json_len) }
-			};
-
-		const std::map<std::string, std::string> integrate =
-			{
-				std::pair<std::string, std::string> { "nothing", std::string(configs_builtin_integrate_nothing_json, configs_builtin_integrate_nothing_json + configs_builtin_integrate_nothing_json_len) },
-				std::pair<std::string, std::string> { "c++", std::string(configs_builtin_integrate_c___json, configs_builtin_integrate_c___json + configs_builtin_integrate_c___json_len) }
-			};
-
-		const std::map<std::string, std::string> publish =
-			{
-				std::pair<std::string, std::string> { "nothing", std::string(configs_builtin_publish_nothing_json, configs_builtin_publish_nothing_json + configs_builtin_publish_nothing_json_len) },
-				std::pair<std::string, std::string> { "birch", std::string(configs_builtin_publish_birch_json, configs_builtin_publish_birch_json + configs_builtin_publish_birch_json_len) }
-			};
-
-	} // namespace: variants
+	const std::map<std::string, std::string> variants =
+		{
+			std::pair<std::string, std::string> { "greenfield", std::string(configs_builtin_variant_greenfield_json, configs_builtin_variant_greenfield_json + configs_builtin_variant_greenfield_json_len) },
+			std::pair<std::string, std::string> { "c++", std::string(configs_builtin_variant_c___json, configs_builtin_variant_c___json + configs_builtin_variant_c___json_len) }
+		};
 
 } // namespace: builtin
 
