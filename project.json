@@ -2,20 +2,16 @@
 		"project": {
 			"name": "oak"
 		},
-		"variants": {
-			"integrate": "c++"
-		}
+		"variant": "c++"
 	},
 	"tasks": {
-		"integrate": {
-			"build": {
-				"source": {
-					"input": "${meta.input}/src"
-				}
-			},
-			"test": {
-				"enabled": "no"
+		"build": {
+			"source": {
+				"input": "${meta.input}/src"
 			}
+		},
+		"test": {
+			"enabled": false
 		}
 	}
 }

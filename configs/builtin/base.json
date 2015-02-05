@@ -69,6 +69,7 @@
 		"report": "${meta.output}/reports/oak.json"
 	},
 	"publish": {
+		"enabled": false,
 		"sources": {
 			"build": "${meta.output}/build",
 			"doc": "${meta.output}/doc",
@@ -77,9 +78,12 @@
 		"destination": {
 			"user": "${meta.system.user}",
 			"host": "localhost",
+			"remote": "${publish.destination.user}@${publish.destination.host}",
 			"port": "22",
 			"base": "/home/${meta.system.user}/repository",
 			"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.descriptor}",
+			"path": "${publish.destination.base}/${publish.destination.directory}",
+			"report": "${publish.destination.path}/reports/oak.json",
 			"mkdir": { "binary": "mkdir" },
 			"birch": { "binary": "birch" }
 		}

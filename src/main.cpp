@@ -108,10 +108,12 @@ namespace fs_utils
 
 #endif
 
+void publish( const config::Config& config );
+
 int main( int argc, const char* const* argv )
 {
 	config::Config conf;
-	boost::filesystem::path input, output;
+	boost::filesystem::path inputPath, outputPath;
 	boost::program_options::variables_map vm;
 
 	try
@@ -405,12 +407,12 @@ int main( int argc, const char* const* argv )
 			}
 		}
 
-		input = fs_utils::normalize(conf.get("meta.input").to_string());
+		inputPath = fs_utils::normalize(conf.get("meta.input").to_string());
 
-		if( boost::filesystem::exists(input / ".git") )
+		if( boost::filesystem::exists(inputPath / ".git") )
 		{
 			// meta.repository
-			process::TextProcessResult gitRepository = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"config", "--get", "remote.origin.url"}, input);
+			process::TextProcessResult gitRepository = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"config", "--get", "remote.origin.url"}, inputPath);
 
 			if(gitRepository.exitCode == 0 && gitRepository.output.size() == 1 && gitRepository.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -425,7 +427,7 @@ int main( int argc, const char* const* argv )
 			// meta.branch
 			if(argMode != "jenkins")
 			{
-				process::TextProcessResult gitBranch = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"symbolic-ref", "--short", "-q", "HEAD"}, input);
+				process::TextProcessResult gitBranch = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"symbolic-ref", "--short", "-q", "HEAD"}, inputPath);
 
 				if(gitBranch.exitCode == 0 && gitBranch.output.size() == 1 && gitBranch.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -439,7 +441,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.id.long
-			process::TextProcessResult gitCommit = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"rev-parse", "--verify", "-q", "HEAD"}, input);
+			process::TextProcessResult gitCommit = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"rev-parse", "--verify", "-q", "HEAD"}, inputPath);
 
 			if(gitCommit.exitCode == 0 && gitCommit.output.size() == 1 && gitCommit.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -452,7 +454,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.timestamp.default
-			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ci", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ci", conf.get("meta.commit.id.long").to_string()}, inputPath);
 
 			if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -466,7 +468,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.committer.name
-			process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%cn", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%cn", conf.get("meta.commit.id.long").to_string()}, inputPath);
 
 			if(gitCommitterName.exitCode == 0 && gitCommitterName.output.size() >= 1 && gitCommitterName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -479,7 +481,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.committer.email
-			process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ce", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ce", conf.get("meta.commit.id.long").to_string()}, inputPath);
 
 			if(gitCommitterEmail.exitCode == 0 && gitCommitterEmail.output.size() >= 1 && gitCommitterEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -492,7 +494,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.author.name
-			process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%an", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%an", conf.get("meta.commit.id.long").to_string()}, inputPath);
 
 			if(gitAuthorName.exitCode == 0 && gitAuthorName.output.size() >= 1 && gitAuthorName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -505,7 +507,7 @@ int main( int argc, const char* const* argv )
 			}
 
 			// meta.commit.author.email
-			process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ae", conf.get("meta.commit.id.long").to_string()}, input);
+			process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ae", conf.get("meta.commit.id.long").to_string()}, inputPath);
 
 			if(gitAuthorEmail.exitCode == 0 && gitAuthorEmail.output.size() >= 1 && gitAuthorEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 			{
@@ -519,7 +521,7 @@ int main( int argc, const char* const* argv )
 
 			// detect build gap begin
 			boost::optional<std::string> buildGapBeginId;
-			process::TextProcessResult gitBuildGapBegin = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"log", "--walk-reflogs", "--format=%H",  (argMode == "jenkins" ? "origin/" : "") + conf.get("meta.branch").to_string()}, input);
+			process::TextProcessResult gitBuildGapBegin = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"log", "--walk-reflogs", "--format=%H",  (argMode == "jenkins" ? "origin/" : "") + conf.get("meta.branch").to_string()}, inputPath);
 
 			if(gitBuildGapBegin.exitCode == 0)
 			{
@@ -552,7 +554,7 @@ int main( int argc, const char* const* argv )
 
 			if(buildGapBeginId)
 			{
-				process::TextProcessResult gitBuildGap = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"log", "--format=%H", (*buildGapBeginId)+".."+conf.get("meta.commit.id.long").to_string()}, input);
+				process::TextProcessResult gitBuildGap = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"log", "--format=%H", (*buildGapBeginId)+".."+conf.get("meta.commit.id.long").to_string()}, inputPath);
 
 				if(gitBuildGapBegin.exitCode != 0)
 				{
@@ -588,7 +590,7 @@ int main( int argc, const char* const* argv )
 				buildGapEntry.set("id.short", buildGapId.substr(0, 7));
 
 				// timestamp.default
-				process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ci", buildGapId}, input);
+				process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ci", buildGapId}, inputPath);
 
 				if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -631,7 +633,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// committer.name
-				process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%cn", buildGapId}, input);
+				process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%cn", buildGapId}, inputPath);
 
 				if(gitCommitterName.exitCode == 0 && gitCommitterName.output.size() >= 1 && gitCommitterName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -644,7 +646,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// committer.email
-				process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ce", buildGapId}, input);
+				process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ce", buildGapId}, inputPath);
 
 				if(gitCommitterEmail.exitCode == 0 && gitCommitterEmail.output.size() >= 1 && gitCommitterEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -657,7 +659,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// author.name
-				process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%an", buildGapId}, input);
+				process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%an", buildGapId}, inputPath);
 
 				if(gitAuthorName.exitCode == 0 && gitAuthorName.output.size() >= 1 && gitAuthorName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -670,7 +672,7 @@ int main( int argc, const char* const* argv )
 				}
 
 				// author.email
-				process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ae", buildGapId}, input);
+				process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tools.git.binary").to_string(), {"show", "-s", "--format=%ae", buildGapId}, inputPath);
 
 				if(gitAuthorEmail.exitCode == 0 && gitAuthorEmail.output.size() >= 1 && gitAuthorEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
 				{
@@ -733,11 +735,11 @@ int main( int argc, const char* const* argv )
 		}
 
 		// paths
-		input = fs_utils::normalize(conf.get("meta.input").to_string());
-		output = fs_utils::normalize(conf.get("meta.output").to_string());
+		inputPath = fs_utils::normalize(conf.get("meta.input").to_string());
+		outputPath = fs_utils::normalize(conf.get("meta.output").to_string());
 
-		conf.apply(config::Config::Priority::Computed, "meta.input",  input.string());
-		conf.apply(config::Config::Priority::Computed, "meta.output", output.string());
+		conf.apply(config::Config::Priority::Computed, "meta.input",  inputPath.string());
+		conf.apply(config::Config::Priority::Computed, "meta.output", outputPath.string());
 
 		conf.apply(config::Config::Priority::Computed, "meta.configs.system",  fs_utils::normalize(conf.get("meta.configs.system").to_string() ).string());
 		conf.apply(config::Config::Priority::Computed, "meta.configs.project", fs_utils::normalize(conf.get("meta.configs.project").to_string()).string());
@@ -778,11 +780,11 @@ int main( int argc, const char* const* argv )
 	try
 	{
 #ifdef _WIN32
-		fs_utils::remove_all(output.string());
+		fs_utils::remove_all(outputPath.string());
 #else
-		boost::filesystem::remove_all(output);
+		boost::filesystem::remove_all(outputPath);
 #endif
-		boost::filesystem::create_directories(output);
+		boost::filesystem::create_directories(outputPath);
 	}
 	catch(const std::exception& e)
 	{
@@ -885,7 +887,7 @@ int main( int argc, const char* const* argv )
 					result.message = std::string("exception occured: ") + e.what();
 					result.output.set("exception", e.what());
 
-					std::cout << "An exception occured: " << e.what() << std::endl;
+					std::cerr << "An exception occured: " << e.what() << std::endl;
 				}
 				catch(...)
 				{
@@ -895,7 +897,7 @@ int main( int argc, const char* const* argv )
 					result.message = "unknown exception occured";
 					result.output.set("exception", "unknown exception");
 
-					std::cout << "An exception occured: unknown" << std::endl;
+					std::cerr << "An exception occured: unknown" << std::endl;
 				}
 
 				if(result.status == tasks::TaskResult::STATUS_ERROR)
@@ -961,5 +963,73 @@ int main( int argc, const char* const* argv )
 		return 1;
 	}
 
+	// publish
+	try
+	{
+		publish(conf);
+	}
+	catch ( const std::exception& e )
+	{
+		std::cerr << "Error on publish: " << e.what() << std::endl;
+		return 1;
+	}
+	catch ( ... )
+	{
+		std::cerr << "Error on publish: unknown" << std::endl;
+		return 1;
+	}
+
 	return task_with_error ? 2 : 0;
+}
+
+void publish( const config::Config& conf )
+{
+	if(!conf.get("publish.enabled").to_boolean())
+	{
+		std::cout << "Skipping publishing..." << std::endl;
+		return;
+	}
+
+	std::cout << "Publishing" << std::endl;
+
+	std::string remote = conf.get("publish.destination.remote").to_string();
+
+	for( auto source : conf.get("publish.sources").as_object() )
+	{
+		std::string srcpath = source.second.to_string();
+		std::string destpath = conf.get("publish.destination.path").to_string() + std::string("/") + source.first;
+
+		// run ssh:mkdir
+		std::vector<std::string> sshMkdirArgs { "-o", "BatchMode=yes", "-p", conf.get("publish.destination.port").to_string(), remote, conf.get("publish.destination.mkdir.binary").to_string(), "-p", destpath };
+
+		process::TextProcessResult sshMkdirResult = process::executeTextProcess(conf.get("tools.ssh.binary").to_string(), sshMkdirArgs, srcpath);
+
+		if(sshMkdirResult.exitCode != 0)
+		{
+			throw std::runtime_error("could not create directory on remote");
+		}
+
+		// run rsync
+		std::vector<std::string> rsyncArgs {
+			std::string("--rsh=") + conf.get("tools.ssh.binary").to_string() + (" -o BatchMode=yes -p ") + conf.get("tools.destination.port").to_string(), "--archive", "--delete", "--verbose", std::string("./"),
+			remote + std::string(":") + destpath + std::string("/")
+		};
+
+		process::TextProcessResult rsyncResult = process::executeTextProcess(conf.get("tools.rsync.binary").to_string(), rsyncArgs, srcpath);
+
+		if(rsyncResult.exitCode != 0)
+		{
+			throw std::runtime_error("could not sync files to remote");
+		}
+	}
+
+	// run ssh:birch
+	std::vector<std::string> sshBirchArgs { "-o", "BatchMode=yes", "-p", conf.get("publish.destination.port").to_string(), remote, conf.get("publish.destination.birch.binary").to_string(), "--letterbox", "--input=" + conf.get("publish.destination.report").to_string() };
+
+	process::TextProcessResult sshBirchResult = process::executeTextProcess(conf.get("tools.ssh.binary").to_string(), sshBirchArgs, ".");
+
+	if(sshBirchResult.exitCode != 0)
+	{
+		throw std::runtime_error("could not run birch on remote");
+	}
 }
