@@ -1,0 +1,18 @@
+{	"tasks": {
+		"build": {
+			"type": "build:cmake"
+		},
+		"test": {
+			"type": "test:googletest",
+			"dependencies": {
+				"build": true
+			}
+		},
+		"analysis": {
+			"type": "analysis:cppcheck"
+		},
+		"doc": {
+			"type": "doc:doxygen"
+		}
+	}
+}

@@ -1,47 +1,38 @@
-{	"tasks": {
-		"defaults": {
-			"build:cmake": {
-				"cmake":  {
-					"binary": "/usr/bin/cmake",
-					"variables": {
-						"SIGNING_IDENTITY": { "type": "STRING", "value": "0x5467433454" },
-						"SIGNING_KEYCHAIN": { "type": "STRING", "value": "/Users/build/.keychain" },
-						"SIGNING_KEYCHAIN_PASSWORD": { "type": "STRING", "value": "secret" }
-					}
-				},
-				"make": { "binary": "/usr/bin/make" },
-				"local" : {
-					"c": { "binary": "/usr/bin/gcc" },
-					"c++": { "binary": "/usr/bin/g++" },
-					"architecture": "x86",
-					"bitness": "64",
-					"os": "linux"
-				},
-				"target" : {
-					"c": { "binary": "/usr/bin/gcc" },
-					"c++": { "binary": "/usr/bin/g++" },
-					"architecture": "x86",
-					"bitness": "64",
-					"os": "linux"
-				},
-				"verbose": true
-			},
-			"analysis:cppcheck": {
-				"binary": "/usr/bin/cppcheck"
-			},
-			"doc:doxygen": {
-				"binary": "/usr/bin/doxygen"
-			}
-		},
-		"publish": {
-			"repo": {
-				"type": "publish:rsync+ssh",
-				"destination": {
-					"user": "builds",
-					"host": "build-repo",
-					"base": "/home/builds/integration"
+{	"taskdefs": {
+		"build:cmake": {
+			"cmake":  {
+				"binary": "/usr/bin/cmake",
+				"variables": {
+					"SIGNING_IDENTITY": { "type": "STRING", "value": "0x5467433454" },
+					"SIGNING_KEYCHAIN": { "type": "STRING", "value": "/Users/build/.keychain" },
+					"SIGNING_KEYCHAIN_PASSWORD": { "type": "STRING", "value": "secret" }
 				}
-			}
+			},
+			"make": { "binary": "/usr/bin/make" },
+			"arch": {
+				"build" : {
+					"c": { "binary": "/usr/bin/gcc" },
+					"c++": { "binary": "/usr/bin/g++" }
+				},
+				"host" : {
+					"c": { "binary": "/usr/bin/gcc" },
+					"c++": { "binary": "/usr/bin/g++" }
+				}
+			},
+			"verbose": true
+		},
+		"analysis:cppcheck": {
+			"binary": "/usr/bin/cppcheck"
+		},
+		"doc:doxygen": {
+			"binary": "/usr/bin/doxygen"
+		}
+	},
+	"publish": {
+		"destination": {
+			"user": "builds",
+			"host": "build-repo",
+			"base": "/home/builds/integration"
 		}
 	}
 }

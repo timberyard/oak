@@ -7,11 +7,7 @@
 			"name": null,
 			"version": null
 		},
-		"variants": {
-			"checkout": "nothing",
-			"integrate": "nothing",
-			"publish": "nothing"
-		},
+		"variant": "greenfield",
 		"repository": null,
 		"branch": null,
 		"commit": {
@@ -70,138 +66,124 @@
 			"system": "/etc/oak/system.json",
 			"project": "${meta.input}/project.json"
 		},
-		"results": {
-			"checkout": "${meta.output}/results/checkout.json",
-			"integrate": "${meta.output}/results/integrate.json",
-			"publish": "${meta.output}/results/publish.json"
+		"report": "${meta.output}/reports/oak.json"
+	},
+	"publish": {
+		"sources": {
+			"build": "${meta.output}/build",
+			"doc": "${meta.output}/doc",
+			"reports": "${meta.output}/reports"
+		},
+		"destination": {
+			"user": "${meta.system.user}",
+			"host": "localhost",
+			"port": "22",
+			"base": "/home/${meta.system.user}/repository",
+			"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.descriptor}",
+			"mkdir": { "binary": "mkdir" },
+			"birch": { "binary": "birch" }
+		}
+	},
+	"tools": {
+		"git": { "binary": "git" },
+		"rsync": { "binary": "rsync" },
+		"ssh": { "binary": "ssh" }
+	},
+	"taskdefs": {
+		"build:cmake": {
+			"enabled": true,
+			"dependencies": { },
+			"cmake": {
+				"binary": "cmake",
+				"variables": { },
+				"generator": "Unix Makefiles"
+			},
+			"make": {
+				"binary": "make",
+				"type": "gnu",
+				"variables": { }
+			},
+			"arch": {
+				"build" : {
+					"c": { "binary": "cc" },
+					"c++": { "binary": "c++" },
+					"os": "${meta.arch.build.os}",
+					"distribution": "${meta.arch.build.distribution}",
+					"family": "${meta.arch.build.family}",
+					"bitness": "${meta.arch.build.bitness}",
+					"misc": "${meta.arch.build.misc}",
+					"descriptor": "${taskdefs.build:cmake.arch.build.os}_${taskdefs.build:cmake.arch.build.distribution}_${taskdefs.build:cmake.arch.build.family}-${taskdefs.build:cmake.arch.build.bitness}_${taskdefs.build:cmake.arch.build.misc}"
+				},
+				"host" : {
+					"c": { "binary": "cc" },
+					"c++": { "binary": "c++" },
+					"os": "${meta.arch.host.os}",
+					"distribution": "${meta.arch.host.distribution}",
+					"family": "${meta.arch.host.family}",
+					"bitness": "${meta.arch.host.bitness}",
+					"misc": "${meta.arch.host.misc}",
+					"descriptor": "${taskdefs.build:cmake.arch.host.os}_${taskdefs.build:cmake.arch.host.distribution}_${taskdefs.build:cmake.arch.host.family}-${taskdefs.build:cmake.arch.host.bitness}_${taskdefs.build:cmake.arch.host.misc}"
+				}
+			},
+			"source": {
+				"input": "${meta.input}",
+				"base": "${meta.input}"
+			},
+			"build": {
+				"output": "${meta.output}/build_work"
+			},
+			"install": {
+				"enabled": true,
+				"base": "${meta.output}/build_work",
+				"output": "${meta.output}/build"
+			},
+			"verbose": false
+		},
+		"test:googletest": {
+			"enabled": true,
+			"dependencies": { },
+			"binary": "${meta.output}/build/test",
+			"output": "${meta.output}/test/googletest.xml",
+			"filter": "*"
+		},
+		"analysis:cppcheck": {
+			"enabled": true,
+			"dependencies": { },
+			"binary": "cppcheck",
+			"source": "${meta.input}/src",
+			"base": "${meta.input}",
+			"output": "${meta.output}/analysis/cppcheck.xml"
+		},
+		"doc:doxygen": {
+			"enabled": true,
+			"dependencies": { },
+			"binary": "doxygen",
+			"source": "${meta.input}/src",
+			"output": "${meta.output}/doc",
+			"doxyfile" : {
+				"FILE_PATTERNS": "*.h*",
+				"RECURSIVE": "YES",
+				"CASE_SENSE_NAMES": "NO",
+				"EXTRACT_ALL": "NO",
+				"EXTRACT_PRIVATE": "NO",
+				"EXTRACT_PACKAGE": "NO",
+				"EXTRACT_STATIC": "YES",
+				"EXTRACT_LOCAL_CLASSES": "NO",
+				"EXTRACT_LOCAL_METHODS": "NO",
+				"EXTRACT_ANON_NSPACES": "NO",
+				"HIDE_UNDOC_MEMBERS": "YES",
+				"HIDE_UNDOC_CLASSES": "YES",
+				"HIDE_FRIEND_COMPOUNDS": "YES",
+				"HIDE_IN_BODY_DOCS": "YES",
+				"INTERNAL_DOCS": "NO",
+				"SHOW_INCLUDE_FILES": "NO",
+				"GENERATE_TODOLIST": "NO",
+				"GENERATE_TESTLIST": "NO",
+				"GENERATE_BUGLIST": "NO",
+				"SHOW_USED_FILES": "NO"
+			}
 		}
 	},
 	"tasks": {
-		"defaults": {
-			"checkout:git": {
-				"enabled": true,
-				"dependencies": { },
-				"binary": "git"
-			},
-			"build:cmake": {
-				"enabled": true,
-				"dependencies": { },
-				"cmake": {
-					"binary": "cmake",
-					"variables": { },
-					"generator": "Unix Makefiles"
-				},
-				"make": {
-					"binary": "make",
-					"type": "gnu",
-					"variables": { }
-				},
-				"arch": {
-					"build" : {
-						"c": { "binary": "cc" },
-						"c++": { "binary": "c++" },
-						"os": "${meta.arch.build.os}",
-						"distribution": "${meta.arch.build.distribution}",
-						"family": "${meta.arch.build.family}",
-						"bitness": "${meta.arch.build.bitness}",
-						"misc": "${meta.arch.build.misc}",
-						"descriptor": "${tasks.defaults.build:cmake.arch.build.os}_${tasks.defaults.build:cmake.arch.build.distribution}_${tasks.defaults.build:cmake.arch.build.family}-${tasks.defaults.build:cmake.arch.build.bitness}_${tasks.defaults.build:cmake.arch.build.misc}"
-					},
-					"host" : {
-						"c": { "binary": "cc" },
-						"c++": { "binary": "c++" },
-						"os": "${meta.arch.host.os}",
-						"distribution": "${meta.arch.host.distribution}",
-						"family": "${meta.arch.host.family}",
-						"bitness": "${meta.arch.host.bitness}",
-						"misc": "${meta.arch.host.misc}",
-						"descriptor": "${tasks.defaults.build:cmake.arch.host.os}_${tasks.defaults.build:cmake.arch.host.distribution}_${tasks.defaults.build:cmake.arch.host.family}-${tasks.defaults.build:cmake.arch.host.bitness}_${tasks.defaults.build:cmake.arch.host.misc}"
-					}
-				},
-				"source": {
-					"input": "${meta.input}",
-					"base": "${meta.input}"
-				},
-				"build": {
-					"output": "${meta.output}/build_work"
-				},
-				"install": {
-					"enabled": true,
-					"base": "${meta.output}/build_work",
-					"output": "${meta.output}/build"
-				},
-				"verbose": false
-			},
-			"test:googletest": {
-				"enabled": true,
-				"dependencies": { },
-				"binary": "${meta.output}/build/test",
-				"output": "${meta.output}/test/googletest.xml",
-				"filter": "*"
-			},
-			"analysis:cppcheck": {
-				"enabled": true,
-				"dependencies": { },
-				"binary": "cppcheck",
-				"source": "${meta.input}/src",
-				"base": "${meta.input}",
-				"output": "${meta.output}/analysis/cppcheck.xml"
-			},
-			"doc:doxygen": {
-				"enabled": true,
-				"dependencies": { },
-				"binary": "doxygen",
-				"source": "${meta.input}/src",
-				"output": "${meta.output}/doc",
-				"doxyfile" : {
-					"FILE_PATTERNS": "*.h*",
-					"RECURSIVE": "YES",
-					"CASE_SENSE_NAMES": "NO",
-					"EXTRACT_ALL": "NO",
-					"EXTRACT_PRIVATE": "NO",
-					"EXTRACT_PACKAGE": "NO",
-					"EXTRACT_STATIC": "YES",
-					"EXTRACT_LOCAL_CLASSES": "NO",
-					"EXTRACT_LOCAL_METHODS": "NO",
-					"EXTRACT_ANON_NSPACES": "NO",
-					"HIDE_UNDOC_MEMBERS": "YES",
-					"HIDE_UNDOC_CLASSES": "YES",
-					"HIDE_FRIEND_COMPOUNDS": "YES",
-					"HIDE_IN_BODY_DOCS": "YES",
-					"INTERNAL_DOCS": "NO",
-					"SHOW_INCLUDE_FILES": "NO",
-					"GENERATE_TODOLIST": "NO",
-					"GENERATE_TESTLIST": "NO",
-					"GENERATE_BUGLIST": "NO",
-					"SHOW_USED_FILES": "NO"
-				}
-			},
-			"publish:birch": {
-				"enabled": true,
-				"dependencies": { },
-				"rsync": { "binary": "rsync" },
-				"ssh": { "binary": "ssh" },
-				"sources": {
-					"build": "${meta.output}/build",
-					"doc": "${meta.output}/doc",
-					"results": "${meta.output}/results"
-				},
-				"destination": {
-					"user": "${meta.system.user}",
-					"host": "localhost",
-					"port": "22",
-					"base": "/home/${meta.system.user}/repository",
-					"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.descriptor}",
-					"mkdir": { "binary": "mkdir" },
-					"birch": { "binary": "birch" }
-				}
-			}
-		},
-		"checkout": {
-		},
-		"integrate": {
-		},
-		"publish": {
-		}
 	}
 }
