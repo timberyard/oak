@@ -22,8 +22,18 @@
 			"timestamp": {
 				"default": null,
 				"compact": null
+			},
+			"author": {
+				"name": null,
+				"email": null
+			},
+			"committer": {
+				"name": null,
+				"email": null
 			}
 		},
+		"buildgap": [
+		],
 		"system": {
 			"name": null,
 			"user": null,

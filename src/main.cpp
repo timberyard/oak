@@ -319,7 +319,6 @@ int main( int argc, const char* const* argv )
 		conf.apply(config::Config::Priority::Arguments, argOptions);
 
 		// apply system configuration
-		uon::write_json(conf.resolved(), std::cout, false);
 		boost::filesystem::path sysconf = conf.get("meta.configs.system").to_string();
 
 		if(boost::filesystem::exists(sysconf))
@@ -473,6 +472,228 @@ int main( int argc, const char* const* argv )
 				std::cerr << "Could not detect git commit timestamp" << std::endl;
 				return 1;
 			}
+
+			// meta.commit.committer.name
+			process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%cn", conf.get("meta.commit.id.long").to_string()}, input);
+
+			if(gitCommitterName.exitCode == 0 && gitCommitterName.output.size() >= 1 && gitCommitterName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.commit.committer.name", gitCommitterName.output[0].second);
+			}
+			else
+			{
+				std::cerr << "Could not detect git committer name" << std::endl;
+				return 1;
+			}
+
+			// meta.commit.committer.email
+			process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ce", conf.get("meta.commit.id.long").to_string()}, input);
+
+			if(gitCommitterEmail.exitCode == 0 && gitCommitterEmail.output.size() >= 1 && gitCommitterEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.commit.committer.email", gitCommitterEmail.output[0].second);
+			}
+			else
+			{
+				std::cerr << "Could not detect git committer email" << std::endl;
+				return 1;
+			}
+
+			// meta.commit.author.name
+			process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%an", conf.get("meta.commit.id.long").to_string()}, input);
+
+			if(gitAuthorName.exitCode == 0 && gitAuthorName.output.size() >= 1 && gitAuthorName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.commit.author.name", gitAuthorName.output[0].second);
+			}
+			else
+			{
+				std::cerr << "Could not detect git author name" << std::endl;
+				return 1;
+			}
+
+			// meta.commit.author.email
+			process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ae", conf.get("meta.commit.id.long").to_string()}, input);
+
+			if(gitAuthorEmail.exitCode == 0 && gitAuthorEmail.output.size() >= 1 && gitAuthorEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+			{
+				conf.apply(config::Config::Priority::Environment, "meta.commit.author.email", gitAuthorEmail.output[0].second);
+			}
+			else
+			{
+				std::cerr << "Could not detect git author email" << std::endl;
+				return 1;
+			}
+
+			// detect build gap begin
+			boost::optional<std::string> buildGapBeginId;
+			process::TextProcessResult gitBuildGapBegin = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"log", "--walk-reflogs", "--format=%H",  (argMode == "jenkins" ? "origin/" : "") + conf.get("meta.branch").to_string()}, input);
+
+			if(gitBuildGapBegin.exitCode == 0)
+			{
+				for(auto line = gitBuildGapBegin.output.begin(); line != gitBuildGapBegin.output.end(); ++line)
+				{
+					if(line->first != process::TextProcessResult::LineType::INFO_LINE)
+					{
+						std::cerr << "Could not detect begin of build gap" << std::endl;
+						return 1;
+					}
+
+					if(line->second != conf.get("meta.commit.id.long").to_string())
+						continue;
+
+					++line;
+
+					if(line == gitBuildGapBegin.output.end() || line->second.length() == 0)
+						break;
+
+					buildGapBeginId = line->second;
+				}
+			}
+			else
+			{
+				std::cerr << "Could not detect begin of build gap" << std::endl;
+				return 1;
+			}
+
+			std::vector<std::string> buildGapIds;
+
+			if(buildGapBeginId)
+			{
+				process::TextProcessResult gitBuildGap = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"log", "--format=%H", (*buildGapBeginId)+".."+conf.get("meta.commit.id.long").to_string()}, input);
+
+				if(gitBuildGapBegin.exitCode != 0)
+				{
+					std::cerr << "Could not detect build gap" << std::endl;
+					return 1;
+				}
+
+				for(auto line : gitBuildGap.output)
+				{
+					if(line.first != process::TextProcessResult::LineType::INFO_LINE)
+					{
+						std::cerr << "Could not detect build gap" << std::endl;
+						return 1;
+					}
+
+					if(line.second == conf.get("meta.commit.id.long").to_string())
+						continue;
+
+					if(line.second.length() == 0)
+						continue;
+
+					buildGapIds.push_back(line.second);
+				}
+			}
+
+			uon::Array buildGapEntries;
+
+			for(auto buildGapId : buildGapIds)
+			{
+				uon::Value buildGapEntry;
+
+				buildGapEntry.set("id.long", buildGapId);
+				buildGapEntry.set("id.short", buildGapId.substr(0, 7));
+
+				// timestamp.default
+				process::TextProcessResult gitTimestamp = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ci", buildGapId}, input);
+
+				if(gitTimestamp.exitCode == 0 && gitTimestamp.output.size() >= 1 && gitTimestamp.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+				{
+					// parse timestamp
+					boost::posix_time::ptime timestamp;
+
+					std::stringstream ps(gitTimestamp.output[0].second);
+					auto input_facet = new boost::posix_time::time_input_facet("%Y-%m-%d %H:%M:%S");
+					ps.imbue(std::locale(ps.getloc(), input_facet));
+					ps >> timestamp;
+
+					if(timestamp.is_not_a_date_time())
+					{
+						std::cerr << "Could not parse timestamp" << std::endl;
+						return 1;
+					}
+
+					// default format
+					std::stringstream fs1;
+
+					auto output_facet = new boost::posix_time::time_facet("%Y-%m-%d %H:%M:%S");
+					fs1.imbue(std::locale(fs1.getloc(), output_facet));
+					fs1 << timestamp;
+
+					buildGapEntry.set("timestamp.default", fs1.str());
+
+					// compact format
+					std::stringstream fs2;
+
+					output_facet = new boost::posix_time::time_facet("%Y%m%d-%H%M%S");
+					fs2.imbue(std::locale(fs2.getloc(), output_facet));
+					fs2 << timestamp;
+
+					buildGapEntry.set("timestamp.compact", fs2.str());
+				}
+				else
+				{
+					std::cerr << "Could not detect git commit timestamp" << std::endl;
+					return 1;
+				}
+
+				// committer.name
+				process::TextProcessResult gitCommitterName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%cn", buildGapId}, input);
+
+				if(gitCommitterName.exitCode == 0 && gitCommitterName.output.size() >= 1 && gitCommitterName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+				{
+					buildGapEntry.set("committer.name", gitCommitterName.output[0].second);
+				}
+				else
+				{
+					std::cerr << "Could not detect git committer name" << std::endl;
+					return 1;
+				}
+
+				// committer.email
+				process::TextProcessResult gitCommitterEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ce", buildGapId}, input);
+
+				if(gitCommitterEmail.exitCode == 0 && gitCommitterEmail.output.size() >= 1 && gitCommitterEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+				{
+					buildGapEntry.set("committer.email", gitCommitterEmail.output[0].second);
+				}
+				else
+				{
+					std::cerr << "Could not detect git committer email" << std::endl;
+					return 1;
+				}
+
+				// author.name
+				process::TextProcessResult gitAuthorName = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%an", buildGapId}, input);
+
+				if(gitAuthorName.exitCode == 0 && gitAuthorName.output.size() >= 1 && gitAuthorName.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+				{
+					buildGapEntry.set("author.name", gitAuthorName.output[0].second);
+				}
+				else
+				{
+					std::cerr << "Could not detect git author name" << std::endl;
+					return 1;
+				}
+
+				// author.email
+				process::TextProcessResult gitAuthorEmail = process::executeTextProcess(conf.get("tasks.defaults.checkout:git.binary").to_string(), {"show", "-s", "--format=%ae", buildGapId}, input);
+
+				if(gitAuthorEmail.exitCode == 0 && gitAuthorEmail.output.size() >= 1 && gitAuthorEmail.output[0].first == process::TextProcessResult::LineType::INFO_LINE)
+				{
+					buildGapEntry.set("author.email", gitAuthorEmail.output[0].second);
+				}
+				else
+				{
+					std::cerr << "Could not detect git author email" << std::endl;
+					return 1;
+				}
+
+				buildGapEntries.push_back(buildGapEntry);
+			}
+
+			conf.apply(config::Config::Priority::Environment, "meta.buildgap", uon::Value(buildGapEntries));
 		}
 
 		// computing values
