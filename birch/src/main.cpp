@@ -116,6 +116,7 @@ int main(int argc, char** argv)
 			op.set( std::vector<std::string>{"$set", "hosts."+report.get("meta.arch.host.descriptor").to_string()}, report );
 			op.set( std::vector<std::string>{"$addToSet", "tasks.consolidation"}, report.get("meta.id").to_string() );
 			op.set( std::vector<std::string>{"$addToSet", "tasks.notification"}, report.get("meta.id").to_string() );
+			op.set( std::vector<std::string>{"$set", "tasks.notification_timeout"}, (std::uint64_t)(std::time(nullptr) + (60 * 5)) );	// 5 minute timeout
 
 			db.update(collection, uon::to_mongo_bson(query), uon::to_mongo_bson(op), true, false);
 		}
@@ -178,6 +179,7 @@ int main(int argc, char** argv)
 		uon::Value query;
 		query.set( std::vector<std::string>{"tasks.notification.0", "$exists"}, true );
 		query.set( std::vector<std::string>{"tasks.consolidation.0", "$exists"}, false );
+		query.set( std::vector<std::string>{"tasks.notification_timeout", "$lte"}, (std::uint64_t)std::time(nullptr) );
 
 		auto reports = db.query(collection, uon::to_mongo_bson(query));
 
