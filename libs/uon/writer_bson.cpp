@@ -5,6 +5,8 @@
 
 namespace uon {
 
+#if !defined(_WIN32)
+
 void write_bson(const Value& value, std::ostream& input)
 {
 	input.exceptions( std::ofstream::failbit | std::ofstream::badbit );
@@ -24,5 +26,7 @@ mongo::BSONObj to_mongo_bson(const Value& value)
 {
 	return mongo::fromjson(write_json(value));
 }
+
+#endif
 
 }

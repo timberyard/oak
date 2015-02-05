@@ -107,6 +107,8 @@ int main(int argc, char** argv)
 			*/
 
 			// insert report
+			std::cout << "creating mongo query and op..." << std::endl;
+
 			uon::Value query;
 			query.set("repository", report.get("meta.repository").to_string());
 			query.set("branch", report.get("meta.branch").to_string());
@@ -119,7 +121,12 @@ int main(int argc, char** argv)
 			op.set( std::vector<std::string>{"$addToSet", "tasks.notification"}, report.get("meta.id").to_string() );
 			op.set( std::vector<std::string>{"$set", "tasks.notification_timeout"}, (std::uint64_t)(std::time(nullptr) + (60 * 5)) );	// 5 minute timeout
 
-			db.update(collection, uon::to_mongo_bson(query), uon::to_mongo_bson(op), true, false);
+			auto mquery = uon::to_mongo_bson(query);
+			auto mop = uon::to_mongo_bson(op);
+
+			std::cout << "running mongo query..." << std::endl;
+
+			db.update(collection, mquery, mop, true, false);
 		}
 	}
 	catch ( const std::exception& e )
@@ -152,6 +159,8 @@ int main(int argc, char** argv)
 
 			auto consolidated = consolidate(report.get("hosts").to_object());
 
+			std::cout << "creating mongo query and op..." << std::endl;
+
 			query = uon::null;
 			query.set("_id", report.get("_id"));
 
@@ -160,7 +169,12 @@ int main(int argc, char** argv)
 			obj.set( std::vector<std::string>{"$set", "consolidated"}, consolidated );
 			obj.set( std::vector<std::string>{"$pull", "tasks.consolidation", "$in"}, report.get("tasks.consolidation").to_array() );
 
-			db.update(collection, uon::to_mongo_bson(query), uon::to_mongo_bson(obj));
+			auto mquery = uon::to_mongo_bson(query);
+			auto mobj = uon::to_mongo_bson(obj);
+
+			std::cout << "running mongo query..." << std::endl;
+
+			db.update(collection, mquery, mobj);
 		}
 	}
 	catch ( const std::exception& e )
@@ -195,13 +209,20 @@ int main(int argc, char** argv)
 
 			notify(report.get("consolidated"));
 
+			std::cout << "creating mongo query and op..." << std::endl;
+
 			query = uon::null;
 			query.set("_id", report.get("_id"));
 
 			uon::Value obj;
 			obj.set({"$pull", "tasks.notification", "$in"}, report.get("tasks.notification").to_array());
 
-			db.update(collection, uon::to_mongo_bson(query), uon::to_mongo_bson(obj));
+			auto mquery = uon::to_mongo_bson(query);
+			auto mobj = uon::to_mongo_bson(obj);
+
+			std::cout << "running mongo query..." << std::endl;
+
+			db.update(collection, mquery, mobj);
 		}
 	}
 	catch ( const std::exception& e )

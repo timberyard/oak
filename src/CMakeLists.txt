@@ -10,7 +10,9 @@ set_directory_properties(properties EP_PREFIX "${PROJECT_BINARY_DIR}/external_pr
 include(zlib)
 include(bzip2)
 include(boost)
-include(mongocpp)
+if(NOT WIN32)
+	include(mongocpp)
+endif()
 
 set(Boost_LIBRARIES boost_system boost_filesystem boost_iostreams boost_program_options boost_thread boost_regex)
 
@@ -37,7 +39,9 @@ include_directories( ${BOOST_ROOT}/include )
 include_directories( ${PROJECT_SOURCE_DIR}/../libs/boost-process)
 include_directories( ${PROJECT_SOURCE_DIR}/../libs)
 include_directories( ${JsonSpirit_INCLUDE_DIR} )
-include_directories( ${MONGODB_CXX_DRIVER_INCLUDE} )
+if(NOT WIN32)
+	include_directories( ${MONGODB_CXX_DRIVER_INCLUDE} )
+endif()
 
 link_directories(${BOOST_ROOT}/lib)
 
@@ -77,7 +81,11 @@ add_executable(oak
 	${PROJECT_SOURCE_DIR}/../libs/uon/writer_json.cpp
 )
 
-add_dependencies(oak boost JsonSpirit mongodb_cxx_driver)
+add_dependencies(oak boost JsonSpirit)
+
+if(NOT WIN32)
+	add_dependencies(oak mongodb_cxx_driver)
+endif()
 
 if(NOT WIN32)
 	target_link_libraries( oak ${MONGODB_CXX_DRIVER_LIBRARIES} ${Boost_LIBRARIES} ${JsonSpirit_LIBRARY} ${CMAKE_THREAD_LIBS_INIT} )

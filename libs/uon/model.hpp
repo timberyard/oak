@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <string>
 #include <map>
-#include <deque>
 #include <vector>
 #include <functional>
 #include <boost/variant.hpp>
@@ -35,7 +34,7 @@ namespace uon
 	class Value;
 
 	using Object = std::map<String, Value>;
-	using Array = std::deque<Value>;
+	using Array = std::vector<Value>;
 
 	class Value
 	{
@@ -60,7 +59,7 @@ namespace uon
 		Boolean to_boolean() const;
 		Object to_object() const;
 		Array to_array() const;
-		std::deque<std::string> to_string_array() const;
+		std::vector<std::string> to_string_array() const;
 
 		Value& operator=(const Value& other);
 

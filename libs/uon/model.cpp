@@ -326,9 +326,9 @@ Array Value::to_array() const
 	throw std::runtime_error("invalid type");
 }
 
-std::deque<std::string> Value::to_string_array() const
+std::vector<std::string> Value::to_string_array() const
 {
-	std::deque<std::string> result;
+	std::vector<std::string> result;
 
 	for(auto i : to_array())
 	{

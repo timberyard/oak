@@ -49,6 +49,7 @@ endif()
 # ./b2 arguments
 set( B2_ARGS
 	-q -j4
+	warnings=off
 	address-model=${TARGET_BITNESS}
 	link=static
 	threading=multi

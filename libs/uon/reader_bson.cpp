@@ -4,6 +4,8 @@
 
 namespace uon {
 
+#if !defined(_WIN32)
+
 Value read_bson(std::istream& input)
 {
 	input.exceptions( std::ifstream::failbit | std::ifstream::badbit );
@@ -23,5 +25,7 @@ Value from_mongo_bson(const mongo::BSONObj& mval)
 {
 	return read_json(mval.jsonString());
 }
+
+#endif
 
 }
