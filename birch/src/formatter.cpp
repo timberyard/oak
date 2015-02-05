@@ -202,7 +202,7 @@ void html(uon::Value input, std::ostream& output)
 						<< _html::github_link(meta.get("repository", uon::null).to_string(), meta.get("commit.id.long", uon::null).to_string(), "blob", error.get("file", uon::null).to_string(), (std::size_t)error.get("line", uon::null).to_number(), error.get("file", uon::null).to_string()) << "</td><td>"
 						<< _html::escape(error.get("line", uon::null).to_string()) << "</td></tr>";
 
-					output << "<tr class=\"warning\"><td></td><td colspan=\"4\">"
+					output << "<tr class=\"warning\"><td></td><td colspan=\"4\" style=\"font-size: 0.7em;\">"
 						<< _html::escape(boost::algorithm::join(error.get("hosts", uon::null).to_string_array(), ", ")) << "</td></tr>" << std::endl;
 				}
 
@@ -248,7 +248,7 @@ void html(uon::Value input, std::ostream& output)
 					}
 
 					output
-						<< "<td></td><td colspan=\"4\">"
+						<< "<td></td><td colspan=\"4\" style=\"font-size: 0.7em;\">"
 						<< _html::escape(boost::algorithm::join(result.get("hosts", uon::null).to_string_array(), ", ")) << "</td></tr>" << std::endl;
 				}
 
@@ -264,7 +264,7 @@ void html(uon::Value input, std::ostream& output)
 			if(tests.size() > 0)
 			{
 				output << "<table class=\"task-test-googletest table table-condensed table-hover table-bordered\">" << std::endl;
-				output << "<tr><th>Name</th><th>Status</th><th>Messages</th><th>Result</th></tr>" << std::endl;
+				output << "<tr><th>Name</th><th>Status</th><th>Result</th></tr>" << std::endl;
 
 				for(auto testsuite : tests)
 				{
@@ -281,25 +281,31 @@ void html(uon::Value input, std::ostream& output)
 
 						output << "<td>"
 							<< _html::escape(test.second.get("name", uon::null).to_string()) << "</td><td>"
-							<< _html::escape(test.second.get("status", uon::null).to_string()) << "</td><td>";
+							<< _html::escape(test.second.get("status", uon::null).to_string()) << "</td><td>"
+							<< _html::escape(test.second.get("result", uon::null).to_string()) << "</td></tr>" << std::endl;
 
 						auto messages = test.second.get("message", uon::null).to_object();
 
 						if(messages.size() > 0)
 						{
-							output << "<table class=\"task-test-googletest-messages\">";
+							if(test.second.get("result", uon::null).to_string() == "Ok")
+							{
+								output << "<tr class=\"success\">";
+							}
+							else
+							{
+								output << "<tr class=\"danger\">";
+							}
+
+							output << "<td colspan=\"3\"><table class=\"task-test-googletest-messages\">";
 
 							for(auto message : messages)
 							{
-								output << "<tr><td>" << _html::escape(message.first) << ":</td><td>" << _html::escape(message.second.to_string()) << "</td></tr>";
+								output << "<tr><td style=\"font-size: 0.7em;\">" << _html::escape(message.first) << ":</td><td style=\"font-size: 0.7em;\">" << _html::escape(message.second.to_string()) << "</td></tr>";
 							}
 
-							output << "</table>";
+							output << "</table></td></tr>";
 						}
-
-						output
-							<< "</td><td>"
-							<< _html::escape(test.second.get("result", uon::null).to_string()) << "</td></tr>" << std::endl;
 					}
 				}
 

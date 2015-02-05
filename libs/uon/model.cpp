@@ -172,7 +172,12 @@ Number Value::to_number() const
 
 	if(_value.type() == typeid(String))
 	{
-		return std::stold(boost::get<String>(_value));
+		auto str = boost::get<String>(_value);
+
+		if(str.length() == 0)
+			return 0.0;
+
+		return std::stold(str);
 	}
 
 	if(_value.type() == typeid(Number))
