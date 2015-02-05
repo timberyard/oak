@@ -51,7 +51,7 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 	{
 		auto host_descr = report.second.get("meta.arch.host.descriptor").to_string();
 
-		for(auto task : report.second.get("tasks.integrate").to_object())
+		for(auto task : report.second.get("tasks").to_object())
 		{
 			uon::Value& task_cs = tasks_cs[task.first];
 
