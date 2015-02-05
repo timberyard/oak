@@ -77,15 +77,15 @@ if( MSVC )
 else()
 	if( WIN32 )
 		set( BOOST_CMDS
-			CONFIGURE_COMMAND ./bootstrap.sh --with-toolset=mingw COMMAND sed -i.bak "s/mingw/gcc/g" <SOURCE_DIR>/project-config.jam
-			BUILD_COMMAND ./b2 toolset=${TOOLSET} ${B2_ARGS}
-			INSTALL_COMMAND ./b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install
+			CONFIGURE_COMMAND ./bootstrap.sh --with-toolset=mingw  > /dev/null COMMAND sed -i.bak "s/mingw/gcc/g" <SOURCE_DIR>/project-config.jam
+			BUILD_COMMAND ./b2 toolset=${TOOLSET} ${B2_ARGS}  > /dev/null
+			INSTALL_COMMAND ./b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install > /dev/null
 		)
 	else()
 		set( BOOST_CMDS
-			CONFIGURE_COMMAND ./bootstrap.sh
-			BUILD_COMMAND ./b2 toolset=${TOOLSET} ${B2_ARGS}
-			INSTALL_COMMAND ./b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install
+			CONFIGURE_COMMAND ./bootstrap.sh > /dev/null
+			BUILD_COMMAND ./b2 toolset=${TOOLSET} ${B2_ARGS} > /dev/null
+			INSTALL_COMMAND ./b2 ${B2_ARGS} --prefix=<INSTALL_DIR> install > /dev/null
 		)
 	endif()
 endif()
