@@ -11,7 +11,23 @@ namespace formatter { namespace _html {
 std::string escape(std::string data) {
     std::string buffer;
     buffer.reserve(data.size());
-    for(size_t pos = 0; pos != data.size(); ++pos) {
+    for(size_t pos = 0, lastnl = 0; pos != data.size(); ++pos) {
+
+    	if( (data[pos] & 0x80) < 0x80
+    		|| (data[pos] & 0xE0) == 0xC0
+    		|| (data[pos] & 0xF0) == 0xE0
+    		|| (data[pos] & 0xF8) == 0xF0
+    		)
+    	{
+    		if(lastnl >= 40)
+    		{
+    			buffer.append(" ");
+    			lastnl = 0;
+    		}
+
+    		lastnl += 1;
+    	}
+
         switch(data[pos]) {
             case '&':  buffer.append("&amp;");       break;
             case '\"': buffer.append("&quot;");      break;
@@ -71,7 +87,9 @@ void html(uon::Value input, std::ostream& output)
 			<< "h1 { font-size: 32px; margin-top: 32px; }" << std::endl
 			<< "h2 { font-size: 24px; margin-top: 24px; }" << std::endl
 			<< ".task-messages td:first-child { padding-right: 10px; }" << std::endl
+			<< ".task-messages td { padding-bottom: 5px; font-size: 0.7em; }" << std::endl
 			<< ".task-test-googletest-messages td:first-child { padding-right: 10px; }" << std::endl
+			<< ".task-test-googletest-messages td { padding-bottom: 5px; font-size: 0.7em; }" << std::endl
 			<< "</style>" << std::endl
 		<< "</head>" << std::endl
 		<< "<body>" << std::endl
