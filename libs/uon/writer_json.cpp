@@ -45,7 +45,16 @@ std::string utf8_remove_illegal_chars(std::string value)
 		{
 			if( value[i] <= 0x1F || value[i] == 0x7F )
 			{
-				result += "\\u00" + hex_byte(value[i]);
+		        switch( value[i] )
+		        {
+		            case '\b':
+		            case '\f':
+		            case '\n':
+		            case '\r':
+		            case '\t':
+						result += value.substr(i, 1);
+						break;
+		        }
 			}
 			else
 			{
@@ -73,15 +82,8 @@ std::string utf8_remove_illegal_chars(std::string value)
 		}
 		else
 		{
-			while( (value[i] & 0x80) == 0x80 && (j-i-1) >= 1 && (value[i+1] & 0x80) == 0x80 )
-			{
-				result += "\\u" + hex_byte(value[i]) + hex_byte(value[i+1]);
-				i += 2;
-			}
-
 			while( (value[i] & 0x80) == 0x80 )
 			{
-				result += "\\u00" + hex_byte(value[i]);
 				i += 1;
 			}
 		}
