@@ -19,9 +19,11 @@ std::string escape(std::string data) {
     		|| (data[pos] & 0xF8) == 0xF0
     		)
     	{
-    		if(lastnl >= 40)
+    		if( (lastnl >= 25 && data[pos] == ' ')
+    			|| lastnl >= 40
+    		)
     		{
-    			buffer.append(" ");
+    			buffer.append("\n");
     			lastnl = 0;
     		}
 
