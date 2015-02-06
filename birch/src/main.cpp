@@ -1,6 +1,11 @@
 #include <boost/program_options.hpp>
 #include <uon/uon.hpp>
 #include <mongo/client/dbclient.h>
+#include <cstdlib>
+#include <boost/filesystem.hpp>
+#include <fstream>
+#include <boost/interprocess/sync/file_lock.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 
 extern uon::Value consolidate(std::map<std::string, uon::Value> reports);
 extern void notify(uon::Value report);
@@ -9,6 +14,37 @@ static std::string collection = std::string("timberyard.reports");
 
 int main(int argc, char** argv)
 {
+	// get home
+	const char* homedir_c = std::getenv("HOME");
+
+	if(homedir_c == NULL)
+	{
+		std::cerr << "Could not get HOME..." << std::endl;
+		return 1;
+	}
+
+	boost::filesystem::path homedir(homedir_c);
+
+	// lock
+	std::cerr << "Getting file lock..." << std::endl;
+
+	auto lock_file_path = homedir / ".birch-run-lock";
+	std::ofstream lock_file(lock_file_path.string());
+
+	if(!lock_file)
+	{
+		std::cerr << "Could not ensure existence of lock file..." << std::endl;
+		return 1;
+	}
+
+	boost::interprocess::file_lock file_lock(lock_file_path.c_str());
+	boost::interprocess::scoped_lock<boost::interprocess::file_lock> lock(file_lock);
+
+	std::cerr << "Lock acquired..." << std::endl;
+
+	// create database connection
+	std::cerr << "Connect to database..." << std::endl;
+
 	mongo::client::initialize();
 	mongo::DBClientConnection db(true);
 
