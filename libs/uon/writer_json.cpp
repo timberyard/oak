@@ -2,11 +2,13 @@
 
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include <json_spirit/json_spirit_writer.h>
 #include <boost/regex.hpp>
 
 namespace uon {
 
+/*
 static std::string utf8_invalid_characters =
 "("
     "[\\xC0-\\xC1]" // Invalid UTF-8 Bytes
@@ -24,6 +26,69 @@ static std::string utf8_invalid_characters =
 ")";
 
 static std::string utf8_replacement_character = "\uFFFD";
+*/
+
+std::string hex_byte(unsigned char value) {
+	std::stringstream str;
+	str << std::noshowbase << std::hex << std::setw(2) << std::setfill('0') << (unsigned int)value << std::flush;
+	return str.str();
+}
+
+std::string utf8_remove_illegal_chars(std::string value)
+{
+	std::string result;
+	result.reserve(value.length()+1);
+
+	for(std::size_t i = 0, j = value.length(); i < j;)
+	{
+		if( (value[i] & 0x80) < 0x80 )
+		{
+			if( value[i] <= 0x1F || value[i] == 0x7F )
+			{
+				result += "\\u00" + hex_byte(value[i]);
+			}
+			else
+			{
+				result += value.substr(i, 1);
+			}
+			i += 1;
+		}
+		else
+		if( (value[i] & 0xE0) == 0xC0 && (j-i-1) >= 1 && (value[i+1] & 0xC0) == 0x80 )
+		{
+			result += value.substr(i, 2);
+			i += 2;
+		}
+		else
+		if( (value[i] & 0xF0) == 0xE0 && (j-i-1) >= 2 && (value[i+1] & 0xC0) == 0x80 && (value[i+2] & 0xC0) == 0x80 )
+		{
+			result += value.substr(i, 3);
+			i += 3;
+		}
+		else
+		if( (value[i] & 0xF8) == 0xF0 && (j-i-1) >= 3 && (value[i+1] & 0xC0) == 0x80 && (value[i+2] & 0xC0) == 0x80 && (value[i+3] & 0xC0) == 0x80 )
+		{
+			result += value.substr(i, 4);
+			i += 4;
+		}
+		else
+		{
+			while( (value[i] & 0x80) == 0x80 && (j-i-1) >= 1 && (value[i+1] & 0x80) == 0x80 )
+			{
+				result += "\\u" + hex_byte(value[i]) + hex_byte(value[i+1]);
+				i += 2;
+			}
+
+			while( (value[i] & 0x80) == 0x80 )
+			{
+				result += "\\u00" + hex_byte(value[i]);
+				i += 1;
+			}
+		}
+	}
+
+	return result;
+}
 
 std::string write_json(const Value& value, bool compact)
 {
@@ -34,11 +99,11 @@ std::string write_json(const Value& value, bool compact)
 
 void write_json(const Value& value, std::ostream& output, bool compact)
 {
-	boost::regex utf8_illegal_characters_regex(utf8_invalid_characters, boost::regex::perl);
+	//boost::regex utf8_illegal_characters_regex(utf8_invalid_characters, boost::regex::perl);
 
 	output.exceptions( std::ofstream::failbit | std::ofstream::badbit );
 
-	std::function<json_spirit::Value(const Value& val)> convert = [&convert, &utf8_illegal_characters_regex](const Value& val) -> json_spirit::Value
+	std::function<json_spirit::Value(const Value& val)> convert = [&convert /*,&utf8_illegal_characters_regex*/](const Value& val) -> json_spirit::Value
 	{
 		switch(val.type())
 		{
@@ -49,7 +114,9 @@ void write_json(const Value& value, std::ostream& output, bool compact)
 
 			case Type::string:
 			{
-				return json_spirit::Value(boost::regex_replace(val.as_string(), utf8_illegal_characters_regex, utf8_replacement_character, boost::match_default));
+				return json_spirit::Value(
+					utf8_remove_illegal_chars(val.as_string())
+					/*boost::regex_replace(val.as_string(), utf8_illegal_characters_regex, utf8_replacement_character, boost::match_default)*/);
 			}
 
 			case Type::number:
@@ -83,7 +150,8 @@ void write_json(const Value& value, std::ostream& output, bool compact)
 				for(auto& e : val.as_object())
 				{
 					spobj.push_back(json_spirit::Pair(
-						boost::regex_replace(e.first, utf8_illegal_characters_regex, utf8_replacement_character, boost::match_default),
+						//boost::regex_replace(e.first, utf8_illegal_characters_regex, utf8_replacement_character, boost::match_default),
+						utf8_remove_illegal_chars(e.first),
 						convert(e.second)));
 				}
 				return json_spirit::Value(spobj);
