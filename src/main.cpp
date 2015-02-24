@@ -696,6 +696,17 @@ int main( int argc, const char* const* argv )
 			conf.apply(config::Config::Priority::Environment, "meta.buildgap", uon::Value(buildGapEntries));
 		}
 
+		// trigger
+		if(auto buildUserName = environment::variable("BUILD_USER"))
+		{
+			conf.apply(config::Config::Priority::Environment, "meta.trigger.name", *buildUserName);
+		}
+
+		if(auto buildUserEmail = environment::variable("BUILD_USER_EMAIL"))
+		{
+			conf.apply(config::Config::Priority::Environment, "meta.trigger.email", *buildUserEmail);
+		}
+
 		// computing values
 		std::cout << "Computing additional configuration parameter..." << std::endl;
 

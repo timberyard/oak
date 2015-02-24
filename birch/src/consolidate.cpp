@@ -43,6 +43,24 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 
 	cs.set("meta.buildgap", meta_buildgap);
 
+	// meta: trigger
+	uon::Array meta_trigger;
+
+	for(auto report : reports)
+	{
+		auto trigger = report.second.get("meta.trigger");
+
+		auto triggerName = trigger.get("name", uon::Null());
+		auto triggerEmail = trigger.get("email", uon::Null());
+
+		if(!triggerName.is_null() || !triggerEmail.is_null())
+		{
+			meta_trigger.push_back(trigger);
+		}
+	}
+
+	cs.set("meta.trigger", meta_trigger);
+
 	// tasks
 
 	uon::Object tasks_cs;

@@ -30,6 +30,10 @@
 		},
 		"buildgap": [
 		],
+		"trigger": {
+			"name": null,
+			"email": null
+		},
 		"system": {
 			"name": null,
 			"user": null,
