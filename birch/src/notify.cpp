@@ -18,7 +18,7 @@ void notify(uon::Value report)
 		receivers.insert(buildgap.get("committer.email").to_string());
 	}
 
-	for(auto trigger : report.get("meta.trigger").to_array())
+	for(auto trigger : report.get("meta.trigger", uon::Null()).to_array())
 	{
 		auto email = trigger.get("email", uon::Null());
 
