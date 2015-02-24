@@ -3,6 +3,13 @@
 			"name": "example",
 			"version": "0.1"
 		},
-		"variant": "c++"
+		"variant": "c++",
+		"dependencies": {
+			"backend": {
+				"repository": "git@chicago.everbase.net:everbase-backend/backend.git",
+				"tag": "0.1.1",
+				"chain": "host"
+			}
+		}
 	}
 }

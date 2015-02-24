@@ -1,6 +1,6 @@
 {	"tasks": {
 		"build": {
-			"type": "build:cmake"
+			"type": "build:make"
 		},
 		"test": {
 			"type": "test:googletest",

@@ -1,192 +1,246 @@
-{	"meta": {
-		"id": null,
-		"oak": {
-			"version": "0.6"
-		},
-		"project": {
-			"name": null,
-			"version": null
-		},
-		"variant": "greenfield",
-		"repository": null,
-		"branch": null,
-		"commit": {
-			"id": {
-				"long": null,
-				"short": null
-			},
-			"timestamp": {
-				"default": null,
-				"compact": null
-			},
-			"author": {
-				"name": null,
-				"email": null
-			},
-			"committer": {
-				"name": null,
-				"email": null
-			}
-		},
-		"buildgap": [
-		],
-		"system": {
-			"name": null,
-			"user": null,
-			"arch": {
-				"os": null,
-				"distribution": null,
-				"family": null,
-				"bitness": null,
-				"misc": "default",
-				"descriptor": "${meta.system.arch.os}_${meta.system.arch.distribution}_${meta.system.arch.family}-${meta.system.arch.bitness}_${meta.system.arch.misc}"
-			}
-		},
-		"arch": {
-			"build": {
-				"os": "${meta.system.arch.os}",
-				"distribution": "${meta.system.arch.distribution}",
-				"family": "${meta.system.arch.family}",
-				"bitness": "${meta.system.arch.bitness}",
-				"misc": "${meta.system.arch.misc}",
-				"descriptor": "${meta.arch.build.os}_${meta.arch.build.distribution}_${meta.arch.build.family}-${meta.arch.build.bitness}_${meta.arch.build.misc}"
-			},
-			"host": {
-				"os": "${meta.system.arch.os}",
-				"distribution": "${meta.system.arch.distribution}",
-				"family": "${meta.system.arch.family}",
-				"bitness": "${meta.system.arch.bitness}",
-				"misc": "${meta.system.arch.misc}",
-				"descriptor": "${meta.arch.host.os}_${meta.arch.host.distribution}_${meta.arch.host.family}-${meta.arch.host.bitness}_${meta.arch.host.misc}"
-			}
-		},
-		"input": ".",
-		"output": "${meta.input}/oak",
-		"configs": {
-			"system": "/etc/oak/system.json",
-			"project": "${meta.input}/project.json"
-		},
-		"report": "${meta.output}/reports/oak.json"
-	},
-	"publish": {
-		"enabled": false,
-		"sources": {
-			"build": "${meta.output}/build",
-			"doc": "${meta.output}/doc",
-			"reports": "${meta.output}/reports"
-		},
-		"destination": {
-			"user": "${meta.system.user}",
-			"host": "localhost",
-			"remote": "${publish.destination.user}@${publish.destination.host}",
-			"port": "22",
-			"base": "/home/${meta.system.user}/repository",
-			"directory": "${meta.project.name}/${meta.branch}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.arch.host.descriptor}",
-			"path": "${publish.destination.base}/${publish.destination.directory}",
-			"mkdir": { "binary": "mkdir" },
-			"birch": { "binary": "birch" }
-		}
-	},
-	"tools": {
-		"git": { "binary": "git" },
-		"rsync": { "binary": "rsync" },
-		"ssh": { "binary": "ssh" }
-	},
-	"taskdefs": {
-		"build:cmake": {
-			"enabled": true,
-			"dependencies": { },
-			"cmake": {
-				"binary": "cmake",
-				"variables": { },
-				"generator": "Unix Makefiles"
-			},
-			"make": {
-				"binary": "make",
-				"type": "gnu",
-				"variables": { }
-			},
-			"arch": {
-				"build" : {
-					"c": { "binary": "cc" },
-					"c++": { "binary": "c++" },
-					"os": "${meta.arch.build.os}",
-					"distribution": "${meta.arch.build.distribution}",
-					"family": "${meta.arch.build.family}",
-					"bitness": "${meta.arch.build.bitness}",
-					"misc": "${meta.arch.build.misc}",
-					"descriptor": "${taskdefs.build:cmake.arch.build.os}_${taskdefs.build:cmake.arch.build.distribution}_${taskdefs.build:cmake.arch.build.family}-${taskdefs.build:cmake.arch.build.bitness}_${taskdefs.build:cmake.arch.build.misc}"
-				},
-				"host" : {
-					"c": { "binary": "cc" },
-					"c++": { "binary": "c++" },
-					"os": "${meta.arch.host.os}",
-					"distribution": "${meta.arch.host.distribution}",
-					"family": "${meta.arch.host.family}",
-					"bitness": "${meta.arch.host.bitness}",
-					"misc": "${meta.arch.host.misc}",
-					"descriptor": "${taskdefs.build:cmake.arch.host.os}_${taskdefs.build:cmake.arch.host.distribution}_${taskdefs.build:cmake.arch.host.family}-${taskdefs.build:cmake.arch.host.bitness}_${taskdefs.build:cmake.arch.host.misc}"
-				}
-			},
-			"source": {
-				"input": "${meta.input}",
-				"base": "${meta.input}"
-			},
-			"build": {
-				"output": "${meta.output}/build_work"
-			},
-			"install": {
-				"enabled": true,
-				"base": "${meta.output}/build_work",
-				"output": "${meta.output}/build"
-			},
-			"verbose": false
-		},
-		"test:googletest": {
-			"enabled": true,
-			"dependencies": { },
-			"binary": "${meta.output}/build/test",
-			"output": "${meta.output}/test/googletest.xml",
-			"filter": "*"
-		},
-		"analysis:cppcheck": {
-			"enabled": true,
-			"dependencies": { },
-			"binary": "cppcheck",
-			"source": "${meta.input}/src",
-			"base": "${meta.input}",
-			"output": "${meta.output}/analysis/cppcheck.xml"
-		},
-		"doc:doxygen": {
-			"enabled": true,
-			"dependencies": { },
-			"binary": "doxygen",
-			"source": "${meta.input}/src",
-			"output": "${meta.output}/doc",
-			"doxyfile" : {
-				"FILE_PATTERNS": "*.h*",
-				"RECURSIVE": "YES",
-				"CASE_SENSE_NAMES": "NO",
-				"EXTRACT_ALL": "NO",
-				"EXTRACT_PRIVATE": "NO",
-				"EXTRACT_PACKAGE": "NO",
-				"EXTRACT_STATIC": "YES",
-				"EXTRACT_LOCAL_CLASSES": "NO",
-				"EXTRACT_LOCAL_METHODS": "NO",
-				"EXTRACT_ANON_NSPACES": "NO",
-				"HIDE_UNDOC_MEMBERS": "YES",
-				"HIDE_UNDOC_CLASSES": "YES",
-				"HIDE_FRIEND_COMPOUNDS": "YES",
-				"HIDE_IN_BODY_DOCS": "YES",
-				"INTERNAL_DOCS": "NO",
-				"SHOW_INCLUDE_FILES": "NO",
-				"GENERATE_TODOLIST": "NO",
-				"GENERATE_TESTLIST": "NO",
-				"GENERATE_BUGLIST": "NO",
-				"SHOW_USED_FILES": "NO"
-			}
-		}
-	},
-	"tasks": {
-	}
+{   "meta": {
+        "id": null,                    // [computed]
+        "oak": {
+            "version": "0.7"
+        },
+        "project": {
+            "name": null,              // [project] e.g. backend
+            "version": null,           // [project] e.g. 0.6
+            "type": null               // [project] values: native, web, java, .net, python, plain
+        },
+        "variant": null,               // [project] values: greenfield, c++
+        "dependencies": {              // [project] other projects this project depends on
+            /*
+            "<name>": {
+                "repository": "<repository url>",
+                "tag": "<optional git branch, tag or commit>"
+            },
+            ...
+            */
+        },
+        "repository": null,            // [environment] git url
+        "tag": null,                   // [environment] git branch or tag name if detectable
+        "commit": {                    // [environment] current commit
+            "id": {
+                "long": null,          // [environment] ... id
+                "short": null          // [environment] ... id (short form)
+            },
+            "timestamp": {
+                "default": null,       // [environment] ... timestamp
+                "compact": null        // [environment] ... timestamp (compact format, can be used in fs paths)
+            },
+            "author": {
+                "name": null,          // [environment] ... name of author
+                "email": null          // [environment] ... email of author
+            },
+            "committer": {
+                "name": null,          // [environment] ... name of committer
+                "email": null          // [environment] ... email of committer
+            }
+        },
+        "buildgap": [ ],               // [environment] skipped commits derived from ref-log (entries are formatted as commit above)
+        "lastbuild": {                 // [environment] previous commit derived from ref-log (entry is formatted as commit above)
+            "id": {
+                "long": null,
+                "short": null
+            },
+            "timestamp": {
+                "default": null,
+                "compact": null
+            },
+            "author": {
+                "name": null,
+                "email": null
+            },
+            "committer": {
+                "name": null,
+                "email": null
+            }
+        },
+        "trigger": "user",
+        "system": {
+            "hostname": null,          // [environment] derived from gethostname()
+            "platform": {
+                "system": null,        // [environment] e.g. linux, windows, macos
+                "distribution": null,  // [environment] e.g. ubuntu, linuxmint
+                "version": null,       // [environment] e.g. 14.04, 6.2
+                "architecture": null,  // [environment] e.g. x86, arm
+                "bitness": null        // [environment] e.g. 16, 32, 64
+            },
+            "user": {
+                "login": null,         // [environment] users system login name
+                "home": null           // [environment] users system home directory
+            }
+        },
+        "user": {
+            "name": "${..system.user.login}",    // [environment] either users system login name or another name provided by a surrounding system
+            "email": null                        // [environment] user email address potentially provided by a surrounding system
+        },
+        "target": {
+            "platform": {
+                "type": "${...project.type}",
+                /*
+                // native
+                "system": null,        // [build] e.g. linux, windows, macos (default: system specific)
+                "distribution": null,  // [build] e.g. ubuntu, linuxmint (default: empty)
+                "version": null,       // [build] e.g. 14.04, 6.2 (default: empty)
+                "architecture": null,  // [build] e.g. x86, arm (default: system specific)
+                "generation": null,    // [build] e.g. v7m (default: empty)
+                "bitness": null,       // [build] e.g. 16, 32, 64 (default: system specific)
+                "format": null,        // [build] e.g. elf (default: empty)
+                "environment": null,   // [build] gnu, llvm, msvc (default: system specific)
+                // web
+                "environment": null,   // [build] e.g. browser, nodejs (default: empty)
+                // java
+                "version": null,       // [build] e.g. 1.7 (default: empty)
+                // .net
+                "architecture": null,  // [build] e.g. anycpu, x86, x64, itanium (default: empty)
+                // plain
+                "misc": null           // [build]
+                */
+                "descriptor": null
+            },
+            "optimization": "none"                    // [build] none, size, simple, strong, dangerous
+        },
+        "source": null,                               // [build] path to source
+        "workspace": "${.source}/.oak/workspace",     // [build] path to workspace directory
+        "result": "${.source}/.oak/result",           // [build] path to result directory
+        "configs": {
+            "system": "/etc/oak/system.json",         // [build] path to system config
+            "project": "${..source}/project.json"     // [build] path to project config
+        },
+        "report": "${.result}/report.json"            // [build] path to report file
+    },
+    "publish": {
+        "enabled": false,                             // [system] enable/disable publication of result
+        "source": "${meta.result}",                   // [system] path to be published
+        "destination": {
+            "user": "${meta.user.name}",              // [system] destination user
+            "host": "localhost",                      // [system] destination host
+            "remote": "${.user}@${.host}",
+            "port": "22",                             // [system] destination port
+            "base": "${meta.user.home}/repository",   // [system] destination base directory
+            "directory": "${meta.project.name}/${meta.tag}/${meta.commit.timestamp.compact}_${meta.commit.id.short}/${meta.target.platform.descriptor}",
+                                                      // [system] destination sub directory
+            "path": "${.base}/${.directory}",         // [system] destination directory
+            "tools": {
+                "mkdir": "mkdir",                     // [system] remote mkdir tool
+                "birch": "birch"                      // [system] remote birch reporting tool
+            }
+        }
+    },
+    "tools": {
+        "sourcecontrol": {
+            "git": "git",                        // [system] git
+            "svn": "svn"                         // [system] subversion
+        },
+        "automation": {
+            "make": "make",                      // [system] gnu make
+            "cmake": "cmake",                    // [system] cmake
+            "qmake": "qmake",                    // [system] qt qmake
+            "nmake": "nmake",                    // [system] ms nmake
+            "grunt": "grunt",                    // [system] grunt
+            "xbuild": "xbuild",                  // [system] mono xbuild
+            "msbuild": "msbuild",                // [system] ms msbuild
+            "xcodebuild": "xcodebuild"           // [system] apple xcodebuild
+        },
+        "compilation": {
+            "gcc": ["gcc", "*-gcc"],             // [system] gnu c compiler        (target specific)
+            "g++": ["g++", "*-g++"],             // [system] gnu c++ compiler      (target specific)
+            "as": [ "as", "*-as" ],              // [system] gnu assembler         (target specific)
+            "clang": "clang",                    // [system] llvm c compiler       (cross-target)
+            "clang++": "clang++",                // [system] llvm c++ compiler     (cross-target)
+            "llvm-as": "llvm-as",                // [system] llvm assembler        (cross-target)
+            "cl": "cl",                          // [system] ms c and c++ compiler (target specific)
+            "ml": [ "ml", "ml64" ],              // [system] ms assembler          (target specific)
+            "csc": "csc",                        // [system] ms .net compiler
+            "mcs": "mcs",                        // [system] mono .net compiler
+            "javac": "javac",                    // [system] java compiler
+            "emcc": "emcc"                       // [system] llvm emscripten
+        },
+        "doc": {
+            "doxygen": "doxygen"                 // [system] doxygen
+        },
+        "analysis": {
+            "cppcheck": "cppcheck"               // [system] cppcheck
+        },
+        "remote": {
+            "rsync": "rsync",                    // [system] rsync
+            "ssh": "ssh"                         // [system] openssh client
+        }
+    },
+    "taskdefs": {
+        "base": {
+            "common": {
+                "enabled": true,                 // [project, system] enables/disables task
+                "dependencies": { },             // [project] task dependencies (inert tasks can only depend on tasks of the same type)
+                "source": "${meta.source}"       // [project] source directory for task
+            },
+            "reactive": {
+                "workspace": "${meta.workspace}/${.name}/${meta.target.platform.descriptor}", // [project] workspace for temporary and intermediate files
+                "result": "${meta.result}/${.name}/${meta.target.platform.descriptor}"        // [project] directory for task results
+            },
+            "inert": {
+                "workspace": "${meta.workspace}/${.name}", // [project] workspace for temporary and intermediate files
+                "result": "${meta.result}/${.name}",       // [project] directory for task results
+            }
+        },
+        "build": {
+            "cmake": {
+                "behavior": "reactive",          // [project] reactive task
+                "variables": { },                // [project] cmake variables, format: { "<NAME>": { "type": "<TYPE>", "value": "<VALUE>" }, ... }
+                "verbose": false                 // [project] verbose mode of cmake
+            }
+        },
+        "test": {
+            "googletest": {
+                "behavior": "reactive",          // [project] reactive task
+                "binary": "${meta.result}/build/${meta.target.platform.descriptor}/test",
+                                                 // [project] path to test binary
+                "filter": "*"                    // [project] test filter
+            }
+        },
+        "analysis": {
+            "cppcheck": {
+                "behavior": "inert",             // [project] inert task
+                "platforms": {                   // [project] platforms to analyse (analysis can be done on any platform)
+                    "unix32": true,
+                    "unix64": true,
+                    "win32A": true,
+                    "win32W": true,
+                    "win64": true
+                }
+            }
+        },
+        "doc": {
+            "doxygen": {
+                "behavior": "inert",             // [project] inert task
+                "doxyfile" : {                   // [project] doxygen configuration file
+                    "INPUT": "${...source}",
+                    "OUTPUT_DIRECTORY": "${...result}",
+                    "RECURSIVE": "YES",
+                    "CASE_SENSE_NAMES": "NO",
+                    "EXTRACT_ALL": "NO",
+                    "EXTRACT_PRIVATE": "NO",
+                    "EXTRACT_PACKAGE": "NO",
+                    "EXTRACT_STATIC": "YES",
+                    "EXTRACT_LOCAL_CLASSES": "NO",
+                    "EXTRACT_LOCAL_METHODS": "NO",
+                    "EXTRACT_ANON_NSPACES": "NO",
+                    "HIDE_UNDOC_MEMBERS": "YES",
+                    "HIDE_UNDOC_CLASSES": "YES",
+                    "HIDE_FRIEND_COMPOUNDS": "YES",
+                    "HIDE_IN_BODY_DOCS": "YES",
+                    "INTERNAL_DOCS": "NO",
+                    "SHOW_INCLUDE_FILES": "NO",
+                    "GENERATE_TODOLIST": "NO",
+                    "GENERATE_TESTLIST": "NO",
+                    "GENERATE_BUGLIST": "NO",
+                    "SHOW_USED_FILES": "NO"
+                }
+            }
+        }
+    },
+    "tasks": {
+    }
 }

@@ -119,27 +119,27 @@ TaskResult task_build_cmake( uon::Value config )
 	TaskResult result;
 
 	std::vector<std::string> cmakeParams {
-		std::string("-DCMAKE_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c.binary").to_string(), "\\", "/"),
-		std::string("-DCMAKE_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c++.binary").to_string(), "\\", "/"),
+		std::string("-DCMAKE_C_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get("archs.host.c.binary").to_string(), "\\", "/"),
+		std::string("-DCMAKE_CXX_COMPILER:STRING=") + boost::algorithm::replace_all_copy(config.get("archs.host.c++.binary").to_string(), "\\", "/"),
 		std::string("-DCMAKE_INSTALL_PREFIX:STRING=") + boost::algorithm::replace_all_copy(config.get("install.output").to_string(), "\\", "/"),
 
-		std::string("-DARCH_HOST_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c.binary").to_string(), "\\", "/"),
-		std::string("-DARCH_HOST_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.host.c++.binary").to_string(), "\\", "/"),
-		std::string("-DARCH_HOST_OS:STRING=") + config.get("arch.host.os").to_string(),
-		std::string("-DARCH_HOST_DISTRIBUTION:STRING=") + config.get("arch.host.distribution").to_string(),
-		std::string("-DARCH_HOST_FAMILY:STRING=") + config.get("arch.host.family").to_string(),
-		std::string("-DARCH_HOST_BITNESS:STRING=") + config.get("arch.host.bitness").to_string(),
-		std::string("-DARCH_HOST_MISC:STRING=") + config.get("arch.host.misc").to_string(),
-		std::string("-DARCH_HOST_DESCRIPTOR:STRING=") + config.get("arch.host.descriptor").to_string(),
+		std::string("-DARCH_HOST_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.get("archs.host.c.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_HOST_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.get("archs.host.c++.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_HOST_OS:STRING=") + config.get("archs.host.os").to_string(),
+		std::string("-DARCH_HOST_DISTRIBUTION:STRING=") + config.get("archs.host.distribution").to_string(),
+		std::string("-DARCH_HOST_FAMILY:STRING=") + config.get("archs.host.family").to_string(),
+		std::string("-DARCH_HOST_BITNESS:STRING=") + config.get("archs.host.bitness").to_string(),
+		std::string("-DARCH_HOST_MISC:STRING=") + config.get("archs.host.misc").to_string(),
+		std::string("-DARCH_HOST_DESCRIPTOR:STRING=") + config.get("archs.host.descriptor").to_string(),
 
-		std::string("-DARCH_BUILD_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.build.c.binary").to_string(), "\\", "/"),
-		std::string("-DARCH_BUILD_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.get("arch.build.c++.binary").to_string(), "\\", "/"),
-		std::string("-DARCH_BUILD_OS:STRING=") + config.get("arch.build.os").to_string(),
-		std::string("-DARCH_BUILD_DISTRIBUTION:STRING=") + config.get("arch.build.distribution").to_string(),
-		std::string("-DARCH_BUILD_FAMILY:STRING=") + config.get("arch.build.family").to_string(),
-		std::string("-DARCH_BUILD_BITNESS:STRING=") + config.get("arch.build.bitness").to_string(),
-		std::string("-DARCH_BUILD_MISC:STRING=") + config.get("arch.build.misc").to_string(),
-		std::string("-DARCH_BUILD_DESCRIPTOR:STRING=") + config.get("arch.build.descriptor").to_string()
+		std::string("-DARCH_BUILD_COMPILER_C:STRING=") + boost::algorithm::replace_all_copy(config.get("archs.build.c.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_BUILD_COMPILER_CXX:STRING=") + boost::algorithm::replace_all_copy(config.get("archs.build.c++.binary").to_string(), "\\", "/"),
+		std::string("-DARCH_BUILD_OS:STRING=") + config.get("archs.build.os").to_string(),
+		std::string("-DARCH_BUILD_DISTRIBUTION:STRING=") + config.get("archs.build.distribution").to_string(),
+		std::string("-DARCH_BUILD_FAMILY:STRING=") + config.get("archs.build.family").to_string(),
+		std::string("-DARCH_BUILD_BITNESS:STRING=") + config.get("archs.build.bitness").to_string(),
+		std::string("-DARCH_BUILD_MISC:STRING=") + config.get("archs.build.misc").to_string(),
+		std::string("-DARCH_BUILD_DESCRIPTOR:STRING=") + config.get("archs.build.descriptor").to_string()
 	};
 
 	if(config.get("verbose").to_boolean())

@@ -1,4 +1,18 @@
-{	"taskdefs": {
+{	"chains": {
+		"build" : {
+			"tools": {
+				"c": { "binary": "/usr/bin/gcc" },
+				"c++": { "binary": "/usr/bin/g++" }
+			}
+		},
+		"host" : {
+			"tools": {
+				"c": { "binary": "/usr/bin/gcc" },
+				"c++": { "binary": "/usr/bin/g++" }
+			}
+		}
+	},
+	"taskdefs": {
 		"build:cmake": {
 			"cmake":  {
 				"binary": "/usr/bin/cmake",
@@ -9,16 +23,6 @@
 				}
 			},
 			"make": { "binary": "/usr/bin/make" },
-			"arch": {
-				"build" : {
-					"c": { "binary": "/usr/bin/gcc" },
-					"c++": { "binary": "/usr/bin/g++" }
-				},
-				"host" : {
-					"c": { "binary": "/usr/bin/gcc" },
-					"c++": { "binary": "/usr/bin/g++" }
-				}
-			},
 			"verbose": true
 		},
 		"analysis:cppcheck": {
