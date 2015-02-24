@@ -18,6 +18,16 @@ void notify(uon::Value report)
 		receivers.insert(buildgap.get("committer.email").to_string());
 	}
 
+	for(auto trigger : report.get("meta.trigger").to_array())
+	{
+		auto email = trigger.get("email", uon::Null());
+
+		if(!email.is_null())
+		{
+			receivers.insert(email.to_string());
+		}
+	}
+
 	if(receivers.size() == 0)
 	{
 		std::cout << "no receivers found..." << std::endl;
