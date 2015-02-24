@@ -59,6 +59,8 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 		}
 	}
 
+	uon::unique(meta_trigger);
+
 	cs.set("meta.trigger", meta_trigger);
 
 	// tasks
