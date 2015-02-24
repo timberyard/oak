@@ -233,9 +233,22 @@ TaskResult task_build_cmake( uon::Value config )
 				details_row.set("type", type);
 				details_row.set("message", message);
 				details_row.set("filename", filename);
-				details_row.set("row", std::stold(row));
-				details_row.set("column", std::stold(column));
 
+                long double row_converted = 0.0;
+                long double column_converted = 0.0;
+                try
+                {
+                    row_converted = std::stold(row);
+                    column_converted = std::stold(column);
+                }
+                catch( ... )
+                {
+                    std::cout << "Could not convert " << row << " or " << column << " to long double" << std::endl;
+                }
+
+                details_row.set("row", row_converted);
+                details_row.set("column", column_converted);
+                
 				details.push_back(details_row);
 			}
 		}
