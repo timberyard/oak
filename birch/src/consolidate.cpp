@@ -48,7 +48,7 @@ uon::Value consolidate(std::map<std::string, uon::Value> reports)
 
 	for(auto report : reports)
 	{
-		auto trigger = report.second.get("meta.trigger");
+		auto trigger = report.second.get("meta.trigger", uon::Null());
 
 		auto triggerName = trigger.get("name", uon::Null());
 		auto triggerEmail = trigger.get("email", uon::Null());
