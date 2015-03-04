@@ -31,3 +31,7 @@ There are two *modes of operatons*: “direct mode” and "Jenkins mode”. In �
 | 
 
 
+Use the remove old builds cron script
+-------------------------------------
+
+Touch a .branch file in every branch directory (the directories containing the folders with the build date and time). Then add del_old_builds.sh to your crontab. It searches for the .branch files and removes all but the last 3 build folders next to them.
