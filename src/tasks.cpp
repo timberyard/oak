@@ -446,7 +446,7 @@ TaskResult task_analysis_cppcheck( uon::Value config )
 
 	TaskResult result;
 
-	std::vector<std::string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", config.get("source").to_string() };
+	std::vector<std::string> arguments { "--xml-version=2", "--enable=all", "--suppress=missingIncludeSystem", "--quiet", config.get("source").to_string() };
 
 	process::TextProcessResult checkResult = process::executeTextProcess(
 		config.get("binary").to_string(),
