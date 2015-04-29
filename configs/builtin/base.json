@@ -168,7 +168,7 @@
 			"source": "${meta.input}/src",
 			"output": "${meta.output}/doc",
 			"doxyfile" : {
-				"QUIET": "YES"
+				"QUIET": "YES",
 				"FILE_PATTERNS": "*.h*",
 				"RECURSIVE": "YES",
 				"CASE_SENSE_NAMES": "NO",
