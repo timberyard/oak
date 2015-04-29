@@ -182,7 +182,7 @@ TaskResult task_build_cmake( uon::Value config )
 
 		for(auto variable : config.get("make.variables").as_object())
 		{
-			makeParams.push_back( variable.first + std::string("=") + variable.second.to_string() );
+			makeParams.push_back( variable.first.to_string() + std::string("=") + variable.second.to_string() );
 		}
 
 		process::TextProcessResult makeResult = process::executeTextProcess(
