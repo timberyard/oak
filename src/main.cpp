@@ -807,12 +807,12 @@ int main( int argc, const char* const* argv )
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "Error while preparing output directory: " << e.what() << std::endl;
+		std::cerr << "Error while preparing output directory " << outputPath.string() << ": " << e.what() << std::endl;
 		return 1;
 	}
 	catch(...)
 	{
-		std::cerr << "Error while preparing output directory: unknown" << std::endl;
+        std::cerr << "Error while preparing output directory " << outputPath.string() << ": unknown" << std::endl;
 		return 1;
 	}
 
