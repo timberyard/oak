@@ -19,7 +19,7 @@ set(Boost_LIBRARIES boost_system boost_filesystem boost_iostreams boost_program_
 # Json Spirit
 set( JsonSpiritArgs -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_TOOLCHAIN_FILE:STRING=${CMAKE_TOOLCHAIN_FILE} -DBOOST_ROOT:STRING=${BOOST_ROOT} )
 ExternalProject_Add(JsonSpirit
-    GIT_REPOSITORY "git@chicago.everbase.net:niklas/json_spirit.git"
+    GIT_REPOSITORY "git@github.com:everbase/json_spirit.git"
     GIT_TAG "0.0.1"
     CMAKE_ARGS ${JsonSpiritArgs}
     INSTALL_COMMAND ""
