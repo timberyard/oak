@@ -1043,6 +1043,7 @@ void publish( const config::Config& conf )
 	}
 
 	// run ssh:birch
+	/*
 	std::vector<std::string> sshBirchArgs { "-o", "BatchMode=yes", "-p", conf.get("publish.destination.port").to_string(), remote, conf.get("publish.destination.birch.binary").to_string(), "--letterbox", "--input=" + conf.get("publish.destination.path").to_string() };
 
 	process::TextProcessResult sshBirchResult = process::executeTextProcess(conf.get("tools.ssh.binary").to_string(), sshBirchArgs, ".");
@@ -1051,4 +1052,5 @@ void publish( const config::Config& conf )
 	{
 		throw std::runtime_error("could not run birch on remote");
 	}
+	*/
 }
