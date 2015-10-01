@@ -103,7 +103,7 @@
 			"cmake": {
 				"binary": "cmake",
 				"variables": { },
-				"generator": "Visual Studio 14 2015 Win64"
+				"generator": "Unix Makefiles"
 			},
 			"make": {
 				"binary": "make",
