@@ -175,13 +175,6 @@ TaskResult task_build_cmake( uon::Value config )
 	result.errors = (cmakeResult.exitCode != 0 ? 1 : 0);
 	result.status = (cmakeResult.exitCode != 0 ? TaskResult::STATUS_ERROR : TaskResult::STATUS_OK);
 
-#ifndef _WIN32
-	process::TextProcessResult vcvarsall = process::executeTextProcess(
-        "vcvarsall",
-		std::vector<std::string> {"amd64"},
-        config.get("build.output").to_string());
-#endif
-
 	// run make
 	if(cmakeResult.exitCode == 0)
 	{
@@ -255,7 +248,7 @@ TaskResult task_build_cmake( uon::Value config )
 
                 details_row.set("row", row_converted);
                 details_row.set("column", column_converted);
-
+                
 				details.push_back(details_row);
 			}
 		}
